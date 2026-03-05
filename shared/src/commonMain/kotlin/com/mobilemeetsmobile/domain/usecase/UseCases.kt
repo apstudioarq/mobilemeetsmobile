@@ -13,6 +13,12 @@ class GetScheduleUseCase(private val repository: SessionRepository) {
     }
 }
 
+class GetAllSessionsUseCase(private val repository: SessionRepository) {
+    operator fun invoke(): Flow<List<Session>> {
+        return repository.getAllSessions()
+    }
+}
+
 class GetSessionDetailUseCase(private val repository: SessionRepository) {
     suspend operator fun invoke(sessionId: String): Session {
         return repository.getSessionById(sessionId)

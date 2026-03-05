@@ -20,6 +20,12 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) {
 
     // ── Sessions ────────────────────────────────────────────
 
+    fun getAllSessions(): Flow<List<Session>> {
+        return sessionQueries.getAllSessions(::mapSession)
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+    }
+
     fun getSessionsByDay(day: Int): Flow<List<Session>> {
         return sessionQueries.getSessionsByDay(day.toLong(), ::mapSession)
             .asFlow()

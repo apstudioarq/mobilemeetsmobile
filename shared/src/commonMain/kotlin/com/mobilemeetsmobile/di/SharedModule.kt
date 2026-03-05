@@ -26,6 +26,7 @@ val sharedModule = module {
 
     // Use Cases
     factory { GetScheduleUseCase(get()) }
+    factory { GetAllSessionsUseCase(get()) }
     factory { GetSessionDetailUseCase(get()) }
     factory { SearchSessionsUseCase(get()) }
     factory { ToggleBookmarkUseCase(get()) }
@@ -33,7 +34,7 @@ val sharedModule = module {
     factory { GetSpeakersUseCase(get()) }
 
     // ViewModels
-    factory { ScheduleViewModel(get(), get(), get(), get()) }
+    factory { ScheduleViewModel(get(), get(), get(), get(), get()) }
     factory { SessionDetailViewModel(get(), get(), get()) }
     factory { SpeakersViewModel(get()) }
 }

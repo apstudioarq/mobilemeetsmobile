@@ -1,8 +1,8 @@
-# 📱 Mobile Meets Mobile Clone — Kotlin Multiplatform (KMM)
+# 📱 Mobile Meets Mobile Clone - Kotlin Multiplatform (KMM)
 
-Un clon completo de la app de Mobile Meets Mobile construido con **Kotlin Multiplatform Mobile**, compartiendo lógica de negocio entre Android (Jetpack Compose) e iOS (SwiftUI).
+A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mobile**, sharing business logic between Android (Jetpack Compose) and iOS (SwiftUI).
 
-## 🏗️ Arquitectura
+## 🏗️ Architecture
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -27,37 +27,37 @@ Un clon completo de la app de Mobile Meets Mobile construido con **Kotlin Multip
           └──────────────────┘ └──────────────────┘
 ```
 
-## 📂 Estructura del Proyecto
+## 📂 Project Structure
 
-| Módulo | Contenido |
-|--------|-----------|
-| `shared/commonMain` | Modelos, API client, repositories, use cases, ViewModels, DI |
-| `shared/androidMain` | SQLDelight Android driver, plataforma DI |
-| `shared/iosMain` | SQLDelight iOS driver, plataforma DI, Koin init |
-| `androidApp` | UI con Jetpack Compose, navegación, tema Material 3 |
-| `iosApp` | UI con SwiftUI, vistas nativas iOS |
+| Module | Content |
+|--------|---------|
+| `shared/commonMain` | Models, API client, repositories, use cases, ViewModels, DI |
+| `shared/androidMain` | SQLDelight Android driver, platform DI |
+| `shared/iosMain` | SQLDelight iOS driver, platform DI, Koin init |
+| `androidApp` | Jetpack Compose UI, navigation, Material 3 theme |
+| `iosApp` | SwiftUI UI, native iOS views |
 
-## 🔧 Stack Tecnológico
+## 🔧 Tech Stack
 
 ### Shared (Kotlin Multiplatform)
-- **Ktor** — HTTP client multiplataforma
-- **kotlinx.serialization** — JSON serialization
-- **kotlinx.datetime** — Fechas multiplataforma
-- **SQLDelight** — Base de datos local (offline cache)
-- **Koin** — Inyección de dependencias
-- **Coroutines + Flow** — Programación asíncrona reactiva
+- **Ktor** - Multiplatform HTTP client
+- **kotlinx.serialization** - JSON serialization
+- **kotlinx.datetime** - Multiplatform dates
+- **SQLDelight** - Local database (offline cache)
+- **Koin** - Dependency injection
+- **Coroutines + Flow** - Reactive async programming
 
 ### Android
-- **Jetpack Compose** — UI declarativa
-- **Material 3** — Design system
-- **Navigation Compose** — Navegación
-- **Coil** — Carga de imágenes
+- **Jetpack Compose** - Declarative UI
+- **Material 3** - Design system
+- **Navigation Compose** - Navigation
+- **Coil** - Image loading
 
 ### iOS
-- **SwiftUI** — UI nativa
-- **Combine** — Observación de estado desde KMM
+- **SwiftUI** - Native iOS UI
+- **Combine** - State observation from KMM
 
-## 🚀 Cómo ejecutar
+## 🚀 How to Run
 
 ### Android
 ```bash
@@ -67,57 +67,77 @@ Un clon completo de la app de Mobile Meets Mobile construido con **Kotlin Multip
 ### iOS
 ```bash
 cd iosApp
-pod install   # si usas CocoaPods
+pod install   # if using CocoaPods
 open iosApp.xcworkspace
-# Build & Run en Xcode
+# Build & Run in Xcode
 ```
 
-## 🖥️ Opciones de Backend
+## 🖥️ Backend Options
 
-### Opción 1: Ktor Server (Recomendada — Full Kotlin)
+### Option 1: Ktor Server (Recommended - Full Kotlin)
 ```kotlin
-// Comparte modelos con shared/
+// Share models with shared/
 // Deploy: Google Cloud Run / Railway / Fly.io
 // DB: PostgreSQL + Exposed ORM
 ```
-**Ventaja**: 100% Kotlin, modelos compartidos entre cliente y servidor.
+**Advantage**: 100% Kotlin, shared models between client and server.
 
-### Opción 2: Supabase (Rápido)
+### Option 2: Supabase (Fast)
 ```sql
--- API REST auto-generada desde PostgreSQL
--- Auth, Real-time, Storage incluidos
--- Free tier generoso
+-- Auto-generated REST API from PostgreSQL
+-- Auth, Realtime, Storage included
+-- Generous free tier
 ```
-**Ventaja**: Backend en minutos, PostgreSQL real.
+**Advantage**: Backend in minutes, real PostgreSQL.
 
-### Opción 3: Firebase
+### Option 3: Firebase
 ```
 -- Firestore + Cloud Functions
--- Auth nativo + FCM push notifications
--- Real-time sync
+-- Native Auth + FCM push notifications
+-- Realtime sync
 ```
-**Ventaja**: Integración nativa con Android, escalado automático.
+**Advantage**: Native Android integration, automatic scaling.
 
 ## 📋 Features
 
-- [x] Schedule por días con timeline visual
-- [x] Filtro por tracks (AI/ML, Android, Web, Cloud, Firebase, Flutter, Design)
-- [x] Vista detalle de sesión con speakers y metadata
-- [x] Sistema de bookmarks (offline-first con SQLDelight)
-- [x] Búsqueda de sesiones
-- [x] Vista de speakers
-- [x] Barra de capacidad por sesión
+- [x] Day-based schedule with visual timeline
+- [x] Event days dynamically computed from remote data
+- [x] Track filters (AI/ML, Android, Web, Cloud, Firebase, Flutter, Design)
+- [x] Session detail screen with speakers and metadata
+- [x] Bookmark system (offline-first with SQLDelight)
+- [x] Session search
+- [x] Speakers screen
+- [x] Session capacity bar
 - [x] Bottom navigation (Android) / Tab view (iOS)
-- [x] Tema oscuro Mobile Meets Mobile branded
-- [x] Offline-first: cache local → sync con servidor
+- [x] Branded dark theme
+- [x] Offline-first flow: local cache -> server sync
+- [x] Web admin panel for speakers/sessions (`admin-panel/`)
 
-## 📋 Por implementar
+## 🧰 Web Admin Panel
 
-- [ ] Push notifications (recordatorio antes de sesión)
-- [ ] Mapa del venue con Google Maps SDK
-- [ ] Livestream integrado
-- [ ] Check-in vía QR
-- [ ] Feedback post-sesión
-- [ ] Exportar agenda a Google Calendar
-- [ ] Login con Google Sign-In
-- [ ] Compose Multiplatform (compartir UI entre Android e iOS)
+The project includes an admin panel in `admin-panel/` to create/edit/delete `speakers` and `sessions` in Supabase.
+
+### Run
+
+```bash
+cd admin-panel
+python3 -m http.server 8080
+```
+
+Open: `http://localhost:8080`
+
+To bootstrap a new backend from scratch, use:
+
+- `supabase/schema.sql`
+- `supabase/seed.sql`
+
+## 📋 Backlog
+
+- [ ] Push notifications (session reminders)
+- [ ] Venue map with Google Maps SDK
+- [ ] Built-in livestream
+- [ ] QR check-in
+- [ ] Post-session feedback
+- [ ] Export schedule to Google Calendar
+- [ ] Login with Google Sign-In
+- [ ] Compose Multiplatform (shared UI between Android and iOS)

@@ -149,7 +149,7 @@ struct ScheduleView: View {
             .navigationTitle("")
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    MobileMeetsMobileLogo()
+                    EventHubTitle()
                 }
             }
             .sheet(item: $selectedSessionId) { sessionId in
@@ -173,17 +173,16 @@ struct ScheduleView: View {
 }
 
 // MARK: - Subviews
-struct MobileMeetsMobileLogo: View {
+struct EventHubTitle: View {
     var body: some View {
-        HStack(spacing: 2) {
-            Text("G").foregroundColor(.googleBlue).fontWeight(.bold).font(.title2)
-            Text("o").foregroundColor(.googleRed).fontWeight(.bold).font(.title3)
-            Text("o").foregroundColor(.googleYellow).fontWeight(.bold).font(.title3)
-            Text("g").foregroundColor(.googleBlue).fontWeight(.bold).font(.title3)
-            Text("l").foregroundColor(.googleGreen).fontWeight(.bold).font(.title3)
-            Text("e").foregroundColor(.googleRed).fontWeight(.bold).font(.title3)
-            Text(" I/O").foregroundColor(.white).fontWeight(.bold).font(.title2)
-        }
+        Text("Event Hub")
+            .foregroundColor(.white)
+            .fontWeight(.bold)
+            .font(.title3)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(.white.opacity(0.08))
+            .cornerRadius(10)
     }
 }
 

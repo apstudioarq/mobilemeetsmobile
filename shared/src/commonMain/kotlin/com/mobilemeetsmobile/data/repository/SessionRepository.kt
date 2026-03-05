@@ -12,6 +12,17 @@ class SessionRepository(
     private val api: MobileMeetsMobileApi,
     private val local: LocalDataSource,
 ) {
+    fun getAllSessions(): Flow<List<Session>> {
+        return local.getAllSessions().onStart {
+            try {
+                val remoteSessions = api.getSessions()
+                local.insertSessions(remoteSessions)
+            } catch (e: Exception) {
+                println("Network error fetching all sessions: ${e.message}")
+            }
+        }
+    }
+
     /**
      * Offline-first schedule loading.
      * 1. Emit cached sessions immediately

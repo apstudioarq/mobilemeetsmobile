@@ -3,15 +3,25 @@ package com.mobilemeetsmobile.presentation.schedule
 import com.mobilemeetsmobile.data.model.ConferenceDay
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Track
+import com.mobilemeetsmobile.domain.usecase.GetAllSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.GetBookmarksUseCase
 import com.mobilemeetsmobile.domain.usecase.GetScheduleUseCase
 import com.mobilemeetsmobile.domain.usecase.SearchSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 data class ScheduleUiState(
     val selectedDay: Int = 1,
@@ -23,48 +33,46 @@ data class ScheduleUiState(
     val bookmarkedIds: Set<String> = emptySet(),
     val searchQuery: String = "",
     val showBookmarksOnly: Boolean = false,
-    val days: List<ConferenceDay> = listOf(
-        ConferenceDay(1, "Day 1", "May 14"),
-        ConferenceDay(2, "Day 2", "May 15"),
-        ConferenceDay(3, "Day 3", "May 16"),
-    ),
+    val days: List<ConferenceDay> = listOf(ConferenceDay(1, "Day 1", "TBD")),
 )
 
 class ScheduleViewModel(
     private val getSchedule: GetScheduleUseCase,
+    private val getAllSessions: GetAllSessionsUseCase,
     private val searchSessions: SearchSessionsUseCase,
     private val toggleBookmark: ToggleBookmarkUseCase,
     private val getBookmarks: GetBookmarksUseCase,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var loadDayJob: Job? = null
 
     private val _uiState = MutableStateFlow(ScheduleUiState())
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
 
     init {
-        loadDay(1)
+        loadDay(_uiState.value.selectedDay)
+        observeAvailableDays()
         observeBookmarks()
     }
 
     fun loadDay(day: Int) {
         _uiState.update { it.copy(selectedDay = day, isLoading = true, error = null) }
-        scope.launch {
+        loadDayJob?.cancel()
+        loadDayJob = scope.launch {
             try {
-                getSchedule(day, _uiState.value.selectedTrack)
-                    .collect { sessions ->
-                        val filtered = applyFilters(sessions)
-                        _uiState.update {
-                            it.copy(
-                                sessions = filtered,
-                                timeSlots = filtered.groupBy { s -> s.startTime },
-                                isLoading = false,
-                            )
-                        }
+                getSchedule(day, _uiState.value.selectedTrack).collect { sessions ->
+                    val filtered = applyFilters(sessions)
+                    _uiState.update {
+                        it.copy(
+                            sessions = filtered,
+                            timeSlots = filtered.groupBy { session -> session.startTime },
+                            isLoading = false,
+                        )
                     }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(isLoading = false, error = e.message)
                 }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
@@ -80,13 +88,15 @@ class ScheduleViewModel(
             loadDay(_uiState.value.selectedDay)
             return
         }
+
         scope.launch {
             searchSessions(query).collect { results ->
                 val dayFiltered = results.filter { it.day == _uiState.value.selectedDay }
+                val filtered = applyFilters(dayFiltered)
                 _uiState.update {
                     it.copy(
-                        sessions = dayFiltered,
-                        timeSlots = dayFiltered.groupBy { s -> s.startTime },
+                        sessions = filtered,
+                        timeSlots = filtered.groupBy { session -> session.startTime },
                     )
                 }
             }
@@ -95,7 +105,6 @@ class ScheduleViewModel(
 
     fun onBookmarkToggle(sessionId: String) {
         toggleBookmark(sessionId)
-        // Update local state immediately
         _uiState.update { state ->
             val newBookmarks = state.bookmarkedIds.toMutableSet()
             if (newBookmarks.contains(sessionId)) {
@@ -103,13 +112,20 @@ class ScheduleViewModel(
             } else {
                 newBookmarks.add(sessionId)
             }
-            val updatedSessions = state.sessions.map { s ->
-                if (s.id == sessionId) s.copy(isBookmarked = !s.isBookmarked) else s
+
+            val updatedSessions = state.sessions.map { session ->
+                if (session.id == sessionId) {
+                    session.copy(isBookmarked = !session.isBookmarked)
+                } else {
+                    session
+                }
             }
+
+            val refiltered = applyFilters(updatedSessions, newBookmarks)
             state.copy(
                 bookmarkedIds = newBookmarks,
-                sessions = updatedSessions,
-                timeSlots = updatedSessions.groupBy { s -> s.startTime },
+                sessions = refiltered,
+                timeSlots = refiltered.groupBy { session -> session.startTime },
             )
         }
     }
@@ -127,10 +143,94 @@ class ScheduleViewModel(
         }
     }
 
-    private fun applyFilters(sessions: List<Session>): List<Session> {
+    private fun observeAvailableDays() {
+        scope.launch {
+            getAllSessions().collect { sessions ->
+                val derivedDays = buildConferenceDays(sessions)
+                if (derivedDays.isEmpty()) return@collect
+
+                val current = _uiState.value
+                val selectedDay = if (derivedDays.any { it.dayNumber == current.selectedDay }) {
+                    current.selectedDay
+                } else {
+                    derivedDays.first().dayNumber
+                }
+
+                val shouldReload = selectedDay != current.selectedDay || derivedDays != current.days
+
+                _uiState.update {
+                    it.copy(
+                        days = derivedDays,
+                        selectedDay = selectedDay,
+                    )
+                }
+
+                if (shouldReload) {
+                    loadDay(selectedDay)
+                }
+            }
+        }
+    }
+
+    private fun buildConferenceDays(sessions: List<Session>): List<ConferenceDay> {
+        if (sessions.isEmpty()) return emptyList()
+
+        val firstStartByDay = sessions
+            .groupBy { it.day }
+            .mapValues { (_, daySessions) ->
+                daySessions.minByOrNull { it.startTime }?.startTime
+            }
+
+        return firstStartByDay
+            .keys
+            .sorted()
+            .map { dayNumber ->
+                val startTime = firstStartByDay[dayNumber]
+                ConferenceDay(
+                    dayNumber = dayNumber,
+                    label = "Day $dayNumber",
+                    date = formatDayLabel(startTime),
+                )
+            }
+    }
+
+    private fun formatDayLabel(startTime: String?): String {
+        if (startTime.isNullOrBlank()) return "TBD"
+        return runCatching {
+            val localDate = Instant.parse(startTime)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+                .date
+            "${monthShort(localDate.monthNumber)} ${localDate.dayOfMonth}"
+        }.getOrElse {
+            startTime.take(10)
+        }
+    }
+
+    private fun monthShort(monthNumber: Int): String {
+        return when (monthNumber) {
+            1 -> "Jan"
+            2 -> "Feb"
+            3 -> "Mar"
+            4 -> "Apr"
+            5 -> "May"
+            6 -> "Jun"
+            7 -> "Jul"
+            8 -> "Aug"
+            9 -> "Sep"
+            10 -> "Oct"
+            11 -> "Nov"
+            12 -> "Dec"
+            else -> ""
+        }
+    }
+
+    private fun applyFilters(
+        sessions: List<Session>,
+        bookmarkIds: Set<String> = _uiState.value.bookmarkedIds,
+    ): List<Session> {
         val state = _uiState.value
         return sessions.filter { session ->
-            val matchesBookmark = !state.showBookmarksOnly || state.bookmarkedIds.contains(session.id)
+            val matchesBookmark = !state.showBookmarksOnly || bookmarkIds.contains(session.id)
             val matchesSearch = state.searchQuery.isBlank() ||
                 session.title.contains(state.searchQuery, ignoreCase = true) ||
                 session.description.contains(state.searchQuery, ignoreCase = true)
@@ -139,6 +239,6 @@ class ScheduleViewModel(
     }
 
     fun onCleared() {
-        // Cancel scope if needed
+        loadDayJob?.cancel()
     }
 }

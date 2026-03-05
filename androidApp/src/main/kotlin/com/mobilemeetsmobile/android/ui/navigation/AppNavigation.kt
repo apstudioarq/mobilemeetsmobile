@@ -107,32 +107,12 @@ fun AppNavigation() {
 fun MobileMeetsMobileTopBar() {
     CenterAlignedTopAppBar(
         title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text("G", color = GoogleBlue, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("o", color = GoogleRed, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("o", color = GoogleYellow, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("g", color = GoogleBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("l", color = GoogleGreen, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("e", color = GoogleRed, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(6.dp))
-                Text("I/O", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(6.dp))
-                Surface(
-                    color = GoogleBlue.copy(alpha = 0.15f),
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(
-                        text = "2025",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = GoogleBlue,
-                    )
-                }
-            }
+            Text(
+                text = "Event Hub",
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+            )
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = DarkBackground,
