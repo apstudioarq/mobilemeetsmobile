@@ -66,11 +66,38 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
 
 ### iOS
 ```bash
-cd iosApp
-pod install   # if using CocoaPods
-open iosApp.xcworkspace
-# Build & Run in Xcode
+./gradlew :shared:prepareSharedSpm
+# Add local package iosApp/SharedSPM in Xcode and run
 ```
+
+#### iOS detailed setup
+
+1. Install prerequisites:
+   - Xcode 15+
+2. Generate the KMM XCFramework wrapped for SPM:
+   - Run `./gradlew :shared:prepareSharedSpm`
+   - This generates `iosApp/SharedSPM/shared.xcframework`
+3. Open your iOS app project in Xcode and add the local package:
+   - `File` -> `Add Package Dependencies...`
+   - `Add Local...`
+   - Select folder `iosApp/SharedSPM`
+   - Add product `SharedKMM` to your app target
+4. Configure backend keys for iOS app startup:
+   - Open the iOS target in Xcode and add these entries to `Info.plist`:
+   - `SUPABASE_URL` = `https://<your-project>.supabase.co`
+   - `SUPABASE_ANON_KEY` = `<your-anon-key>`
+5. Open and run:
+   - Select an iOS Simulator (for example, iPhone 16 Pro)
+   - Press `Cmd + R`
+
+#### Troubleshooting
+
+- If you get module errors for `shared`, rebuild the KMM framework first:
+```bash
+./gradlew :shared:prepareSharedSpm
+```
+- This repository currently contains iOS source files but does not include a committed `.xcodeproj` or `.xcworkspace`.
+  To launch on iOS, restore the project file or create an Xcode iOS app target and add local package `iosApp/SharedSPM`.
 
 ## 🖥️ Backend Options
 

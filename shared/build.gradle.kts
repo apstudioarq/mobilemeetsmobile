@@ -1,9 +1,14 @@
+import org.gradle.api.tasks.Sync
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.sqldelight)
 }
+
+val sharedXcframework = XCFramework("shared")
 
 kotlin {
     androidTarget {
@@ -22,6 +27,7 @@ kotlin {
         it.binaries.framework {
             baseName = "shared"
             isStatic = true
+            sharedXcframework.add(this)
         }
     }
 
@@ -79,4 +85,10 @@ sqldelight {
             packageName.set("com.mobilemeetsmobile.data.local")
         }
     }
+}
+
+tasks.register<Sync>("prepareSharedSpm") {
+    dependsOn("assembleSharedReleaseXCFramework")
+    from(layout.buildDirectory.dir("XCFrameworks/release/shared.xcframework"))
+    into(rootProject.layout.projectDirectory.dir("iosApp/SharedSPM/shared.xcframework"))
 }
