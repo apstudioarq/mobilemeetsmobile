@@ -82,11 +82,13 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
    - `Add Local...`
    - Select folder `iosApp/SharedSPM`
    - Add product `SharedKMM` to your app target
-4. Configure backend keys for iOS app startup:
+4. Ensure SQLite linker flag is present in your app target:
+   - `Build Settings` -> `Other Linker Flags` includes `-lsqlite3`
+5. Configure backend keys for iOS app startup:
    - Open the iOS target in Xcode and add these entries to `Info.plist`:
    - `SUPABASE_URL` = `https://<your-project>.supabase.co`
    - `SUPABASE_ANON_KEY` = `<your-anon-key>`
-5. Open and run:
+6. Open and run:
    - Select an iOS Simulator (for example, iPhone 16 Pro)
    - Press `Cmd + R`
 
@@ -117,7 +119,7 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
 ```
 **Advantage**: Backend in minutes, real PostgreSQL.
 
-### Option 3: Firebase
+### Option 3: Firebase  
 ```
 -- Firestore + Cloud Functions
 -- Native Auth + FCM push notifications
