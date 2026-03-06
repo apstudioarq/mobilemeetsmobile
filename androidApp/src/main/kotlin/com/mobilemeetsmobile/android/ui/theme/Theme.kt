@@ -9,9 +9,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 private val DarkColorScheme = darkColorScheme(
-    primary = GoogleBlue,
-    secondary = GoogleGreen,
-    tertiary = GoogleYellow,
+    primary = IngOrange,
+    secondary = IngSky,
+    tertiary = IngSun,
     error = GoogleRed,
     background = DarkBackground,
     surface = DarkSurface,

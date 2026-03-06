@@ -2,7 +2,6 @@ package com.mobilemeetsmobile.android.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -76,7 +75,7 @@ fun SessionCard(
                         modifier = Modifier.size(32.dp),
                     ) {
                         val bookmarkColor by animateColorAsState(
-                            if (session.isBookmarked) GoogleYellow else Color.White.copy(alpha = 0.25f),
+                            if (session.isBookmarked) IngSun else Color.White.copy(alpha = 0.25f),
                             label = "bookmark",
                         )
                         Icon(
@@ -145,7 +144,7 @@ fun TypeBadge(type: SessionType, trackColor: Color) {
             .clip(RoundedCornerShape(8.dp))
             .background(
                 if (isKeynote) {
-                    Brush.linearGradient(listOf(GoogleBlue, TrackDesign))
+                    Brush.linearGradient(listOf(IngOrange, TrackDesign))
                 } else {
                     Brush.linearGradient(listOf(trackColor.copy(alpha = 0.2f), trackColor.copy(alpha = 0.2f)))
                 }
@@ -198,7 +197,7 @@ fun LevelBadge(level: String) {
 fun TrackFilterChip(
     track: String,
     isSelected: Boolean,
-    color: Color = GoogleBlue,
+    color: Color = IngOrange,
     onClick: () -> Unit,
 ) {
     Box(
@@ -231,7 +230,7 @@ fun DayTab(
             .clip(RoundedCornerShape(16.dp))
             .background(
                 if (isSelected) {
-                    Brush.linearGradient(listOf(GoogleBlue, GoogleGreen))
+                    Brush.linearGradient(listOf(IngOrange, IngSky))
                 } else {
                     Brush.linearGradient(
                         listOf(
@@ -330,7 +329,7 @@ fun TimeSlotHeader(time: String) {
                 .size(10.dp)
                 .clip(CircleShape)
                 .background(
-                    Brush.linearGradient(listOf(GoogleBlue, GoogleGreen))
+                    Brush.linearGradient(listOf(IngOrange, IngSky))
                 ),
         )
         Text(

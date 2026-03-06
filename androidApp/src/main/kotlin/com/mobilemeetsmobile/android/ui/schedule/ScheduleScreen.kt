@@ -1,6 +1,5 @@
 package com.mobilemeetsmobile.android.ui.schedule
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,10 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mobilemeetsmobile.android.ui.components.*
 import com.mobilemeetsmobile.android.ui.theme.*
@@ -62,11 +58,11 @@ fun ScheduleScreen(
             },
             shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GoogleBlue.copy(alpha = 0.5f),
+                focusedBorderColor = IngOrange.copy(alpha = 0.5f),
                 unfocusedBorderColor = Color.White.copy(alpha = 0.06f),
                 focusedContainerColor = Color.White.copy(alpha = 0.06f),
                 unfocusedContainerColor = Color.White.copy(alpha = 0.04f),
-                cursorColor = GoogleBlue,
+                cursorColor = IngOrange,
                 focusedTextColor = Color.White,
                 unfocusedTextColor = Color.White,
             ),
@@ -97,7 +93,7 @@ fun ScheduleScreen(
         ) {
             items(allTracks) { trackName ->
                 val track = if (trackName == "All") null else Track.entries.find { it.displayName == trackName }
-                val color = track?.accentColor() ?: GoogleBlue
+                val color = track?.accentColor() ?: IngOrange
                 TrackFilterChip(
                     track = trackName,
                     isSelected = (track == null && state.selectedTrack == null) ||
@@ -132,9 +128,9 @@ fun ScheduleScreen(
                     )
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = GoogleYellow.copy(alpha = 0.2f),
-                    selectedLabelColor = GoogleYellow,
-                    selectedLeadingIconColor = GoogleYellow,
+                    selectedContainerColor = IngSun.copy(alpha = 0.2f),
+                    selectedLabelColor = IngSun,
+                    selectedLeadingIconColor = IngSun,
                 ),
             )
         }
@@ -147,7 +143,7 @@ fun ScheduleScreen(
                     .padding(48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = GoogleBlue)
+                CircularProgressIndicator(color = IngOrange)
             }
         } else if (state.timeSlots.isEmpty()) {
             Box(

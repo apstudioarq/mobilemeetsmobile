@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,7 +42,7 @@ fun SpeakersScreen(
 
         if (state.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GoogleBlue)
+                CircularProgressIndicator(color = IngOrange)
             }
         } else {
             LazyVerticalGrid(
@@ -71,7 +70,7 @@ fun SpeakerCard(
     speaker: Speaker,
     onClick: () -> Unit,
 ) {
-    val colors = listOf(GoogleBlue, GoogleRed, GoogleGreen, GoogleYellow, TrackDesign, TrackFirebase)
+    val colors = listOf(IngOrange, GoogleRed, IngSky, IngSun, TrackDesign, TrackFirebase)
     val color = colors[speaker.name.hashCode().mod(colors.size).let { if (it < 0) -it else it }]
     val initials = speaker.name.split(" ").map { it.first() }.joinToString("")
 

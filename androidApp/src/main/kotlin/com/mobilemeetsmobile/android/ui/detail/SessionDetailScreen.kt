@@ -54,7 +54,7 @@ fun SessionDetailScreen(
 
         if (state.isLoading || session == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GoogleBlue)
+                CircularProgressIndicator(color = IngOrange)
             }
         } else {
             val trackColor = session.track.accentColor()
@@ -110,7 +110,7 @@ fun SessionDetailScreen(
                             Button(
                                 onClick = { viewModel.onBookmarkToggle() },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (session.isBookmarked) GoogleYellow else Color.White.copy(alpha = 0.1f),
+                                    containerColor = if (session.isBookmarked) IngSun else Color.White.copy(alpha = 0.1f),
                                     contentColor = if (session.isBookmarked) Color.Black else Color.White,
                                 ),
                                 shape = RoundedCornerShape(12.dp),

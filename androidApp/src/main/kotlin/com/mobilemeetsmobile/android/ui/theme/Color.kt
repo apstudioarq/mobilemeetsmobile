@@ -3,10 +3,10 @@ package com.mobilemeetsmobile.android.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Google brand colors
-val GoogleBlue = Color(0xFF4285F4)
+val IngOrange = Color(0xFFFF6200)
 val GoogleRed = Color(0xFFEA4335)
-val GoogleYellow = Color(0xFFFBBC04)
-val GoogleGreen = Color(0xFF34A853)
+val IngSun = Color(0xFFFFE100)
+val IngSky = Color(0xFF89D6FD)
 
 // Dark theme palette
 val DarkBackground = Color(0xFF0D0D0D)
