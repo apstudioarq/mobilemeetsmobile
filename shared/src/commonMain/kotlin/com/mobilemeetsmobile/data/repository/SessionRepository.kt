@@ -14,6 +14,7 @@ class SessionRepository(
 ) {
     fun getAllSessions(): Flow<List<Session>> {
         return local.getAllSessions().onStart {
+            local.seedDesignData()
             try {
                 val remoteSessions = api.getSessions()
                 local.insertSessions(remoteSessions)
@@ -43,6 +44,7 @@ class SessionRepository(
                 emit(cached)
             }
         }.onStart {
+            local.seedDesignData()
             // Trigger network fetch in the background
             try {
                 val remoteSessions = api.getSessions(day, track?.name)
@@ -64,8 +66,8 @@ class SessionRepository(
             local.insertSessions(listOf(remote))
             remote.toDomain(local.isBookmarked(id))
         } catch (e: Exception) {
-            // Fallback: query from local
-            throw e
+            local.seedDesignData()
+            local.getSessionById(id) ?: throw e
         }
     }
 

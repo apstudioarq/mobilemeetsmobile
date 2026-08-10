@@ -23,6 +23,7 @@ fun String.toBuildConfigString(): String {
 
 val supabaseUrl = readSecret("SUPABASE_URL")
 val supabaseAnonKey = readSecret("SUPABASE_ANON_KEY")
+val firebaseFunctionsUrl = readSecret("FIREBASE_FUNCTIONS_URL")
 
 android {
     namespace = "com.mobilemeetsmobile.android"
@@ -36,6 +37,7 @@ android {
         versionName = "1.0"
         buildConfigField("String", "SUPABASE_URL", supabaseUrl.toBuildConfigString())
         buildConfigField("String", "SUPABASE_ANON_KEY", supabaseAnonKey.toBuildConfigString())
+        buildConfigField("String", "FIREBASE_FUNCTIONS_URL", firebaseFunctionsUrl.toBuildConfigString())
     }
 
     buildFeatures {

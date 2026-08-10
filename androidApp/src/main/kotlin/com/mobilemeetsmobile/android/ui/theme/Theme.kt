@@ -1,24 +1,24 @@
 package com.mobilemeetsmobile.android.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-private val DarkColorScheme = darkColorScheme(
+private val VibrantColorScheme = lightColorScheme(
     primary = IngOrange,
-    secondary = IngSky,
+    secondary = VibrantBrown,
     tertiary = IngSun,
     error = GoogleRed,
-    background = DarkBackground,
-    surface = DarkSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onBackground = DarkOnBackground,
-    onSurface = DarkOnSurface,
-    onSurfaceVariant = DarkOnSurfaceVariant,
+    background = VibrantBackground,
+    surface = VibrantSurface,
+    surfaceVariant = VibrantSurfaceWarm,
+    onBackground = VibrantText,
+    onSurface = VibrantText,
+    onSurfaceVariant = VibrantMuted,
 )
 
 private val MobileMeetsMobileTypography = Typography(
@@ -26,13 +26,13 @@ private val MobileMeetsMobileTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 38.sp,
-        letterSpacing = (-1).sp,
+        letterSpacing = 0.sp,
     ),
     headlineMedium = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         lineHeight = 30.sp,
-        letterSpacing = (-0.5).sp,
+        letterSpacing = 0.sp,
     ),
     headlineSmall = TextStyle(
         fontWeight = FontWeight.SemiBold,
@@ -43,7 +43,7 @@ private val MobileMeetsMobileTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 24.sp,
-        letterSpacing = (-0.3).sp,
+        letterSpacing = 0.sp,
     ),
     titleMedium = TextStyle(
         fontWeight = FontWeight.SemiBold,
@@ -86,7 +86,7 @@ private val MobileMeetsMobileTypography = Typography(
 @Composable
 fun MobileMeetsMobileTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = DarkColorScheme,
+        colorScheme = VibrantColorScheme,
         typography = MobileMeetsMobileTypography,
         content = content,
     )

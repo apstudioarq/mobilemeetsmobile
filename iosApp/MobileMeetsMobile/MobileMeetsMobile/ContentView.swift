@@ -3,28 +3,105 @@ import shared
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    @State private var showSplash = true
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            ScheduleView()
-                .tabItem {
-                    Image(systemName: selectedTab == 0 ? "calendar.circle.fill" : "calendar.circle")
-                    Text("Schedule")
-                }
-                .tag(0)
+        Group {
+            if showSplash {
+                SplashView()
+            } else {
+                TabView(selection: $selectedTab) {
+                    HomeView()
+                        .tabItem {
+                            Label("HOME", systemImage: selectedTab == 0 ? "house.fill" : "house")
+                        }
+                        .tag(0)
 
-            SpeakersView()
-                .tabItem {
-                    Image(systemName: selectedTab == 1 ? "person.2.fill" : "person.2")
-                    Text("Speakers")
+                    ScheduleView()
+                        .tabItem {
+                            Label("SCHEDULE", systemImage: selectedTab == 1 ? "calendar.badge.clock" : "calendar")
+                        }
+                        .tag(1)
+
+                    FavoritesView()
+                        .tabItem {
+                            Label("FAVORITES", systemImage: selectedTab == 2 ? "heart.fill" : "heart")
+                        }
+                        .tag(2)
                 }
-                .tag(1)
+                .tint(.ingOrange)
+            }
         }
-        .accentColor(Color(hex: 0x4285F4))
+        .task {
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            showSplash = false
+        }
     }
 }
 
-// MARK: - Color Extension
+struct SplashView: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            RoundedRectangle(cornerRadius: 4)
+                .fill(
+                    LinearGradient(
+                        colors: [.ingOrange, Color(hex: 0xFFDCAF), .ingOrange],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 200)
+                .padding(.horizontal, 44)
+
+            Text("Mobile\nMeets\nMobile")
+                .font(.title3)
+                .foregroundStyle(Color.vibrantText)
+                .padding(.top, 50)
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                HStack {
+                    Text("Syncing your experience...")
+                        .foregroundStyle(Color.vibrantMuted)
+                    Spacer()
+                    Text("35%")
+                        .foregroundStyle(Color.ingOrange)
+                }
+                ProgressView(value: 0.35)
+                    .tint(.ingOrange)
+                    .scaleEffect(x: 1, y: 1.6)
+            }
+            .padding(.horizontal, 56)
+
+            Spacer()
+
+            Image(systemName: "building.columns.fill")
+                .font(.title)
+                .foregroundStyle(Color.vibrantBrown)
+                .padding(.bottom, 56)
+        }
+        .background(Color.vibrantBackground.ignoresSafeArea())
+    }
+}
+
+struct EventTopBar: View {
+    let title: String
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(Color.ingOrange)
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
+        .background(Color.white)
+    }
+}
+
 extension Color {
     init(hex: UInt, alpha: Double = 1.0) {
         self.init(
@@ -36,11 +113,22 @@ extension Color {
         )
     }
 
-    static let googleBlue = Color(hex: 0x4285F4)
-    static let googleRed = Color(hex: 0xEA4335)
-    static let googleYellow = Color(hex: 0xFBBC04)
-    static let googleGreen = Color(hex: 0x34A853)
-    static let darkBg = Color(hex: 0x0D0D0D)
-    static let darkSurface = Color(hex: 0x1A1A1A)
-    static let darkSurfaceVariant = Color(hex: 0x242424)
+    static let ingOrange = Color(hex: 0xFF6200)
+    static let vibrantBackground = Color(hex: 0xFFF7F4)
+    static let vibrantSurface = Color.white
+    static let vibrantWarm = Color(hex: 0xFFE8DF)
+    static let vibrantBorder = Color(hex: 0xF0C8BC)
+    static let vibrantText = Color(hex: 0x2A1A16)
+    static let vibrantMuted = Color(hex: 0x745F57)
+    static let vibrantSoftMuted = Color(hex: 0x9A8B86)
+    static let vibrantBrown = Color(hex: 0x9B3A00)
+    static let trackBlue = Color(hex: 0x4285F4)
+    static let trackGreen = Color(hex: 0x34A853)
+    static let trackYellow = Color(hex: 0xFBBC04)
+    static let trackRed = Color(hex: 0xEA4335)
+    static let trackPurple = Color(hex: 0xA142F4)
+}
+
+extension String: @retroactive Identifiable {
+    public var id: String { self }
 }

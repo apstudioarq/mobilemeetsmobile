@@ -1,37 +1,56 @@
 package com.mobilemeetsmobile.android.ui.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.People
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mobilemeetsmobile.android.ui.detail.SessionDetailScreen
+import com.mobilemeetsmobile.android.ui.favorites.FavoritesScreen
+import com.mobilemeetsmobile.android.ui.home.HomeScreen
 import com.mobilemeetsmobile.android.ui.schedule.ScheduleScreen
-import com.mobilemeetsmobile.android.ui.speakers.SpeakersScreen
-import com.mobilemeetsmobile.android.ui.theme.*
+import com.mobilemeetsmobile.android.ui.speakerprofile.SpeakerProfileScreen
+import com.mobilemeetsmobile.android.ui.theme.IngOrange
+import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
+import com.mobilemeetsmobile.android.ui.theme.VibrantBorder
+import com.mobilemeetsmobile.android.ui.theme.VibrantMuted
+import com.mobilemeetsmobile.android.ui.theme.VibrantSurface
+import com.mobilemeetsmobile.android.ui.theme.VibrantText
 import com.mobilemeetsmobile.presentation.detail.SessionDetailViewModel
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
 import com.mobilemeetsmobile.presentation.speakers.SpeakersViewModel
 import org.koin.compose.koinInject
-import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.ui.Alignment
 
 sealed class Screen(
     val route: String,
@@ -39,57 +58,66 @@ sealed class Screen(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
+    data object Home : Screen("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
     data object Schedule : Screen("schedule", "Schedule", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
-    data object Speakers : Screen("speakers", "Speakers", Icons.Filled.People, Icons.Outlined.People)
+    data object Favorites : Screen("favorites", "Favorites", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder)
     data object SessionDetail : Screen("session/{sessionId}", "Detail", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
+    data object SpeakerProfile : Screen("speaker/{speakerId}", "Speaker", Icons.Filled.Home, Icons.Outlined.Home)
 }
 
-val bottomNavItems = listOf(Screen.Schedule, Screen.Speakers)
+val bottomNavItems = listOf(Screen.Home, Screen.Schedule, Screen.Favorites)
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
-    val showBottomBar = currentRoute in bottomNavItems.map { it.route }
+    val showBars = currentRoute in bottomNavItems.map { it.route }
 
     Scaffold(
-        containerColor = DarkBackground,
-        bottomBar = {
-            if (showBottomBar) {
-                MobileMeetsMobileBottomBar(
-                    navController = navController,
-                    currentRoute = currentRoute,
+        containerColor = VibrantBackground,
+        topBar = {
+            if (showBars) {
+                MobileMeetsMobileTopBar(
+                    title = if (currentRoute == Screen.Home.route) "Meets" else "Mobile Meets Mobile",
                 )
             }
         },
-        topBar = {
-            if (showBottomBar) {
-                MobileMeetsMobileTopBar()
+        bottomBar = {
+            if (showBars) {
+                MobileMeetsMobileBottomBar(navController, currentRoute)
             }
         },
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Schedule.route,
+            startDestination = Screen.Home.route,
             modifier = Modifier.padding(paddingValues),
         ) {
+            composable(Screen.Home.route) {
+                val scheduleViewModel: ScheduleViewModel = koinInject()
+                val speakersViewModel: SpeakersViewModel = koinInject()
+                HomeScreen(
+                    scheduleViewModel = scheduleViewModel,
+                    speakersViewModel = speakersViewModel,
+                    onSessionClick = { navController.navigate("session/$it") },
+                    onScheduleClick = { navController.navigate(Screen.Schedule.route) },
+                )
+            }
             composable(Screen.Schedule.route) {
                 val viewModel: ScheduleViewModel = koinInject()
                 ScheduleScreen(
                     viewModel = viewModel,
-                    onSessionClick = { sessionId ->
-                        navController.navigate("session/$sessionId")
-                    },
+                    onSessionClick = { navController.navigate("session/$it") },
                 )
             }
-
-            composable(Screen.Speakers.route) {
-                val viewModel: SpeakersViewModel = koinInject()
-                SpeakersScreen(viewModel = viewModel)
+            composable(Screen.Favorites.route) {
+                val viewModel: ScheduleViewModel = koinInject()
+                FavoritesScreen(
+                    viewModel = viewModel,
+                    onSessionClick = { navController.navigate("session/$it") },
+                )
             }
-
             composable(
                 route = Screen.SessionDetail.route,
                 arguments = listOf(navArgument("sessionId") { type = NavType.StringType }),
@@ -100,6 +128,23 @@ fun AppNavigation() {
                     viewModel = viewModel,
                     sessionId = sessionId,
                     onBackClick = { navController.popBackStack() },
+                    onSpeakerProfileClick = { navController.navigate("speaker/$it") },
+                )
+            }
+            composable(
+                route = Screen.SpeakerProfile.route,
+                arguments = listOf(navArgument("speakerId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val speakerId = backStackEntry.arguments?.getString("speakerId") ?: return@composable
+                val speakersViewModel: SpeakersViewModel = koinInject()
+                val scheduleViewModel: ScheduleViewModel = koinInject()
+                SpeakerProfileScreen(
+                    speakerId = speakerId,
+                    speakersViewModel = speakersViewModel,
+                    scheduleViewModel = scheduleViewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onCloseClick = { navController.popBackStack(Screen.Home.route, inclusive = false) },
+                    onSessionClick = { sessionId -> navController.navigate("session/$sessionId") },
                 )
             }
         }
@@ -108,38 +153,20 @@ fun AppNavigation() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MobileMeetsMobileTopBar() {
+fun MobileMeetsMobileTopBar(title: String) {
     CenterAlignedTopAppBar(
         title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-//                Text("M", color = GoogleBlue, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-//                Text("o", color = GoogleRed, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-//                Text("b", color = GoogleYellow, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-//                Text("i", color = GoogleBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-//                Text("l", color = GoogleGreen, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-//                Text("e", color = GoogleRed, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-//                Spacer(Modifier.width(6.dp))
-                Text("Mobile meets Mobile", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.width(6.dp))
-                Surface(
-                    color = IngOrange.copy(alpha = 0.15f),
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(
-                        text = "2026",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = IngOrange,
-                    )
-                }
-            }
+            Text(
+                text = title,
+                modifier = Modifier.fillMaxWidth(),
+                color = IngOrange,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = DarkBackground,
+            containerColor = VibrantSurface,
+            scrolledContainerColor = VibrantSurface,
         ),
     )
 }
@@ -150,8 +177,8 @@ fun MobileMeetsMobileBottomBar(
     currentRoute: String?,
 ) {
     NavigationBar(
-        containerColor = DarkSurface,
-        contentColor = Color.White,
+        containerColor = VibrantSurface,
+        contentColor = VibrantText,
         tonalElevation = 0.dp,
     ) {
         bottomNavItems.forEach { screen ->
@@ -161,7 +188,7 @@ fun MobileMeetsMobileBottomBar(
                 onClick = {
                     if (currentRoute != screen.route) {
                         navController.navigate(screen.route) {
-                            popUpTo(Screen.Schedule.route) { saveState = true }
+                            popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -175,209 +202,25 @@ fun MobileMeetsMobileBottomBar(
                 },
                 label = {
                     Text(
-                        text = screen.label,
+                        text = screen.label.uppercase(),
                         style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = IngOrange,
                     selectedTextColor = IngOrange,
-                    indicatorColor = IngOrange.copy(alpha = 0.15f),
-                    unselectedIconColor = Color.White.copy(alpha = 0.5f),
-                    unselectedTextColor = Color.White.copy(alpha = 0.5f),
+                    indicatorColor = Color(0xFFFFE9DF),
+                    unselectedIconColor = VibrantMuted.copy(alpha = 0.7f),
+                    unselectedTextColor = VibrantMuted.copy(alpha = 0.7f),
                 ),
             )
         }
     }
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .padding(horizontal = 0.dp),
+    )
 }
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun AppNavigationWithSchedulePreview() {
-    MaterialTheme {
-        Scaffold(
-            containerColor = DarkBackground,
-            topBar = {
-                MobileMeetsMobileTopBar()
-            },
-            bottomBar = {
-                MobileMeetsMobileBottomBar(
-                    navController = rememberNavController(),
-                    currentRoute = Screen.Schedule.route,
-                )
-            }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(DarkBackground)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    // Tabs de días
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            color = IngOrange,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = "Day 1",
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                color = Color.White
-                            )
-                        }
-                        Surface(
-                            color = DarkSurface,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = "Day 2",
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                color = Color.White.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Filtros
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Filtro "All"
-                        Surface(
-                            color = IngOrange,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = "All",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                color = Color.White,
-                                fontSize = 12.sp
-                            )
-                        }
-                        // Filtro "Saved"
-                        Surface(
-                            color = DarkSurface,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Bookmark,
-                                    contentDescription = null,
-                                    tint = Color.White.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = "Saved",
-                                    color = Color.White.copy(alpha = 0.6f),
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }// Filtro por categoría
-                        Surface(
-                            color = DarkSurface,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = "Android",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                color = Color.White.copy(alpha = 0.6f),
-                                fontSize = 12.sp
-                            )
-                        }
-                        Surface(
-                            color = DarkSurface,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = "iOS",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                color = Color.White.copy(alpha = 0.6f),
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Sesiones con bookmark
-                    listOf(
-                        Triple("Kotlin Multiplatform in Production", true, "Android"),
-                        Triple("SwiftUI Best Practices", false, "iOS"),
-                        Triple("Compose Navigation Deep Dive", true, "Android")
-                    ).forEachIndexed { index, (title, isSaved, category) ->
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            color = DarkSurface,
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = title,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "10:0${index} - 11:0${index}",
-                                        color = Color.White.copy(alpha = 0.6f),
-                                        fontSize = 12.sp
-                                    )
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "Speaker ${index + 1}",
-                                            color = IngOrange,
-                                            fontSize = 12.sp
-                                        )
-                                        Surface(
-                                            color = if (category == "Android") IngSky.copy(alpha = 0.2f)
-                                            else IngOrange.copy(alpha = 0.2f),
-                                            shape = MaterialTheme.shapes.extraSmall
-                                        ) {
-                                            Text(
-                                                text = category,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                color = if (category == "Android") IngSky else IngOrange,
-                                                fontSize = 10.sp
-                                            )
-                                        }
-                                    }
-                                }
-                                Icon(
-                                    imageVector = if (isSaved) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                                    contentDescription = "Bookmark",
-                                    tint = if (isSaved) IngSun else Color.White.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-

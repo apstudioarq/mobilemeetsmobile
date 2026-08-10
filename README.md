@@ -86,6 +86,9 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
    - `Build Settings` -> `Other Linker Flags` includes `-lsqlite3`
 5. Configure backend keys for iOS app startup:
    - Open the iOS target in Xcode and add these entries to `Info.plist`:
+   - Firebase option:
+   - `FIREBASE_FUNCTIONS_URL` = `https://europe-west1-<project-id>.cloudfunctions.net/api`
+   - Supabase fallback:
    - `SUPABASE_URL` = `https://<your-project>.supabase.co`
    - `SUPABASE_ANON_KEY` = `<your-anon-key>`
 6. Open and run:
@@ -126,6 +129,8 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
 -- Realtime sync
 ```
 **Advantage**: Native Android integration, automatic scaling.
+
+This repository includes a Firebase implementation in `firebase/`. The app uses Firebase when `FIREBASE_FUNCTIONS_URL` is configured; otherwise it keeps using Supabase. See [`firebase/README.md`](firebase/README.md) for setup, deploy, and Firestore import steps.
 
 ## 📋 Features
 

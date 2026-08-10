@@ -12,10 +12,16 @@ import org.koin.core.context.startKoin
 class MobileMeetsMobileApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        BackendConfig.configureSupabase(
-            projectUrl = BuildConfig.SUPABASE_URL,
-            anonKey = BuildConfig.SUPABASE_ANON_KEY,
-        )
+        if (BuildConfig.FIREBASE_FUNCTIONS_URL.isNotBlank()) {
+            BackendConfig.configureFirebaseFunctions(
+                functionsBaseUrl = BuildConfig.FIREBASE_FUNCTIONS_URL,
+            )
+        } else {
+            BackendConfig.configureSupabase(
+                projectUrl = BuildConfig.SUPABASE_URL,
+                anonKey = BuildConfig.SUPABASE_ANON_KEY,
+            )
+        }
         startKoin {
             androidLogger()
             androidContext(this@MobileMeetsMobileApp)

@@ -3,6 +3,7 @@ package com.mobilemeetsmobile.data.local
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.mobilemeetsmobile.data.model.*
+import com.mobilemeetsmobile.data.seed.DesignSeedData
 import com.mobilemeetsmobile.data.remote.dto.SessionDto
 import com.mobilemeetsmobile.data.remote.dto.SpeakerDto
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +37,10 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) {
         return sessionQueries.getSessionsByDayAndTrack(day.toLong(), track.name, ::mapSession)
             .asFlow()
             .mapToList(Dispatchers.IO)
+    }
+
+    fun getSessionById(id: String): Session? {
+        return sessionQueries.getSessionById(id, ::mapSession).executeAsOneOrNull()
     }
 
     fun searchSessions(query: String): Flow<List<Session>> {
@@ -94,6 +99,15 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) {
                 )
             }
         }
+    }
+
+    fun getSpeakerById(id: String): Speaker? {
+        return sessionQueries.getSpeakerById(id, ::mapSpeaker).executeAsOneOrNull()
+    }
+
+    fun seedDesignData() {
+        insertSpeakers(DesignSeedData.speakers)
+        insertSessions(DesignSeedData.sessions)
     }
 
     // ── Bookmarks ───────────────────────────────────────────

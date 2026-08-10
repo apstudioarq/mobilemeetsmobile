@@ -8,13 +8,22 @@ val GoogleRed = Color(0xFFEA4335)
 val IngSun = Color(0xFFFFE100)
 val IngSky = Color(0xFF89D6FD)
 
-// Dark theme palette
-val DarkBackground = Color(0xFF0D0D0D)
-val DarkSurface = Color(0xFF1A1A1A)
-val DarkSurfaceVariant = Color(0xFF242424)
-val DarkOnBackground = Color(0xFFFFFFFF)
-val DarkOnSurface = Color(0xFFE0E0E0)
-val DarkOnSurfaceVariant = Color(0xFF9E9E9E)
+// Vibrant design palette
+val VibrantBackground = Color(0xFFFFF7F4)
+val VibrantSurface = Color(0xFFFFFFFF)
+val VibrantSurfaceWarm = Color(0xFFFFE8DF)
+val VibrantBorder = Color(0xFFF0C8BC)
+val VibrantText = Color(0xFF2A1A16)
+val VibrantMuted = Color(0xFF745F57)
+val VibrantSoftMuted = Color(0xFF9A8B86)
+val VibrantBrown = Color(0xFF9B3A00)
+
+val DarkBackground = VibrantBackground
+val DarkSurface = VibrantSurface
+val DarkSurfaceVariant = VibrantSurfaceWarm
+val DarkOnBackground = VibrantText
+val DarkOnSurface = VibrantText
+val DarkOnSurfaceVariant = VibrantMuted
 
 // Track colors
 val TrackAiMl = Color(0xFF4285F4)

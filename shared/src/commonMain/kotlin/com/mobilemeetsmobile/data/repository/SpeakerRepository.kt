@@ -13,6 +13,7 @@ class SpeakerRepository(
 ) {
     fun getAllSpeakers(): Flow<List<Speaker>> {
         return local.getAllSpeakers().onStart {
+            local.seedDesignData()
             try {
                 val remote = api.getSpeakers()
                 local.insertSpeakers(remote)
@@ -23,6 +24,12 @@ class SpeakerRepository(
     }
 
     suspend fun getSpeakerById(id: String): Speaker {
-        return api.getSpeakerById(id).toDomain()
+        return try {
+            val remote = api.getSpeakerById(id)
+            remote.toDomain()
+        } catch (e: Exception) {
+            local.seedDesignData()
+            local.getSpeakerById(id) ?: throw e
+        }
     }
 }
