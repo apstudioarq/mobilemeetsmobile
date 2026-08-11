@@ -2,9 +2,6 @@
 <resources>
     <style name="Theme.MobileMeetsMobile" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_window_background</item>
-        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@color/splash_background</item>
         <item name="android:navigationBarColor">@color/splash_background</item>
         <item name="android:windowLightStatusBar">false</item>
