@@ -25,7 +25,6 @@ struct MobileMeetsMobileApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(.light)
         }
     }
 }

@@ -40,49 +40,18 @@ struct ContentView: View {
 }
 
 struct SplashView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            RoundedRectangle(cornerRadius: 4)
-                .fill(
-                    LinearGradient(
-                        colors: [.ingOrange, Color(hex: 0xFFDCAF), .ingOrange],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(height: 200)
-                .padding(.horizontal, 44)
+        ZStack {
+            (colorScheme == .dark ? Color.black : Color.white)
+                .ignoresSafeArea()
 
-            Text("Mobile\nMeets\nMobile")
-                .font(.title3)
-                .foregroundStyle(Color.vibrantText)
-                .padding(.top, 50)
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                HStack {
-                    Text("Syncing your experience...")
-                        .foregroundStyle(Color.vibrantMuted)
-                    Spacer()
-                    Text("35%")
-                        .foregroundStyle(Color.ingOrange)
-                }
-                ProgressView(value: 0.35)
-                    .tint(.ingOrange)
-                    .scaleEffect(x: 1, y: 1.6)
-            }
-            .padding(.horizontal, 56)
-
-            Spacer()
-
-            Image(systemName: "building.columns.fill")
-                .font(.title)
-                .foregroundStyle(Color.vibrantBrown)
-                .padding(.bottom, 56)
+            Image(colorScheme == .dark ? "SplashLogoDark" : "SplashLogoLight")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 164, height: 164)
         }
-        .background(Color.vibrantBackground.ignoresSafeArea())
     }
 }
 
