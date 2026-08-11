@@ -9,6 +9,7 @@ import com.mobilemeetsmobile.data.remote.dto.SpeakerDto
 import com.mobilemeetsmobile.data.remote.dto.SpeakersResponse
 import com.mobilemeetsmobile.data.remote.dto.FirebaseConferenceDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingDto
+import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingSubmissionDto
 import com.mobilemeetsmobile.data.remote.dto.toSessionDtos
 import com.mobilemeetsmobile.data.remote.dto.toSpeakerDtos
 import io.ktor.client.*
@@ -18,6 +19,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.datetime.Clock
 
 class MobileMeetsMobileApi(
     private val client: HttpClient,
@@ -156,6 +158,38 @@ class MobileMeetsMobileApi(
             .toList()
     }
 
+    suspend fun submitFeedback(
+        sessionId: String,
+        sessionTitle: String,
+        rating: Int,
+        comment: String,
+    ) {
+        require(BackendConfig.isFirebaseRealtimeDatabase) {
+            "Feedback submission requires Firebase Realtime Database."
+        }
+        require(rating in 1..5) { "Rating must be between 1 and 5." }
+
+        val conference = getFirebaseConferences().values.firstOrNull { candidate ->
+            candidate.rooms.any { room ->
+                room.presentations.any { presentation -> presentation.id == sessionId }
+            }
+        }
+        firebasePost(
+            path = "ratings",
+            body = FirebaseRatingSubmissionDto(
+                audience = conference?.audience.orEmpty(),
+                country = conference?.organizingCountry.orEmpty(),
+                date = Clock.System.now().toString(),
+                event = conference?.eventType.orEmpty(),
+                name = conference?.title.orEmpty(),
+                rating = rating,
+                sessionId = sessionId,
+                sessionTitle = sessionTitle,
+                comment = comment.trim(),
+            ),
+        )
+    }
+
     private suspend fun getFirebaseSessions(): List<SessionDto> {
         return getFirebaseConferences().toSessionDtos(BackendConfig.selectedConferenceId)
     }
@@ -222,6 +256,24 @@ class MobileMeetsMobileApi(
         return retryResponse.firebaseBodyOrThrow(path)
     }
 
+    private suspend fun firebasePost(path: String, body: FirebaseRatingSubmissionDto) {
+        val firstResponse = authenticatedFirebasePost(
+            path = path,
+            body = body,
+            forceTokenRefresh = false,
+        )
+        if (firstResponse.status != HttpStatusCode.Unauthorized) {
+            firstResponse.firebaseBodyOrThrow(path, operation = "write")
+            return
+        }
+
+        authenticatedFirebasePost(
+            path = path,
+            body = body,
+            forceTokenRefresh = true,
+        ).firebaseBodyOrThrow(path, operation = "write")
+    }
+
     private suspend fun authenticatedFirebaseGet(
         path: String,
         forceTokenRefresh: Boolean,
@@ -232,14 +284,30 @@ class MobileMeetsMobileApi(
         }
     }
 
-    private suspend fun HttpResponse.firebaseBodyOrThrow(path: String): String {
+    private suspend fun authenticatedFirebasePost(
+        path: String,
+        body: FirebaseRatingSubmissionDto,
+        forceTokenRefresh: Boolean,
+    ): HttpResponse {
+        val idToken = firebaseIdTokenProvider.getIdToken(forceTokenRefresh)
+        return client.post(firebaseJsonUrl(path)) {
+            parameter("auth", idToken)
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+    }
+
+    private suspend fun HttpResponse.firebaseBodyOrThrow(
+        path: String,
+        operation: String = "read",
+    ): String {
         val payload = bodyAsText()
         if (!status.isSuccess()) {
             val firebaseMessage = runCatching {
                 json.decodeFromString<FirebaseDatabaseError>(payload).error
             }.getOrNull()
             throw FirebaseRealtimeDatabaseException(
-                "Firebase read failed for /$path (${status.value}): " +
+                "Firebase $operation failed for /$path (${status.value}): " +
                     (firebaseMessage ?: status.description),
             )
         }

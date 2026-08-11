@@ -8,6 +8,7 @@ import com.mobilemeetsmobile.data.remote.auth.FirebaseAuthSessionStore
 import com.mobilemeetsmobile.data.remote.auth.FirebaseIdTokenProvider
 import com.mobilemeetsmobile.data.repository.SessionRepository
 import com.mobilemeetsmobile.data.repository.SpeakerRepository
+import com.mobilemeetsmobile.data.repository.RatingRepository
 import com.mobilemeetsmobile.domain.usecase.*
 import com.mobilemeetsmobile.presentation.detail.SessionDetailViewModel
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
@@ -30,6 +31,7 @@ val sharedModule = module {
     // Repositories
     single { SessionRepository(get(), get()) }
     single { SpeakerRepository(get(), get()) }
+    single { RatingRepository(get()) }
 
     // Use Cases
     factory { GetScheduleUseCase(get()) }
@@ -39,10 +41,11 @@ val sharedModule = module {
     factory { ToggleBookmarkUseCase(get()) }
     factory { GetBookmarksUseCase(get()) }
     factory { GetSpeakersUseCase(get()) }
+    factory { SubmitFeedbackUseCase(get()) }
 
     // ViewModels
     factory { ScheduleViewModel(get(), get(), get(), get(), get()) }
-    factory { SessionDetailViewModel(get(), get(), get()) }
+    factory { SessionDetailViewModel(get(), get(), get(), get()) }
     factory { SpeakersViewModel(get()) }
 }
 

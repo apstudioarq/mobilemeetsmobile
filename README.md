@@ -165,6 +165,23 @@ Enable the Anonymous provider in Firebase Authentication and require authenticat
         ".read": "auth != null",
         ".write": false
       }
+    },
+    "ratings": {
+      ".read": "auth != null",
+      "$ratingId": {
+        ".write": "auth != null && auth.provider == 'anonymous' && !data.exists()",
+        ".validate": "newData.hasChildren(['audience', 'country', 'date', 'event', 'name', 'rating', 'sessionId', 'sessionTitle', 'comment'])",
+        "audience": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "country": { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "date": { ".validate": "newData.isString() && newData.val().length <= 64" },
+        "event": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "name": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "rating": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5" },
+        "sessionId": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "sessionTitle": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500" },
+        "comment": { ".validate": "newData.isString() && newData.val().length <= 2000" },
+        "$other": { ".validate": false }
+      }
     }
   }
 }

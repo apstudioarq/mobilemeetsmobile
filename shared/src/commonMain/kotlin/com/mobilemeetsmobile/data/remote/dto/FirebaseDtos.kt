@@ -50,6 +50,19 @@ data class FirebaseRatingDto(
     val rating: Int = 0,
 )
 
+@Serializable
+data class FirebaseRatingSubmissionDto(
+    val audience: String,
+    val country: String,
+    val date: String,
+    val event: String,
+    val name: String,
+    val rating: Int,
+    val sessionId: String,
+    val sessionTitle: String,
+    val comment: String,
+)
+
 fun Map<String, FirebaseConferenceDto>.toSessionDtos(
     selectedConferenceId: String? = null,
 ): List<SessionDto> {
