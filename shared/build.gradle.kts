@@ -54,6 +54,11 @@ kotlin {
             implementation(libs.koin.core)
         }
 
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.ktor.client.mock)
+        }
+
         androidMain.dependencies {
             implementation(libs.ktor.client.android)
             implementation(libs.sqldelight.android.driver)

@@ -33,9 +33,13 @@ object HttpClientFactory {
             }
             logger = object : Logger {
                 override fun log(message: String) {
-                    println("HTTP: $message")
+                    println("HTTP: ${message.redactFirebaseParameters()}")
                 }
             }
         }
     }
+}
+
+private fun String.redactFirebaseParameters(): String {
+    return replace(Regex("([?&](?:auth|key)=)[^&\\s]+"), "$1<redacted>")
 }

@@ -1,4 +1,5 @@
 import java.util.Properties
+import groovy.json.JsonSlurper
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -21,9 +22,46 @@ fun String.toBuildConfigString(): String {
     return "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 }
 
+data class FirebaseAndroidConfig(
+    val databaseUrl: String = "",
+    val apiKey: String = "",
+)
+
+fun readFirebaseAndroidConfig(): FirebaseAndroidConfig {
+    val configFile = file("google-services.json")
+    if (!configFile.exists()) return FirebaseAndroidConfig()
+
+    val root = JsonSlurper().parse(configFile) as? Map<*, *> ?: return FirebaseAndroidConfig()
+    val projectInfo = root["project_info"] as? Map<*, *>
+    val matchingClient = (root["client"] as? List<*>)
+        ?.filterIsInstance<Map<*, *>>()
+        ?.firstOrNull { client ->
+            val clientInfo = client["client_info"] as? Map<*, *>
+            val androidInfo = clientInfo?.get("android_client_info") as? Map<*, *>
+            androidInfo?.get("package_name") == "com.mobilemeetsmobile.android"
+        }
+    val apiKey = (matchingClient?.get("api_key") as? List<*>)
+        ?.filterIsInstance<Map<*, *>>()
+        ?.firstNotNullOfOrNull { it["current_key"] as? String }
+        .orEmpty()
+
+    return FirebaseAndroidConfig(
+        databaseUrl = projectInfo?.get("firebase_url") as? String ?: "",
+        apiKey = apiKey,
+    )
+}
+
 val supabaseUrl = readSecret("SUPABASE_URL")
 val supabaseAnonKey = readSecret("SUPABASE_ANON_KEY")
 val firebaseFunctionsUrl = readSecret("FIREBASE_FUNCTIONS_URL")
+val firebaseAndroidConfig = readFirebaseAndroidConfig()
+val firebaseDatabaseUrl = readSecret("FIREBASE_DATABASE_URL").ifBlank {
+    firebaseAndroidConfig.databaseUrl.ifBlank {
+        "https://ingtechrating-default-rtdb.europe-west1.firebasedatabase.app"
+    }
+}
+val firebaseConferenceId = readSecret("FIREBASE_CONFERENCE_ID")
+val firebaseApiKey = readSecret("FIREBASE_API_KEY").ifBlank { firebaseAndroidConfig.apiKey }
 
 android {
     namespace = "com.mobilemeetsmobile.android"
@@ -38,6 +76,9 @@ android {
         buildConfigField("String", "SUPABASE_URL", supabaseUrl.toBuildConfigString())
         buildConfigField("String", "SUPABASE_ANON_KEY", supabaseAnonKey.toBuildConfigString())
         buildConfigField("String", "FIREBASE_FUNCTIONS_URL", firebaseFunctionsUrl.toBuildConfigString())
+        buildConfigField("String", "FIREBASE_DATABASE_URL", firebaseDatabaseUrl.toBuildConfigString())
+        buildConfigField("String", "FIREBASE_CONFERENCE_ID", firebaseConferenceId.toBuildConfigString())
+        buildConfigField("String", "FIREBASE_API_KEY", firebaseApiKey.toBuildConfigString())
     }
 
     buildFeatures {

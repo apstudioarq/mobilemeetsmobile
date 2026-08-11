@@ -40,7 +40,23 @@ fun SpeakersScreen(
             modifier = Modifier.padding(vertical = 16.dp),
         )
 
-        if (state.isLoading) {
+        if (state.error != null && state.speakers.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = state.error ?: "Unable to load speakers.",
+                    color = Color.White.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = viewModel::loadSpeakers) {
+                    Text("Retry")
+                }
+            }
+        } else if (state.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = IngOrange)
             }

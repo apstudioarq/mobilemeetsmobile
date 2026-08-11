@@ -37,6 +37,14 @@ CREATE TABLE BookmarkEntity (
     createdAt INTEGER NOT NULL DEFAULT 0
 );
 
+-- Firebase anonymous authentication session
+CREATE TABLE FirebaseAuthSessionEntity (
+    singletonId INTEGER NOT NULL PRIMARY KEY CHECK (singletonId = 1),
+    idToken TEXT NOT NULL,
+    refreshToken TEXT NOT NULL,
+    expiresAt INTEGER NOT NULL
+);
+
 -- Queries
 
 -- Sessions
@@ -100,3 +108,17 @@ DELETE FROM BookmarkEntity WHERE sessionId = ?;
 
 deleteAllBookmarks:
 DELETE FROM BookmarkEntity;
+
+-- Firebase authentication
+getFirebaseAuthSession:
+SELECT idToken, refreshToken, expiresAt
+FROM FirebaseAuthSessionEntity
+WHERE singletonId = 1;
+
+saveFirebaseAuthSession:
+INSERT OR REPLACE INTO FirebaseAuthSessionEntity(
+    singletonId, idToken, refreshToken, expiresAt
+) VALUES (1, ?, ?, ?);
+
+deleteFirebaseAuthSession:
+DELETE FROM FirebaseAuthSessionEntity WHERE singletonId = 1;

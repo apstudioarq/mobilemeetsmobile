@@ -1,0 +1,6 @@
+CREATE TABLE FirebaseAuthSessionEntity (
+    singletonId INTEGER NOT NULL PRIMARY KEY CHECK (singletonId = 1),
+    idToken TEXT NOT NULL,
+    refreshToken TEXT NOT NULL,
+    expiresAt INTEGER NOT NULL
+);

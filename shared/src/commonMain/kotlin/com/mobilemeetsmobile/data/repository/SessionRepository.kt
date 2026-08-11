@@ -3,6 +3,7 @@ package com.mobilemeetsmobile.data.repository
 import com.mobilemeetsmobile.data.local.LocalDataSource
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Track
+import com.mobilemeetsmobile.data.remote.BackendConfig
 import com.mobilemeetsmobile.data.remote.MobileMeetsMobileApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -14,12 +15,21 @@ class SessionRepository(
 ) {
     fun getAllSessions(): Flow<List<Session>> {
         return local.getAllSessions().onStart {
-            local.seedDesignData()
+            if (!BackendConfig.isFirebaseRealtimeDatabase) {
+                local.seedDesignData()
+            }
             try {
                 val remoteSessions = api.getSessions()
-                local.insertSessions(remoteSessions)
+                if (BackendConfig.isFirebaseRealtimeDatabase) {
+                    local.replaceSessions(remoteSessions)
+                } else {
+                    local.insertSessions(remoteSessions)
+                }
             } catch (e: Exception) {
                 println("Network error fetching all sessions: ${e.message}")
+                if (BackendConfig.isFirebaseRealtimeDatabase && !local.hasCachedSessions()) {
+                    throw e
+                }
             }
         }
     }
@@ -44,14 +54,23 @@ class SessionRepository(
                 emit(cached)
             }
         }.onStart {
-            local.seedDesignData()
+            if (!BackendConfig.isFirebaseRealtimeDatabase) {
+                local.seedDesignData()
+            }
             // Trigger network fetch in the background
             try {
-                val remoteSessions = api.getSessions(day, track?.name)
-                local.insertSessions(remoteSessions)
+                if (BackendConfig.isFirebaseRealtimeDatabase) {
+                    local.replaceSessions(api.getSessions())
+                } else {
+                    val remoteSessions = api.getSessions(day, track?.name)
+                    local.insertSessions(remoteSessions)
+                }
             } catch (e: Exception) {
                 // Network failed, rely on cache
                 println("Network error: ${e.message}")
+                if (BackendConfig.isFirebaseRealtimeDatabase && !local.hasCachedSessions()) {
+                    throw e
+                }
             }
         }
     }
@@ -66,7 +85,9 @@ class SessionRepository(
             local.insertSessions(listOf(remote))
             remote.toDomain(local.isBookmarked(id))
         } catch (e: Exception) {
-            local.seedDesignData()
+            if (!BackendConfig.isFirebaseRealtimeDatabase) {
+                local.seedDesignData()
+            }
             local.getSessionById(id) ?: throw e
         }
     }

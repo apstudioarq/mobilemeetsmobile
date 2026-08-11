@@ -2,10 +2,15 @@ package com.mobilemeetsmobile.data.remote
 
 import com.mobilemeetsmobile.data.model.BookmarkRequest
 import com.mobilemeetsmobile.data.model.BookmarkResponse
+import com.mobilemeetsmobile.data.remote.auth.FirebaseIdTokenProvider
 import com.mobilemeetsmobile.data.remote.dto.SessionDto
 import com.mobilemeetsmobile.data.remote.dto.SessionsResponse
 import com.mobilemeetsmobile.data.remote.dto.SpeakerDto
 import com.mobilemeetsmobile.data.remote.dto.SpeakersResponse
+import com.mobilemeetsmobile.data.remote.dto.FirebaseConferenceDto
+import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingDto
+import com.mobilemeetsmobile.data.remote.dto.toSessionDtos
+import com.mobilemeetsmobile.data.remote.dto.toSpeakerDtos
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -14,7 +19,10 @@ import io.ktor.http.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
-class MobileMeetsMobileApi(private val client: HttpClient) {
+class MobileMeetsMobileApi(
+    private val client: HttpClient,
+    private val firebaseIdTokenProvider: FirebaseIdTokenProvider,
+) {
 
     private val baseUrl: String
         get() = BackendConfig.baseUrl
@@ -29,6 +37,12 @@ class MobileMeetsMobileApi(private val client: HttpClient) {
         day: Int? = null,
         track: String? = null,
     ): List<SessionDto> {
+        if (BackendConfig.isFirebaseRealtimeDatabase) {
+            return getFirebaseSessions()
+                .filter { session -> day == null || session.day == day }
+                .filter { session -> track == null || session.track == track }
+        }
+
         val payload = client.get("$baseUrl/sessions") {
             if (BackendConfig.isSupabase) {
                 day?.let { parameter("day", "eq.$it") }
@@ -43,6 +57,11 @@ class MobileMeetsMobileApi(private val client: HttpClient) {
     }
 
     suspend fun getSessionById(id: String): SessionDto {
+        if (BackendConfig.isFirebaseRealtimeDatabase) {
+            return getFirebaseSessions().firstOrNull { it.id == id }
+                ?: error("Session not found: $id")
+        }
+
         val payload = if (BackendConfig.isSupabase) {
             client.get("$baseUrl/sessions") {
                 parameter("id", "eq.$id")
@@ -55,6 +74,13 @@ class MobileMeetsMobileApi(private val client: HttpClient) {
     }
 
     suspend fun searchSessions(query: String): List<SessionDto> {
+        if (BackendConfig.isFirebaseRealtimeDatabase) {
+            return getFirebaseSessions().filter { session ->
+                session.title.contains(query, ignoreCase = true) ||
+                    session.description.contains(query, ignoreCase = true)
+            }
+        }
+
         val payload = if (BackendConfig.isSupabase) {
             client.get("$baseUrl/sessions") {
                 parameter("or", "title.ilike.*$query*,description.ilike.*$query*")
@@ -71,6 +97,10 @@ class MobileMeetsMobileApi(private val client: HttpClient) {
     // ── Speakers ────────────────────────────────────────────
 
     suspend fun getSpeakers(): List<SpeakerDto> {
+        if (BackendConfig.isFirebaseRealtimeDatabase) {
+            return getFirebaseConferences().toSpeakerDtos(BackendConfig.selectedConferenceId)
+        }
+
         val payload = client.get("$baseUrl/speakers") {
             if (BackendConfig.isSupabase) {
                 parameter("order", "name.asc")
@@ -80,6 +110,11 @@ class MobileMeetsMobileApi(private val client: HttpClient) {
     }
 
     suspend fun getSpeakerById(id: String): SpeakerDto {
+        if (BackendConfig.isFirebaseRealtimeDatabase) {
+            return getSpeakers().firstOrNull { it.id == id }
+                ?: error("Speaker not found: $id")
+        }
+
         val payload = if (BackendConfig.isSupabase) {
             client.get("$baseUrl/speakers") {
                 parameter("id", "eq.$id")
@@ -112,6 +147,25 @@ class MobileMeetsMobileApi(private val client: HttpClient) {
         userId: String,
     ) {
         client.delete("$baseUrl/users/$userId/bookmarks/$sessionId")
+    }
+
+    suspend fun getRatings(): List<FirebaseRatingDto> {
+        val payload = firebaseGet("ratings")
+        return json.decodeFromString<Map<String, FirebaseRatingDto>>(payload)
+            .values
+            .toList()
+    }
+
+    private suspend fun getFirebaseSessions(): List<SessionDto> {
+        return getFirebaseConferences().toSessionDtos(BackendConfig.selectedConferenceId)
+    }
+
+    private suspend fun getFirebaseConferences(): Map<String, FirebaseConferenceDto> {
+        val payload = firebaseGet("test/conferences")
+        return json.decodeFromString<Map<String, FirebaseConferenceDto>>(payload)
+            .mapValues { (key, conference) ->
+                conference.copy(id = conference.id.ifBlank { key })
+            }
     }
 
     private fun decodeSessionList(payload: String): List<SessionDto> {
@@ -147,4 +201,55 @@ class MobileMeetsMobileApi(private val client: HttpClient) {
                 ?: error("Speaker not found: $id")
         }.getOrThrow()
     }
+
+    private fun firebaseJsonUrl(path: String): String {
+        return "$baseUrl/${path.trim('/')}.json"
+    }
+
+    private suspend fun firebaseGet(path: String): String {
+        val firstResponse = authenticatedFirebaseGet(
+            path = path,
+            forceTokenRefresh = false,
+        )
+        if (firstResponse.status != HttpStatusCode.Unauthorized) {
+            return firstResponse.firebaseBodyOrThrow(path)
+        }
+
+        val retryResponse = authenticatedFirebaseGet(
+            path = path,
+            forceTokenRefresh = true,
+        )
+        return retryResponse.firebaseBodyOrThrow(path)
+    }
+
+    private suspend fun authenticatedFirebaseGet(
+        path: String,
+        forceTokenRefresh: Boolean,
+    ): HttpResponse {
+        val idToken = firebaseIdTokenProvider.getIdToken(forceTokenRefresh)
+        return client.get(firebaseJsonUrl(path)) {
+            parameter("auth", idToken)
+        }
+    }
+
+    private suspend fun HttpResponse.firebaseBodyOrThrow(path: String): String {
+        val payload = bodyAsText()
+        if (!status.isSuccess()) {
+            val firebaseMessage = runCatching {
+                json.decodeFromString<FirebaseDatabaseError>(payload).error
+            }.getOrNull()
+            throw FirebaseRealtimeDatabaseException(
+                "Firebase read failed for /$path (${status.value}): " +
+                    (firebaseMessage ?: status.description),
+            )
+        }
+        return payload
+    }
 }
+
+@kotlinx.serialization.Serializable
+private data class FirebaseDatabaseError(
+    val error: String,
+)
+
+class FirebaseRealtimeDatabaseException(message: String) : IllegalStateException(message)

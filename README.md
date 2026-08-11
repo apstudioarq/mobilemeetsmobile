@@ -84,11 +84,12 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
    - Add product `SharedKMM` to your app target
 4. Ensure SQLite linker flag is present in your app target:
    - `Build Settings` -> `Other Linker Flags` includes `-lsqlite3`
-5. Configure backend keys for iOS app startup:
-   - Open the iOS target in Xcode and add these entries to `Info.plist`:
-   - Firebase option:
-   - `FIREBASE_FUNCTIONS_URL` = `https://europe-west1-<project-id>.cloudfunctions.net/api`
-   - Supabase fallback:
+5. Configure Firebase for iOS app startup:
+   - Place `GoogleService-Info.plist` in `iosApp/MobileMeetsMobile/MobileMeetsMobile`.
+   - Ensure its `BUNDLE_ID` matches the target bundle identifier (`com.mobilemeetsmobile.ios`).
+   - The app reads `DATABASE_URL` and `API_KEY` from this file automatically.
+   - Optionally define `FIREBASE_CONFERENCE_ID` as a user-defined Xcode build setting.
+   - Legacy Supabase fallback:
    - `SUPABASE_URL` = `https://<your-project>.supabase.co`
    - `SUPABASE_ANON_KEY` = `<your-anon-key>`
 6. Open and run:
@@ -124,19 +125,58 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
 
 ### Option 3: Firebase  
 ```
--- Firestore + Cloud Functions
+-- Realtime Database REST API
 -- Native Auth + FCM push notifications
 -- Realtime sync
 ```
 **Advantage**: Native Android integration, automatic scaling.
 
-This repository includes a Firebase implementation in `firebase/`. The app uses Firebase when `FIREBASE_FUNCTIONS_URL` is configured; otherwise it keeps using Supabase. See [`firebase/README.md`](firebase/README.md) for setup, deploy, and Firestore import steps.
+The app now reads conference data from Firebase Realtime Database by default using `FIREBASE_DATABASE_URL`. When no `FIREBASE_CONFERENCE_ID` is set, it picks the conference whose title contains `Mobile Meets Mobile`; set `FIREBASE_CONFERENCE_ID` to force a specific conference.
+
+### Firebase anonymous authentication
+
+Realtime Database requests are authenticated automatically without showing a login screen. The shared client creates one anonymous Firebase session per installation, persists its refresh token locally, refreshes the ID token before expiry, and retries one database request after a `401`.
+
+For Android, place the Firebase configuration at `androidApp/google-services.json`. The
+build reads the Realtime Database URL and the API key from the client whose package is
+`com.mobilemeetsmobile.android`.
+
+You can override those values, or set an optional conference filter, in the untracked
+`local.properties` file:
+
+```properties
+FIREBASE_DATABASE_URL=https://ingtechrating-default-rtdb.europe-west1.firebasedatabase.app
+FIREBASE_API_KEY=<Firebase Web API key>
+FIREBASE_CONFERENCE_ID=A0C691FD-E111-4436-8B51-2EF97C14E548
+```
+
+For iOS, place the Firebase configuration at
+`iosApp/MobileMeetsMobile/MobileMeetsMobile/GoogleService-Info.plist`. You can override
+`FIREBASE_DATABASE_URL` or `FIREBASE_API_KEY`, and optionally define
+`FIREBASE_CONFERENCE_ID`, as user-defined Xcode build settings.
+
+Enable the Anonymous provider in Firebase Authentication and require authentication in Realtime Database rules:
+
+```json
+{
+  "rules": {
+    "test": {
+      "conferences": {
+        ".read": "auth != null",
+        ".write": false
+      }
+    }
+  }
+}
+```
+
+Do not place a service-account JSON, private key, database secret, or shared email/password in either app.
 
 ## 📋 Features
 
 - [x] Day-based schedule with visual timeline
 - [x] Event days dynamically computed from remote data
-- [x] Track filters (AI/ML, Android, Web, Cloud, Firebase, Flutter, Design)
+- [x] Track filters (AI/ML, Android, iOS, Generic, Web, Cloud, Firebase, Flutter, Design)
 - [x] Session detail screen with speakers and metadata
 - [x] Bookmark system (offline-first with SQLDelight)
 - [x] Session search
