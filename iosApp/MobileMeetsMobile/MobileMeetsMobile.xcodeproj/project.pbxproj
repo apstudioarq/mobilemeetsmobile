@@ -262,6 +262,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_FIREBASE_API_KEY = "$(FIREBASE_API_KEY)";
+				INFOPLIST_KEY_FIREBASE_CONFERENCE_ID = "$(FIREBASE_CONFERENCE_ID)";
+				INFOPLIST_KEY_FIREBASE_DATABASE_URL = "https://ingtechrating-default-rtdb.europe-west1.firebasedatabase.app";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -276,7 +279,7 @@
 					"-lsqlite3",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mobilemeetsmobile.ios.MobileMeetsMobile;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mobilemeetsmobile.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -297,6 +300,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_FIREBASE_API_KEY = "$(FIREBASE_API_KEY)";
+				INFOPLIST_KEY_FIREBASE_CONFERENCE_ID = "$(FIREBASE_CONFERENCE_ID)";
+				INFOPLIST_KEY_FIREBASE_DATABASE_URL = "https://ingtechrating-default-rtdb.europe-west1.firebasedatabase.app";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -311,7 +317,7 @@
 					"-lsqlite3",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mobilemeetsmobile.ios.MobileMeetsMobile;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mobilemeetsmobile.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

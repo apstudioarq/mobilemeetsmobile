@@ -183,27 +183,90 @@ struct SessionDetailView: View {
                 Text("How was your experience with this session?")
                     .foregroundStyle(Color.vibrantMuted)
                 HStack(spacing: 2) {
-                    ForEach(0..<4, id: \.self) { _ in Image(systemName: "star.fill").foregroundStyle(Color.ingOrange) }
-                    Image(systemName: "star").foregroundStyle(Color.vibrantBorder)
+                    ForEach(1...5, id: \.self) { star in
+                        Button {
+                            wrapper.viewModel.onRatingSelected(rating: Int32(star))
+                        } label: {
+                            Image(
+                                systemName: star <= Int(wrapper.state.feedbackRating)
+                                    ? "star.fill"
+                                    : "star"
+                            )
+                            .font(.system(size: 28))
+                            .foregroundStyle(
+                                star <= Int(wrapper.state.feedbackRating)
+                                    ? Color.ingOrange
+                                    : Color.vibrantBorder
+                            )
+                            .frame(width: 42, height: 42)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(
+                            wrapper.state.isSubmittingFeedback || wrapper.state.feedbackSubmitted
+                        )
+                        .accessibilityLabel("\(star) stars")
+                    }
                 }
                 Text("Additional comments (optional)")
                     .font(.headline)
                     .foregroundStyle(Color.vibrantText)
-                TextEditor(text: .constant("What did you like or what could be improved?"))
-                    .foregroundStyle(Color.vibrantMuted)
-                    .frame(height: 86)
-                    .padding(4)
-                    .background(Color.vibrantWarm)
-                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.vibrantBorder))
-                Button(action: {}) {
-                    Text("Submit Feedback")
-                        .font(.headline)
+                ZStack(alignment: .topLeading) {
+                    if wrapper.state.feedbackComment.isEmpty {
+                        Text("What did you like or what could be improved?")
+                            .foregroundStyle(Color.vibrantMuted)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 12)
+                            .allowsHitTesting(false)
+                    }
+                    TextEditor(
+                        text: Binding(
+                            get: { wrapper.state.feedbackComment },
+                            set: { wrapper.viewModel.onFeedbackCommentChanged(comment: $0) }
+                        )
+                    )
+                    .scrollContentBackground(.hidden)
+                    .foregroundStyle(Color.vibrantText)
+                    .disabled(
+                        wrapper.state.isSubmittingFeedback || wrapper.state.feedbackSubmitted
+                    )
+                }
+                .frame(height: 96)
+                .padding(4)
+                .background(Color.vibrantWarm)
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.vibrantBorder))
+
+                if let error = wrapper.state.feedbackError {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(Color.red)
+                } else if wrapper.state.feedbackSubmitted {
+                    Text("Thanks! Your feedback was submitted.")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.green)
+                }
+
+                Button(action: { wrapper.viewModel.submitFeedback() }) {
+                    Group {
+                        if wrapper.state.isSubmittingFeedback {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Text(wrapper.state.feedbackSubmitted ? "Feedback Submitted" : "Submit Feedback")
+                                .font(.headline)
+                        }
+                    }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .foregroundStyle(Color.white)
                         .background(Color.vibrantBrown)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
+                .disabled(
+                    wrapper.state.feedbackRating == 0 ||
+                        wrapper.state.isSubmittingFeedback ||
+                        wrapper.state.feedbackSubmitted
+                )
+                .opacity(wrapper.state.feedbackRating == 0 ? 0.55 : 1)
             }
             .padding(24)
             .background(Color.vibrantSurface)

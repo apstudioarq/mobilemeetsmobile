@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,7 +74,20 @@ fun ScheduleScreen(
             Spacer(Modifier.height(40.dp))
         }
 
-        if (state.isLoading && state.sessions.isEmpty()) {
+        if (state.error != null && state.sessions.isEmpty()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = state.error ?: "Unable to load the schedule.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VibrantMuted,
+                    )
+                    Button(onClick = { viewModel.loadDay(state.selectedDay) }) {
+                        Text("Retry")
+                    }
+                }
+            }
+        } else if (state.isLoading && state.sessions.isEmpty()) {
             item {
                 Row(Modifier.padding(40.dp)) {
                     CircularProgressIndicator(color = IngOrange)

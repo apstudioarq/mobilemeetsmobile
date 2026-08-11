@@ -191,7 +191,16 @@ fun SessionDetailScreen(
                     }
                 }
 
-                FeedbackCard()
+                FeedbackCard(
+                    rating = state.feedbackRating,
+                    comment = state.feedbackComment,
+                    isSubmitting = state.isSubmittingFeedback,
+                    isSubmitted = state.feedbackSubmitted,
+                    error = state.feedbackError,
+                    onRatingSelected = viewModel::onRatingSelected,
+                    onCommentChanged = viewModel::onFeedbackCommentChanged,
+                    onSubmit = viewModel::submitFeedback,
+                )
                 Spacer(Modifier.height(60.dp))
             }
         }
@@ -274,7 +283,16 @@ private fun ReserveCard(isBookmarked: Boolean, onBookmark: () -> Unit) {
 }
 
 @Composable
-private fun FeedbackCard() {
+private fun FeedbackCard(
+    rating: Int,
+    comment: String,
+    isSubmitting: Boolean,
+    isSubmitted: Boolean,
+    error: String?,
+    onRatingSelected: (Int) -> Unit,
+    onCommentChanged: (String) -> Unit,
+    onSubmit: () -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Rate this session", style = MaterialTheme.typography.headlineMedium, color = VibrantText)
         Column(
@@ -287,16 +305,32 @@ private fun FeedbackCard() {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("How was your experience with this session?", style = MaterialTheme.typography.bodyMedium, color = VibrantMuted)
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                repeat(4) {
-                    Icon(Icons.Filled.Star, contentDescription = null, tint = IngOrange)
+            Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                repeat(5) { index ->
+                    val starValue = index + 1
+                    IconButton(
+                        onClick = { onRatingSelected(starValue) },
+                        enabled = !isSubmitting && !isSubmitted,
+                        modifier = Modifier.size(44.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (starValue <= rating) {
+                                Icons.Filled.Star
+                            } else {
+                                Icons.Outlined.StarBorder
+                            },
+                            contentDescription = "$starValue stars",
+                            tint = if (starValue <= rating) IngOrange else VibrantBorder,
+                            modifier = Modifier.size(30.dp),
+                        )
+                    }
                 }
-                Icon(Icons.Outlined.StarBorder, contentDescription = null, tint = VibrantBorder)
             }
             Text("Additional comments (optional)", style = MaterialTheme.typography.labelLarge, color = VibrantText)
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = comment,
+                onValueChange = onCommentChanged,
+                enabled = !isSubmitting && !isSubmitted,
                 placeholder = { Text("What did you like or what could be improved?") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
@@ -306,13 +340,39 @@ private fun FeedbackCard() {
                     unfocusedIndicatorColor = VibrantBorder,
                 ),
             )
+            if (error != null) {
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFB3261E),
+                )
+            } else if (isSubmitted) {
+                Text(
+                    text = "Thanks! Your feedback was submitted.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF2E7D32),
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Button(
-                onClick = {},
+                onClick = onSubmit,
+                enabled = rating in 1..5 && !isSubmitting && !isSubmitted,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = VibrantBrown, contentColor = Color.White),
             ) {
-                Text("Submit Feedback", fontWeight = FontWeight.Bold)
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(
+                        text = if (isSubmitted) "Feedback Submitted" else "Submit Feedback",
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
     }

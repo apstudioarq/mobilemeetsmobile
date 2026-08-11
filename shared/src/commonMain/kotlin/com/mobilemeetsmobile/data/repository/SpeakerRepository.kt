@@ -2,6 +2,7 @@ package com.mobilemeetsmobile.data.repository
 
 import com.mobilemeetsmobile.data.local.LocalDataSource
 import com.mobilemeetsmobile.data.model.Speaker
+import com.mobilemeetsmobile.data.remote.BackendConfig
 import com.mobilemeetsmobile.data.remote.MobileMeetsMobileApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -13,12 +14,21 @@ class SpeakerRepository(
 ) {
     fun getAllSpeakers(): Flow<List<Speaker>> {
         return local.getAllSpeakers().onStart {
-            local.seedDesignData()
+            if (!BackendConfig.isFirebaseRealtimeDatabase) {
+                local.seedDesignData()
+            }
             try {
                 val remote = api.getSpeakers()
-                local.insertSpeakers(remote)
+                if (BackendConfig.isFirebaseRealtimeDatabase) {
+                    local.replaceSpeakers(remote)
+                } else {
+                    local.insertSpeakers(remote)
+                }
             } catch (e: Exception) {
                 println("Network error fetching speakers: ${e.message}")
+                if (BackendConfig.isFirebaseRealtimeDatabase && !local.hasCachedSpeakers()) {
+                    throw e
+                }
             }
         }
     }
@@ -28,7 +38,9 @@ class SpeakerRepository(
             val remote = api.getSpeakerById(id)
             remote.toDomain()
         } catch (e: Exception) {
-            local.seedDesignData()
+            if (!BackendConfig.isFirebaseRealtimeDatabase) {
+                local.seedDesignData()
+            }
             local.getSpeakerById(id) ?: throw e
         }
     }

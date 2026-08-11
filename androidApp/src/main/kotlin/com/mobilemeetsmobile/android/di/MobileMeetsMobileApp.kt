@@ -12,7 +12,15 @@ import org.koin.core.context.startKoin
 class MobileMeetsMobileApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        if (BuildConfig.FIREBASE_FUNCTIONS_URL.isNotBlank()) {
+        if (BuildConfig.FIREBASE_DATABASE_URL.isNotBlank() || BuildConfig.FIREBASE_FUNCTIONS_URL.isBlank()) {
+            BackendConfig.configureFirebaseRealtimeDatabase(
+                databaseUrl = BuildConfig.FIREBASE_DATABASE_URL.ifBlank {
+                    "https://ingtechrating-default-rtdb.europe-west1.firebasedatabase.app"
+                },
+                conferenceId = BuildConfig.FIREBASE_CONFERENCE_ID,
+                apiKey = BuildConfig.FIREBASE_API_KEY,
+            )
+        } else if (BuildConfig.FIREBASE_FUNCTIONS_URL.isNotBlank()) {
             BackendConfig.configureFirebaseFunctions(
                 functionsBaseUrl = BuildConfig.FIREBASE_FUNCTIONS_URL,
             )

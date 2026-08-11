@@ -48,6 +48,8 @@ enum class Track(
 ) {
     AI_ML("AI/ML", 0xFF4285F4, 0xFFE8F0FE),
     ANDROID("Android", 0xFF34A853, 0xFFE6F4EA),
+    IOS("iOS", 0xFF111111, 0xFFEFEFEF),
+    GENERIC("Generic", 0xFF5F6368, 0xFFF1F3F4),
     WEB("Web", 0xFFFBBC04, 0xFFFEF7E0),
     CLOUD("Cloud", 0xFFEA4335, 0xFFFCE8E6),
     FIREBASE("Firebase", 0xFFFF6D00, 0xFFFFF3E0),

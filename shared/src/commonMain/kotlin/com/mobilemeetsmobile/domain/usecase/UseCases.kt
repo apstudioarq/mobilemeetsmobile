@@ -5,6 +5,7 @@ import com.mobilemeetsmobile.data.model.Speaker
 import com.mobilemeetsmobile.data.model.Track
 import com.mobilemeetsmobile.data.repository.SessionRepository
 import com.mobilemeetsmobile.data.repository.SpeakerRepository
+import com.mobilemeetsmobile.data.repository.RatingRepository
 import kotlinx.coroutines.flow.Flow
 
 class GetScheduleUseCase(private val repository: SessionRepository) {
@@ -46,5 +47,16 @@ class GetBookmarksUseCase(private val repository: SessionRepository) {
 class GetSpeakersUseCase(private val repository: SpeakerRepository) {
     operator fun invoke(): Flow<List<Speaker>> {
         return repository.getAllSpeakers()
+    }
+}
+
+class SubmitFeedbackUseCase(private val repository: RatingRepository) {
+    suspend operator fun invoke(
+        sessionId: String,
+        sessionTitle: String,
+        rating: Int,
+        comment: String,
+    ) {
+        repository.submitFeedback(sessionId, sessionTitle, rating, comment)
     }
 }

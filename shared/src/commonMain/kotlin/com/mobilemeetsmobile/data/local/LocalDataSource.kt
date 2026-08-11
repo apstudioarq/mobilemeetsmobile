@@ -6,6 +6,8 @@ import com.mobilemeetsmobile.data.model.*
 import com.mobilemeetsmobile.data.seed.DesignSeedData
 import com.mobilemeetsmobile.data.remote.dto.SessionDto
 import com.mobilemeetsmobile.data.remote.dto.SpeakerDto
+import com.mobilemeetsmobile.data.remote.auth.FirebaseAuthSession
+import com.mobilemeetsmobile.data.remote.auth.FirebaseAuthSessionStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class LocalDataSource(driverFactory: DatabaseDriverFactory) {
+class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessionStore {
 
     private val database = MobileMeetsMobileDatabase(driverFactory.createDriver())
     private val sessionQueries = database.mobileMeetsMobileDatabaseQueries
@@ -43,6 +45,10 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) {
         return sessionQueries.getSessionById(id, ::mapSession).executeAsOneOrNull()
     }
 
+    fun hasCachedSessions(): Boolean {
+        return sessionQueries.getAllSessions().executeAsList().isNotEmpty()
+    }
+
     fun searchSessions(query: String): Flow<List<Session>> {
         return sessionQueries.searchSessions(query, query, ::mapSession)
             .asFlow()
@@ -52,6 +58,35 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) {
     fun insertSessions(sessions: List<SessionDto>) {
         val now = kotlinx.datetime.Clock.System.now().epochSeconds
         database.transaction {
+            sessions.forEach { dto ->
+                sessionQueries.insertSession(
+                    id = dto.id,
+                    title = dto.title,
+                    description = dto.description,
+                    startTime = dto.startTime,
+                    endTime = dto.endTime,
+                    duration = dto.duration,
+                    room = dto.room,
+                    day = dto.day.toLong(),
+                    track = dto.track,
+                    type = dto.type,
+                    level = dto.level,
+                    speakerIds = json.encodeToString(dto.speakerIds),
+                    capacity = dto.capacity.toLong(),
+                    registered = dto.registered.toLong(),
+                    tags = json.encodeToString(dto.tags),
+                    livestreamUrl = dto.livestreamUrl,
+                    slidesUrl = dto.slidesUrl,
+                    updatedAt = now,
+                )
+            }
+        }
+    }
+
+    fun replaceSessions(sessions: List<SessionDto>) {
+        val now = kotlinx.datetime.Clock.System.now().epochSeconds
+        database.transaction {
+            sessionQueries.deleteAllSessions()
             sessions.forEach { dto ->
                 sessionQueries.insertSession(
                     id = dto.id,
@@ -101,8 +136,29 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) {
         }
     }
 
+    fun replaceSpeakers(speakers: List<SpeakerDto>) {
+        database.transaction {
+            sessionQueries.deleteAllSpeakers()
+            speakers.forEach { dto ->
+                sessionQueries.insertSpeaker(
+                    id = dto.id,
+                    name = dto.name,
+                    role = dto.role,
+                    company = dto.company,
+                    bio = dto.bio,
+                    photoUrl = dto.photoUrl,
+                    socialLinks = json.encodeToString(dto.socialLinks),
+                )
+            }
+        }
+    }
+
     fun getSpeakerById(id: String): Speaker? {
         return sessionQueries.getSpeakerById(id, ::mapSpeaker).executeAsOneOrNull()
+    }
+
+    fun hasCachedSpeakers(): Boolean {
+        return sessionQueries.getAllSpeakers().executeAsList().isNotEmpty()
     }
 
     fun seedDesignData() {
@@ -130,6 +186,30 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) {
             val now = kotlinx.datetime.Clock.System.now().epochSeconds
             sessionQueries.insertBookmark(sessionId, now)
         }
+    }
+
+    // ── Firebase authentication ─────────────────────────────
+
+    override fun getSession(): FirebaseAuthSession? {
+        return sessionQueries.getFirebaseAuthSession { idToken, refreshToken, expiresAt ->
+            FirebaseAuthSession(
+                idToken = idToken,
+                refreshToken = refreshToken,
+                expiresAtEpochSeconds = expiresAt,
+            )
+        }.executeAsOneOrNull()
+    }
+
+    override fun saveSession(session: FirebaseAuthSession) {
+        sessionQueries.saveFirebaseAuthSession(
+            idToken = session.idToken,
+            refreshToken = session.refreshToken,
+            expiresAt = session.expiresAtEpochSeconds,
+        )
+    }
+
+    override fun clearSession() {
+        sessionQueries.deleteFirebaseAuthSession()
     }
 
     // ── Mappers ─────────────────────────────────────────────

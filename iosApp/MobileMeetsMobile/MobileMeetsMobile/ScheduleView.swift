@@ -147,6 +147,12 @@ struct ScheduleView: View {
                             .foregroundStyle(Color.vibrantMuted)
                             .padding(.bottom, 34)
 
+                        if let error = wrapper.state.error, wrapper.state.sessions.isEmpty {
+                            FirebaseLoadError(message: error) {
+                                wrapper.viewModel.loadDay(day: wrapper.state.selectedDay)
+                            }
+                        }
+
                         dayTabs
 
                         ForEach(wrapper.state.timeSlots.sorted { $0.key < $1.key }, id: \.key) { time, sessions in
@@ -193,6 +199,23 @@ struct ScheduleView: View {
                 }
             }
         }
+    }
+}
+
+private struct FirebaseLoadError: View {
+    let message: String
+    let retry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(Color.vibrantMuted)
+            Button("Retry", action: retry)
+                .buttonStyle(.borderedProminent)
+                .tint(Color.ingOrange)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

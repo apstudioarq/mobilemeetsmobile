@@ -145,28 +145,39 @@ class ScheduleViewModel(
 
     private fun observeAvailableDays() {
         scope.launch {
-            getAllSessions().collect { sessions ->
-                val derivedDays = buildConferenceDays(sessions)
-                if (derivedDays.isEmpty()) return@collect
+            try {
+                getAllSessions().collect { sessions ->
+                    val derivedDays = buildConferenceDays(sessions)
+                    if (derivedDays.isEmpty()) return@collect
 
-                val current = _uiState.value
-                val selectedDay = if (derivedDays.any { it.dayNumber == current.selectedDay }) {
-                    current.selectedDay
-                } else {
-                    derivedDays.first().dayNumber
+                    val current = _uiState.value
+                    val selectedDay = if (derivedDays.any { it.dayNumber == current.selectedDay }) {
+                        current.selectedDay
+                    } else {
+                        derivedDays.first().dayNumber
+                    }
+
+                    val shouldReload = selectedDay != current.selectedDay || derivedDays != current.days
+
+                    _uiState.update {
+                        it.copy(
+                            days = derivedDays,
+                            selectedDay = selectedDay,
+                        )
+                    }
+
+                    if (shouldReload) {
+                        loadDay(selectedDay)
+                    }
                 }
-
-                val shouldReload = selectedDay != current.selectedDay || derivedDays != current.days
-
-                _uiState.update {
-                    it.copy(
-                        days = derivedDays,
-                        selectedDay = selectedDay,
-                    )
-                }
-
-                if (shouldReload) {
-                    loadDay(selectedDay)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiState.update { current ->
+                    if (current.sessions.isEmpty()) {
+                        current.copy(isLoading = false, error = e.message)
+                    } else {
+                        current
+                    }
                 }
             }
         }
