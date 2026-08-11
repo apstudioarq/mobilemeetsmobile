@@ -40,14 +40,12 @@ struct ContentView: View {
 }
 
 struct SplashView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
         ZStack {
-            (colorScheme == .dark ? Color.black : Color.white)
+            Color.black
                 .ignoresSafeArea()
 
-            Image(colorScheme == .dark ? "SplashLogoDark" : "SplashLogoLight")
+            Image("SplashLogo")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 164, height: 164)
