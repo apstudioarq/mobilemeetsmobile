@@ -51,8 +51,8 @@ fun ScheduleScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(VibrantBackground),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
             LazyRow(
@@ -68,7 +68,7 @@ fun ScheduleScreen(
                     )
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(18.dp))
         }
 
         item {
@@ -83,7 +83,7 @@ fun ScheduleScreen(
                 selectedTrack = state.selectedTrack,
                 onTrackSelected = viewModel::selectTrack,
             )
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
         }
 
         if (state.error != null && state.sessions.isEmpty()) {
@@ -142,7 +142,7 @@ private fun CategoryFilter(
     selectedTrack: Track?,
     onTrackSelected: (Track?) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             text = "Category",
             style = MaterialTheme.typography.labelLarge,
@@ -183,7 +183,7 @@ private fun CategoryChip(
                 RoundedCornerShape(20.dp),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
     ) {
         Text(
             text = label,

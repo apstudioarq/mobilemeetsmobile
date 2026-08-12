@@ -8,7 +8,7 @@ import com.mobilemeetsmobile.domain.usecase.GetAllSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.GetBookmarksUseCase
 import com.mobilemeetsmobile.domain.usecase.GetHomeContentUseCase
 import com.mobilemeetsmobile.domain.usecase.GetScheduleUseCase
-import com.mobilemeetsmobile.domain.usecase.SearchSessionsUseCase
+import com.mobilemeetsmobile.domain.usecase.GetSpeakersUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -43,13 +43,14 @@ data class ScheduleUiState(
 class ScheduleViewModel(
     private val getSchedule: GetScheduleUseCase,
     private val getAllSessions: GetAllSessionsUseCase,
-    private val searchSessions: SearchSessionsUseCase,
     private val toggleBookmark: ToggleBookmarkUseCase,
     private val getBookmarks: GetBookmarksUseCase,
     private val getHomeContent: GetHomeContentUseCase,
+    private val getSpeakers: GetSpeakersUseCase,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var loadDayJob: Job? = null
+    private var speakerNamesById: Map<String, String> = emptyMap()
 
     private val _uiState = MutableStateFlow(ScheduleUiState())
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
@@ -59,6 +60,7 @@ class ScheduleViewModel(
         observeAvailableDays()
         observeBookmarks()
         observeHomeContent()
+        observeSpeakers()
     }
 
     fun loadDay(day: Int) {
@@ -95,18 +97,7 @@ class ScheduleViewModel(
             return
         }
 
-        scope.launch {
-            searchSessions(query).collect { results ->
-                val dayFiltered = results.filter { it.day == _uiState.value.selectedDay }
-                val filtered = applyFilters(applyBookmarkState(dayFiltered))
-                _uiState.update {
-                    it.copy(
-                        sessions = filtered,
-                        timeSlots = filtered.groupBy { session -> session.startTime },
-                    )
-                }
-            }
-        }
+        refilterCurrentDayFromAllSessions()
     }
 
     fun onBookmarkToggle(sessionId: String) {
@@ -168,6 +159,17 @@ class ScheduleViewModel(
         scope.launch {
             getHomeContent().collect { content ->
                 _uiState.update { it.copy(homeContent = content) }
+            }
+        }
+    }
+
+    private fun observeSpeakers() {
+        scope.launch {
+            getSpeakers().collect { speakers ->
+                speakerNamesById = speakers.associate { speaker -> speaker.id to speaker.name }
+                if (_uiState.value.searchQuery.isNotBlank()) {
+                    refilterCurrentDayFromAllSessions()
+                }
             }
         }
     }
@@ -274,10 +276,30 @@ class ScheduleViewModel(
         return sessions.filter { session ->
             val matchesBookmark = !state.showBookmarksOnly || bookmarkIds.contains(session.id)
             val matchesTrack = state.selectedTrack == null || session.track == state.selectedTrack
-            val matchesSearch = state.searchQuery.isBlank() ||
-                session.title.contains(state.searchQuery, ignoreCase = true) ||
-                session.description.contains(state.searchQuery, ignoreCase = true)
+            val matchesSearch = state.searchQuery.isBlank() || sessionMatchesSearch(session, state.searchQuery)
             matchesBookmark && matchesTrack && matchesSearch
+        }
+    }
+
+    private fun sessionMatchesSearch(session: Session, query: String): Boolean {
+        return session.title.contains(query, ignoreCase = true) ||
+            session.description.contains(query, ignoreCase = true) ||
+            session.speakerIds.any { speakerId ->
+                speakerId.contains(query, ignoreCase = true) ||
+                    speakerNamesById[speakerId]?.contains(query, ignoreCase = true) == true
+            }
+    }
+
+    private fun refilterCurrentDayFromAllSessions() {
+        val state = _uiState.value
+        val allDaySessions = state.allSessions.filter { session -> session.day == state.selectedDay }
+        val daySessions = allDaySessions.ifEmpty { state.sessions }
+        val filtered = applyFilters(applyBookmarkState(daySessions))
+        _uiState.update {
+            it.copy(
+                sessions = filtered,
+                timeSlots = filtered.groupBy { session -> session.startTime },
+            )
         }
     }
 

@@ -3,6 +3,7 @@ package com.mobilemeetsmobile.android.ui.navigation
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,15 +16,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -31,7 +37,11 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +49,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mobilemeetsmobile.android.R
@@ -93,9 +106,13 @@ private fun NavHostController.navigateToBottomTab(screen: Screen) {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val scheduleViewModel: ScheduleViewModel = koinInject()
+    val scheduleState by scheduleViewModel.uiState.collectAsState()
+    var isScheduleSearchExpanded by remember { mutableStateOf(false) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBars = currentRoute in bottomNavItems.map { it.route }
+    val isScheduleRoute = currentRoute == Screen.Schedule.route
 
     Scaffold(
         containerColor = VibrantBackground,
@@ -108,6 +125,11 @@ fun AppNavigation() {
                         Screen.Favorites.route -> Screen.Favorites.label
                         else -> ""
                     },
+                    searchQuery = scheduleState.searchQuery,
+                    onSearchQueryChanged = scheduleViewModel::onSearchQueryChanged,
+                    showSearchAction = isScheduleRoute,
+                    isSearchExpanded = isScheduleRoute && isScheduleSearchExpanded,
+                    onSearchActionClick = { isScheduleSearchExpanded = !isScheduleSearchExpanded },
                 )
             }
         },
@@ -133,9 +155,8 @@ fun AppNavigation() {
                 )
             }
             composable(Screen.Schedule.route) {
-                val viewModel: ScheduleViewModel = koinInject()
                 ScheduleScreen(
-                    viewModel = viewModel,
+                    viewModel = scheduleViewModel,
                     onSessionClick = { navController.navigate("session/$it") },
                 )
             }
@@ -180,7 +201,14 @@ fun AppNavigation() {
 }
 
 @Composable
-fun MobileMeetsMobileTopBar(sectionTitle: String) {
+fun MobileMeetsMobileTopBar(
+    sectionTitle: String,
+    searchQuery: String = "",
+    onSearchQueryChanged: (String) -> Unit = {},
+    showSearchAction: Boolean = false,
+    isSearchExpanded: Boolean = false,
+    onSearchActionClick: () -> Unit = {},
+) {
     val statusBarHeight = with(LocalDensity.current) {
         WindowInsets.statusBars.getTop(this).toDp()
     }
@@ -194,8 +222,8 @@ fun MobileMeetsMobileTopBar(sectionTitle: String) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 18.dp),
+                .height(52.dp)
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -207,33 +235,47 @@ fun MobileMeetsMobileTopBar(sectionTitle: String) {
                     painter = painterResource(R.drawable.splash_logo),
                     contentDescription = "Mobile Meets Mobile",
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(28.dp)
                         .clip(RoundedCornerShape(8.dp)),
                 )
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(9.dp))
                 Text(
                     text = "Mobile Meets Mobile",
                     color = VibrantText,
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(VibrantSurfaceWarm)
-                    .border(1.dp, VibrantBorder, RoundedCornerShape(16.dp))
-                    .padding(horizontal = 11.dp, vertical = 5.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = sectionTitle.uppercase(),
-                    color = IngOrange,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                )
+                if (showSearchAction) {
+                    IconButton(
+                        onClick = onSearchActionClick,
+                        modifier = Modifier.size(34.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = "Toggle search",
+                            tint = IngOrange,
+                            modifier = Modifier.size(19.dp),
+                        )
+                    }
+                }
+                TopBarSectionChip(sectionTitle = sectionTitle)
             }
+        }
+        if (isSearchExpanded) {
+            TopBarSearchField(
+                query = searchQuery,
+                onQueryChanged = onSearchQueryChanged,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
         }
         Box(
             modifier = Modifier
@@ -242,6 +284,91 @@ fun MobileMeetsMobileTopBar(sectionTitle: String) {
                 .background(VibrantBorder.copy(alpha = 0.65f)),
         )
     }
+}
+
+@Composable
+private fun TopBarSectionChip(sectionTitle: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(VibrantSurfaceWarm)
+            .border(1.dp, VibrantBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text = sectionTitle.uppercase(),
+            color = IngOrange,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun TopBarSearchField(
+    query: String,
+    onQueryChanged: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = query,
+        onValueChange = onQueryChanged,
+        singleLine = true,
+        textStyle = TextStyle(
+            color = VibrantText,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+        ),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        modifier = modifier,
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(17.dp))
+                    .background(VibrantSurfaceWarm)
+                    .border(1.dp, VibrantBorder, RoundedCornerShape(17.dp))
+                    .padding(horizontal = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = "Search sessions or speakers",
+                    tint = IngOrange,
+                    modifier = Modifier.size(17.dp),
+                )
+                Spacer(Modifier.width(7.dp))
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (query.isBlank()) {
+                        Text(
+                            text = "Search sessions or speakers",
+                            color = VibrantMuted,
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    innerTextField()
+                }
+                if (query.isNotBlank()) {
+                    Spacer(Modifier.width(7.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Clear search",
+                        tint = VibrantMuted,
+                        modifier = Modifier
+                            .size(17.dp)
+                            .clickable { onQueryChanged("") },
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
