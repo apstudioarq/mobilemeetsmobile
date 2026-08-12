@@ -12,7 +12,7 @@ firebase emulators:start --only hosting,database,auth
 
 Open:
 
-- http://localhost:5000
+- http://localhost:5002
 
 When running on `localhost`, the panel automatically connects Firebase Auth to `127.0.0.1:9099` and Realtime Database to `127.0.0.1:9000`.
 If `/__/firebase/init.json` is empty locally, the panel falls back to a local emulator config for the `ingtechrating` Firebase project. That fallback is only used on `localhost`.
@@ -32,7 +32,7 @@ For a fully local test:
 }
 ```
 
-5. Open http://localhost:5000 and use Google Sign-In.
+5. Open http://localhost:5002 and use Google Sign-In.
 
 ## Firebase Setup
 

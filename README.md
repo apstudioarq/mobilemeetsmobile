@@ -185,7 +185,7 @@ The project includes an admin panel in `admin-panel/` to create/edit/delete Fire
 firebase emulators:start --only hosting,database,auth
 ```
 
-Open: `http://localhost:5000`
+Open: `http://localhost:5002`
 
 To deploy the panel to Firebase Hosting with Realtime Database rules:
 

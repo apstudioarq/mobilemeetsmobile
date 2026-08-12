@@ -32,7 +32,10 @@ const DATABASE_EMULATOR_HOST = "127.0.0.1";
 const DATABASE_EMULATOR_PORT = 9000;
 
 const els = {
+  loginScreen: document.querySelector("#loginScreen"),
+  appShell: document.querySelector("#appShell"),
   sessionStatus: document.querySelector("#sessionStatus"),
+  loginStatus: document.querySelector("#loginStatus"),
   loginPanel: document.querySelector("#loginPanel"),
   googleSignInBtn: document.querySelector("#googleSignInBtn"),
   configStatus: document.querySelector("#configStatus"),
@@ -45,6 +48,7 @@ const els = {
   conferenceList: document.querySelector("#conferenceList"),
   conferenceForm: document.querySelector("#conferenceForm"),
   conferenceFormTitle: document.querySelector("#conferenceFormTitle"),
+  conferenceSummary: document.querySelector("#conferenceSummary"),
   conferenceId: document.querySelector("#conferenceId"),
   conferenceTitle: document.querySelector("#conferenceTitle"),
   audience: document.querySelector("#audience"),
@@ -89,6 +93,7 @@ function bindEvents() {
   });
   els.deleteConferenceBtn.addEventListener("click", deleteSelectedConference);
   els.conferenceForm.addEventListener("submit", saveConference);
+  els.conferenceForm.addEventListener("input", updateConferenceSummaryFromForm);
   els.ratingsConferenceFilter.addEventListener("change", renderRatings);
 
   for (const tab of els.tabs) {
@@ -108,14 +113,15 @@ async function connect(event) {
     db = getDatabase(app);
     connectLocalEmulators();
     await setPersistence(auth, browserLocalPersistence);
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+    setConnectedUi(true, credential.user.email, credential.user.uid);
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         setConnectedUi(false);
         return;
       }
-      setConnectedUi(true, user.email);
+      setConnectedUi(true, user.email, user.uid);
     });
 
     await loadAllData();
@@ -216,6 +222,9 @@ async function loadAllData() {
     renderRatings();
     showToast("Data loaded.");
   } catch (error) {
+    if (isPermissionDenied(error)) {
+      setStatus("Missing admin permissions", true);
+    }
     showToast(readableError(error), true);
   }
 }
@@ -238,18 +247,15 @@ function normalizeConferences(raw) {
   }, {});
 }
 
-function setConnectedUi(connected, email = "") {
-  els.loginPanel.hidden = connected;
+function setConnectedUi(connected, email = "", uid = "") {
+  els.loginScreen.hidden = connected;
+  els.appShell.hidden = !connected;
   els.signOutBtn.hidden = !connected;
   els.refreshBtn.disabled = !connected;
   els.newConferenceBtn.disabled = !connected;
   els.ratingsConferenceFilter.disabled = !connected;
 
-  for (const tab of els.tabs) {
-    tab.disabled = !connected;
-  }
-
-  setStatus(connected ? `Connected as ${email}` : "Not connected");
+  setStatus(connected ? `Connected as ${email} · UID ${uid}` : "Not connected");
 }
 
 function renderEmptyState() {
@@ -257,6 +263,7 @@ function renderEmptyState() {
   els.ratingsSummary.innerHTML = "";
   els.ratingsTableBody.innerHTML = "";
   els.ratingsConferenceFilter.innerHTML = "";
+  els.conferenceSummary.innerHTML = "";
   openConferenceForm(null, null);
 }
 
@@ -307,8 +314,8 @@ function openConferenceForm(conference = null, key = null) {
 
   els.conferenceFormTitle.textContent = key ? "Edit Conference" : "New Conference";
   els.deleteConferenceBtn.hidden = !key;
-  els.conferenceId.readOnly = Boolean(key);
   els.conferenceId.value = activeConference.id || key || "";
+  setLockedInput(els.conferenceId, Boolean(key));
   els.conferenceTitle.value = activeConference.title || "";
   els.audience.value = activeConference.audience || "";
   els.eventType.value = activeConference.eventType || "";
@@ -318,9 +325,10 @@ function openConferenceForm(conference = null, key = null) {
 
   const rooms = activeConference.rooms?.length ? activeConference.rooms : [createBlankRoom()];
   for (const room of rooms) {
-    addRoom(room);
+    addRoom(room, Boolean(key));
   }
 
+  renderConferenceSummary(activeConference);
   renderConferenceList();
 }
 
@@ -359,28 +367,37 @@ function createBlankPresentation() {
   };
 }
 
-function addRoom(room = createBlankRoom()) {
+function addRoom(room = createBlankRoom(), isExisting = false) {
   const node = els.roomTemplate.content.firstElementChild.cloneNode(true);
-  node.querySelector(".room-id").value = room.id || "";
+  const roomIdInput = node.querySelector(".room-id");
+  roomIdInput.value = room.id || "";
+  setLockedInput(roomIdInput, isExisting && Boolean(room.id));
   node.querySelector(".room-name").value = room.name || "";
   node.querySelector(".room-description").value = room.description || "";
-  node.querySelector(".remove-room-btn").addEventListener("click", () => node.remove());
+  node.querySelector(".remove-room-btn").addEventListener("click", () => {
+    node.remove();
+    updateConferenceSummaryFromForm();
+  });
   node.querySelector(".add-presentation-btn").addEventListener("click", () => addPresentation(node));
 
   const presentations = room.presentations?.length ? room.presentations : [];
   for (const presentation of presentations) {
-    addPresentation(node, presentation);
+    addPresentation(node, presentation, isExisting);
   }
 
   els.roomsContainer.appendChild(node);
+  updateRoomHeading(node);
+  updateConferenceSummaryFromForm();
   return node;
 }
 
-function addPresentation(roomNode, presentation = createBlankPresentation()) {
+function addPresentation(roomNode, presentation = createBlankPresentation(), isExisting = false) {
   const container = roomNode.querySelector(".presentations");
   const node = els.presentationTemplate.content.firstElementChild.cloneNode(true);
 
-  node.querySelector(".presentation-id").value = presentation.id || "";
+  const presentationIdInput = node.querySelector(".presentation-id");
+  presentationIdInput.value = presentation.id || "";
+  setLockedInput(presentationIdInput, isExisting && Boolean(presentation.id));
   node.querySelector(".presentation-title").value = presentation.title || "";
   node.querySelector(".presentation-description").value = presentation.description || "";
   node.querySelector(".presentation-duration").value = presentation.durationMinutes ?? 45;
@@ -389,9 +406,16 @@ function addPresentation(roomNode, presentation = createBlankPresentation()) {
   node.querySelector(".presentation-tags").value = (presentation.tags || []).join(", ");
   node.querySelector(".presentation-technology").value = presentation.technology || "Android";
   node.querySelector(".presentation-type").value = presentation.type || "Session";
-  node.querySelector(".remove-presentation-btn").addEventListener("click", () => node.remove());
+  node.querySelector(".remove-presentation-btn").addEventListener("click", () => {
+    node.remove();
+    updateRoomHeading(roomNode);
+    updateConferenceSummaryFromForm();
+  });
 
   container.appendChild(node);
+  updatePresentationHeading(node);
+  updateRoomHeading(roomNode);
+  updateConferenceSummaryFromForm();
 }
 
 async function saveConference(event) {
@@ -454,6 +478,69 @@ function readPresentation(node) {
     type: value(node.querySelector(".presentation-type")),
   };
   return presentation.id && presentation.title ? presentation : null;
+}
+
+function setLockedInput(input, locked) {
+  input.readOnly = locked;
+  input.classList.toggle("locked-id", locked);
+}
+
+function updateConferenceSummaryFromForm() {
+  updateComponentHeadings();
+  renderConferenceSummary(readConferenceForm());
+}
+
+function updateComponentHeadings() {
+  for (const roomNode of els.roomsContainer.querySelectorAll(".room-item")) {
+    updateRoomHeading(roomNode);
+    for (const presentationNode of roomNode.querySelectorAll(".presentation-item")) {
+      updatePresentationHeading(presentationNode);
+    }
+  }
+}
+
+function updateRoomHeading(roomNode) {
+  const name = value(roomNode.querySelector(".room-name"));
+  const id = value(roomNode.querySelector(".room-id"));
+  const presentationCount = roomNode.querySelectorAll(".presentation-item").length;
+  roomNode.querySelector(".room-heading").textContent = name || "Room";
+  roomNode.querySelector(".room-meta").textContent = `${id || "new-room"} · ${presentationCount} presentations`;
+}
+
+function updatePresentationHeading(node) {
+  const title = value(node.querySelector(".presentation-title"));
+  const id = value(node.querySelector(".presentation-id"));
+  const technology = value(node.querySelector(".presentation-technology"));
+  node.querySelector(".presentation-heading").textContent = title || "Presentation";
+  node.querySelector(".presentation-meta").textContent = `${id || "new-presentation"} · ${technology}`;
+}
+
+function renderConferenceSummary(conference) {
+  const rooms = conference.rooms || [];
+  const presentationCount = rooms.reduce((total, room) => total + (room.presentations || []).length, 0);
+  const roomItems = rooms
+    .map((room) => {
+      const presentations = (room.presentations || [])
+        .map((presentation) => `<li>${escapeHtml(presentation.title || presentation.id || "Presentation")}</li>`)
+        .join("");
+      return `
+        <li>
+          <strong>${escapeHtml(room.name || room.id || "Room")}</strong>
+          <span>${(room.presentations || []).length} presentations</span>
+          <ul>${presentations}</ul>
+        </li>
+      `;
+    })
+    .join("");
+
+  els.conferenceSummary.innerHTML = `
+    <div class="summary-metrics">
+      <span>${rooms.length} rooms</span>
+      <span>${presentationCount} presentations</span>
+      <span>${escapeHtml(conference.organizingCountry || "No country")}</span>
+    </div>
+    <ol class="summary-tree">${roomItems}</ol>
+  `;
 }
 
 async function deleteSelectedConference() {
@@ -637,6 +724,8 @@ function value(input) {
 function setStatus(message, isError = false) {
   els.sessionStatus.textContent = message;
   els.sessionStatus.classList.toggle("error", isError);
+  els.loginStatus.textContent = message;
+  els.loginStatus.classList.toggle("error", isError);
 }
 
 function showToast(message, isError = false) {
@@ -650,7 +739,21 @@ function showToast(message, isError = false) {
 }
 
 function readableError(error) {
+  if (isPermissionDenied(error)) {
+    const uid = auth?.currentUser?.uid;
+    const databaseName = isLocalhost() ? "Realtime Database emulator" : "Realtime Database";
+    if (uid) {
+      return `Permission denied. Add {"admins":{"${uid}":true}} in the same ${databaseName}.`;
+    }
+    return `Permission denied. The signed-in user is not marked as admin in ${databaseName}.`;
+  }
+
   return error?.message?.replace(/^Firebase:\s*/, "") || "Unexpected error.";
+}
+
+function isPermissionDenied(error) {
+  const message = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
+  return message.includes("permission_denied") || message.includes("permission denied");
 }
 
 function escapeHtml(text) {

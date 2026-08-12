@@ -8,118 +8,131 @@
   </head>
   <body>
     <main class="layout">
-      <header class="topbar">
-        <div>
-          <h1>Conference Admin</h1>
-          <p id="sessionStatus">Not connected</p>
+      <section id="loginScreen" class="login-screen">
+        <div id="loginPanel" class="panel login-panel">
+          <img class="login-logo" src="./assets/mobile-meets-mobile-logo.png" alt="Mobile Meets Mobile" />
+          <div class="login-copy">
+            <h1>Conference Admin</h1>
+            <p>Mobile Meets Mobile</p>
+          </div>
+          <p id="loginStatus">Not connected</p>
+          <div class="actions">
+            <button id="googleSignInBtn" type="button">Sign in with Google</button>
+          </div>
+          <p id="configStatus" class="config-status">Firebase config loads automatically from Hosting.</p>
         </div>
-        <div class="topbar-actions">
-          <button id="refreshBtn" type="button" class="icon-button" title="Refresh" disabled aria-label="Refresh">↻</button>
-          <button id="signOutBtn" type="button" class="ghost" hidden>Sign out</button>
-        </div>
-      </header>
-
-      <section id="loginPanel" class="panel">
-        <h2>Firebase Access</h2>
-        <div class="actions">
-          <button id="googleSignInBtn" type="button">Sign in with Google</button>
-        </div>
-        <p id="configStatus" class="config-status">Firebase config loads automatically from Hosting.</p>
       </section>
 
-      <nav class="tabs" aria-label="Admin sections">
-        <button id="conferencesTab" type="button" class="tab active" data-tab="conferences" disabled>Conferences</button>
-        <button id="ratingsTab" type="button" class="tab" data-tab="ratings" disabled>Ratings</button>
-      </nav>
-
-      <section id="conferencesView" class="view active">
-        <aside class="panel list-panel">
-          <div class="section-title-row">
-            <h2>Conferences</h2>
-            <button id="newConferenceBtn" type="button" class="ghost" disabled>New</button>
+      <section id="appShell" class="app-shell" hidden>
+        <header class="topbar">
+          <div>
+            <h1>Conference Admin</h1>
+            <p id="sessionStatus">Not connected</p>
           </div>
-          <div id="conferenceList" class="conference-list"></div>
-        </aside>
-
-        <section class="panel editor-panel">
-          <div class="section-title-row">
-            <h2 id="conferenceFormTitle">Conference</h2>
-            <button id="deleteConferenceBtn" type="button" class="danger" hidden>Delete</button>
+          <div class="topbar-actions">
+            <button id="refreshBtn" type="button" class="icon-button" title="Refresh" aria-label="Refresh">↻</button>
+            <button id="signOutBtn" type="button" class="ghost">Sign out</button>
           </div>
+        </header>
 
-          <form id="conferenceForm" class="conference-form">
-            <fieldset class="grid three-cols">
-              <label>
-                ID
-                <input id="conferenceId" required placeholder="mmm-2026" />
-              </label>
-              <label>
-                Start Date
-                <input id="conferenceStartDate" type="datetime-local" required />
-              </label>
-              <label>
-                Country
-                <input id="organizingCountry" required placeholder="ES" />
-              </label>
-              <label class="span-2">
-                Title
-                <input id="conferenceTitle" required placeholder="Mobile Meets Mobile 2026" />
-              </label>
-              <label>
-                Event Type
-                <input id="eventType" required placeholder="Conference" />
-              </label>
-              <label class="span-3">
-                Audience
-                <input id="audience" required placeholder="Developers" />
-              </label>
-            </fieldset>
+        <nav class="tabs" aria-label="Admin sections">
+          <button id="conferencesTab" type="button" class="tab active" data-tab="conferences">Conferences</button>
+          <button id="ratingsTab" type="button" class="tab" data-tab="ratings">Ratings</button>
+        </nav>
 
-            <div class="section-title-row block-title">
-              <h3>Rooms</h3>
-              <button id="addRoomBtn" type="button" class="ghost">Add Room</button>
+        <section id="conferencesView" class="view active">
+          <aside class="panel list-panel">
+            <div class="section-title-row">
+              <h2>Conferences</h2>
+              <button id="newConferenceBtn" type="button" class="ghost">New</button>
             </div>
-            <div id="roomsContainer" class="rooms"></div>
+            <div id="conferenceList" class="conference-list"></div>
+          </aside>
 
-            <div class="actions sticky-actions">
-              <button type="submit">Save Conference</button>
-              <button id="cancelConferenceBtn" type="button" class="ghost">Reset</button>
+          <section class="panel editor-panel">
+            <div class="section-title-row">
+              <h2 id="conferenceFormTitle">Conference</h2>
+              <button id="deleteConferenceBtn" type="button" class="danger" hidden>Delete</button>
             </div>
-          </form>
+            <div id="conferenceSummary" class="conference-summary"></div>
+
+            <form id="conferenceForm" class="conference-form">
+              <fieldset class="grid three-cols">
+                <label>
+                  ID
+                  <input id="conferenceId" required placeholder="mmm-2026" />
+                </label>
+                <label>
+                  Start Date
+                  <input id="conferenceStartDate" type="datetime-local" required />
+                </label>
+                <label>
+                  Country
+                  <input id="organizingCountry" required placeholder="ES" />
+                </label>
+                <label class="span-2">
+                  Title
+                  <input id="conferenceTitle" required placeholder="Mobile Meets Mobile 2026" />
+                </label>
+                <label>
+                  Event Type
+                  <input id="eventType" required placeholder="Conference" />
+                </label>
+                <label class="span-3">
+                  Audience
+                  <input id="audience" required placeholder="Developers" />
+                </label>
+              </fieldset>
+
+              <div class="section-title-row block-title">
+                <h3>Rooms</h3>
+                <button id="addRoomBtn" type="button" class="ghost">Add Room</button>
+              </div>
+              <div id="roomsContainer" class="rooms"></div>
+
+              <div class="actions sticky-actions">
+                <button type="submit">Save Conference</button>
+                <button id="cancelConferenceBtn" type="button" class="ghost">Reset</button>
+              </div>
+            </form>
+          </section>
         </section>
-      </section>
 
-      <section id="ratingsView" class="view">
-        <section class="panel">
-          <div class="section-title-row">
-            <h2>Ratings</h2>
-            <select id="ratingsConferenceFilter" disabled aria-label="Conference filter"></select>
-          </div>
-          <div id="ratingsSummary" class="metric-grid"></div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Session</th>
-                  <th>Votes</th>
-                  <th>Average</th>
-                  <th>5★</th>
-                  <th>4★</th>
-                  <th>3★</th>
-                  <th>2★</th>
-                  <th>1★</th>
-                </tr>
-              </thead>
-              <tbody id="ratingsTableBody"></tbody>
-            </table>
-          </div>
+        <section id="ratingsView" class="view">
+          <section class="panel">
+            <div class="section-title-row">
+              <h2>Ratings</h2>
+              <select id="ratingsConferenceFilter" aria-label="Conference filter"></select>
+            </div>
+            <div id="ratingsSummary" class="metric-grid"></div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Session</th>
+                    <th>Votes</th>
+                    <th>Average</th>
+                    <th>5★</th>
+                    <th>4★</th>
+                    <th>3★</th>
+                    <th>2★</th>
+                    <th>1★</th>
+                  </tr>
+                </thead>
+                <tbody id="ratingsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
         </section>
       </section>
 
       <template id="roomTemplate">
         <article class="nested-item room-item">
           <div class="section-title-row">
-            <h4>Room</h4>
+            <div>
+              <h4 class="room-heading">Room</h4>
+              <small class="component-meta room-meta"></small>
+            </div>
             <div class="row-actions">
               <button type="button" class="ghost add-presentation-btn">Add Presentation</button>
               <button type="button" class="danger remove-room-btn">Remove</button>
@@ -146,7 +159,10 @@
       <template id="presentationTemplate">
         <article class="nested-item presentation-item">
           <div class="section-title-row">
-            <h4>Presentation</h4>
+            <div>
+              <h4 class="presentation-heading">Presentation</h4>
+              <small class="component-meta presentation-meta"></small>
+            </div>
             <button type="button" class="danger remove-presentation-btn">Remove</button>
           </div>
           <div class="grid four-cols">
