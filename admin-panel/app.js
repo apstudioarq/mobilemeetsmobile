@@ -56,6 +56,8 @@ const els = {
   organizingCountry: document.querySelector("#organizingCountry"),
   conferenceStartDate: document.querySelector("#conferenceStartDate"),
   roomsContainer: document.querySelector("#roomsContainer"),
+  existingRoomSelect: document.querySelector("#existingRoomSelect"),
+  addExistingRoomBtn: document.querySelector("#addExistingRoomBtn"),
   addRoomBtn: document.querySelector("#addRoomBtn"),
   cancelConferenceBtn: document.querySelector("#cancelConferenceBtn"),
   deleteConferenceBtn: document.querySelector("#deleteConferenceBtn"),
@@ -97,7 +99,8 @@ function bindEvents() {
   els.signOutBtn.addEventListener("click", disconnect);
   els.refreshBtn.addEventListener("click", loadAllData);
   els.newConferenceBtn.addEventListener("click", () => openConferenceForm());
-  els.addRoomBtn.addEventListener("click", () => addRoom());
+  els.addExistingRoomBtn.addEventListener("click", addSelectedExistingRoom);
+  els.addRoomBtn.addEventListener("click", () => addRoom(createGeneratedRoom(), false));
   els.cancelConferenceBtn.addEventListener("click", () => {
     const selected = editingConferenceKey ? conferences[editingConferenceKey] : null;
     openConferenceForm(selected, editingConferenceKey);
@@ -312,6 +315,7 @@ function renderEmptyState() {
   els.ratingsTableBody.innerHTML = "";
   els.ratingsConferenceFilter.innerHTML = "";
   els.conferenceSummary.innerHTML = "";
+  renderExistingRoomOptions();
   openConferenceForm(null, null);
 }
 
@@ -363,7 +367,7 @@ function openConferenceForm(conference = null, key = null) {
   els.conferenceFormTitle.textContent = key ? "Edit Conference" : "New Conference";
   els.deleteConferenceBtn.hidden = !key;
   els.conferenceId.value = activeConference.id || key || "";
-  setLockedInput(els.conferenceId, Boolean(key));
+  setLockedInput(els.conferenceId, Boolean(activeConference.id || key));
   els.conferenceTitle.value = activeConference.title || "";
   els.audience.value = activeConference.audience || "";
   els.eventType.value = activeConference.eventType || "";
@@ -372,24 +376,24 @@ function openConferenceForm(conference = null, key = null) {
   els.roomsContainer.innerHTML = "";
 
   const activeRooms = toArray(activeConference.rooms);
-  const rooms = activeRooms.length ? activeRooms : [createBlankRoom()];
-  for (const room of rooms) {
+  for (const room of activeRooms) {
     addRoom(room, Boolean(key));
   }
 
   renderConferenceSummary(activeConference);
+  renderExistingRoomOptions();
   renderConferenceList();
 }
 
 function createBlankConference() {
   return {
-    id: "",
+    id: generateUniqueId("conference", conferenceIdsInUse()),
     title: "",
     audience: "",
     eventType: "Conference",
     organizingCountry: "",
     startDate: Math.floor(Date.now() / 1000),
-    rooms: [createBlankRoom()],
+    rooms: [],
   };
 }
 
@@ -399,6 +403,14 @@ function createBlankRoom() {
     name: "",
     description: "",
     presentations: [],
+  };
+}
+
+function createGeneratedRoom() {
+  return {
+    ...createBlankRoom(),
+    id: generateUniqueId("room", roomIdsInUse()),
+    name: "New room",
   };
 }
 
@@ -416,11 +428,19 @@ function createBlankPresentation() {
   };
 }
 
+function createGeneratedPresentation() {
+  return {
+    ...createBlankPresentation(),
+    id: generateUniqueId("presentation", presentationIdsInUse()),
+    title: "New presentation",
+  };
+}
+
 function addRoom(room = createBlankRoom(), isExisting = false) {
   const node = els.roomTemplate.content.firstElementChild.cloneNode(true);
   const roomIdInput = node.querySelector(".room-id");
   roomIdInput.value = room.id || "";
-  setLockedInput(roomIdInput, isExisting && Boolean(room.id));
+  setLockedInput(roomIdInput, Boolean(room.id));
   node.querySelector(".room-name").value = room.name || "";
   node.querySelector(".room-description").value = room.description || "";
   node.querySelector(".remove-room-btn").addEventListener("click", () => {
@@ -428,6 +448,7 @@ function addRoom(room = createBlankRoom(), isExisting = false) {
     updateConferenceSummaryFromForm();
   });
   node.querySelector(".add-presentation-btn").addEventListener("click", () => addPresentation(node));
+  node.querySelector(".add-existing-presentation-btn").addEventListener("click", () => addSelectedExistingPresentation(node));
 
   const presentations = toArray(room.presentations);
   for (const presentation of presentations) {
@@ -435,18 +456,19 @@ function addRoom(room = createBlankRoom(), isExisting = false) {
   }
 
   els.roomsContainer.appendChild(node);
+  renderExistingPresentationOptions(node);
   updateRoomHeading(node);
   updateConferenceSummaryFromForm();
   return node;
 }
 
-function addPresentation(roomNode, presentation = createBlankPresentation(), isExisting = false) {
+function addPresentation(roomNode, presentation = createGeneratedPresentation(), isExisting = false) {
   const container = roomNode.querySelector(".presentations");
   const node = els.presentationTemplate.content.firstElementChild.cloneNode(true);
 
   const presentationIdInput = node.querySelector(".presentation-id");
   presentationIdInput.value = presentation.id || "";
-  setLockedInput(presentationIdInput, isExisting && Boolean(presentation.id));
+  setLockedInput(presentationIdInput, Boolean(presentation.id));
   node.querySelector(".presentation-title").value = presentation.title || "";
   node.querySelector(".presentation-description").value = presentation.description || "";
   node.querySelector(".presentation-duration").value = presentation.durationMinutes ?? 45;
@@ -467,6 +489,146 @@ function addPresentation(roomNode, presentation = createBlankPresentation(), isE
   updateConferenceSummaryFromForm();
 }
 
+function addSelectedExistingRoom() {
+  const room = roomLibrary().find((candidate) => candidate.id === els.existingRoomSelect.value);
+  if (!room) {
+    showToast("Select an existing room first.", true);
+    return;
+  }
+
+  if (roomIdsInForm().has(room.id)) {
+    showToast("That room is already in this conference.", true);
+    return;
+  }
+
+  addRoom(cloneComponent(room), true);
+}
+
+function addSelectedExistingPresentation(roomNode) {
+  const select = roomNode.querySelector(".existing-presentation-select");
+  const presentation = presentationLibrary().find((candidate) => candidate.id === select.value);
+  if (!presentation) {
+    showToast("Select an existing presentation first.", true);
+    return;
+  }
+
+  const currentIds = new Set(
+    [...roomNode.querySelectorAll(".presentation-id")].map((input) => value(input)).filter(Boolean),
+  );
+  if (currentIds.has(presentation.id)) {
+    showToast("That presentation is already in this room.", true);
+    return;
+  }
+
+  addPresentation(roomNode, cloneComponent(presentation), true);
+}
+
+function renderExistingRoomOptions() {
+  renderSelectOptions(
+    els.existingRoomSelect,
+    roomLibrary(),
+    "Select existing room",
+    (room) => `${room.name || room.id} (${room.id})`,
+  );
+}
+
+function renderExistingPresentationOptions(roomNode) {
+  renderSelectOptions(
+    roomNode.querySelector(".existing-presentation-select"),
+    presentationLibrary(),
+    "Select existing presentation",
+    (presentation) => `${presentation.title || presentation.id} (${presentation.id})`,
+  );
+}
+
+function renderAllExistingPresentationOptions() {
+  for (const roomNode of els.roomsContainer.querySelectorAll(".room-item")) {
+    renderExistingPresentationOptions(roomNode);
+  }
+}
+
+function renderSelectOptions(select, items, placeholder, labelFor) {
+  if (!select) return;
+
+  select.innerHTML = "";
+  const placeholderOption = document.createElement("option");
+  placeholderOption.value = "";
+  placeholderOption.textContent = placeholder;
+  select.appendChild(placeholderOption);
+
+  for (const item of items) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = labelFor(item);
+    select.appendChild(option);
+  }
+
+  select.disabled = items.length === 0;
+}
+
+function roomLibrary() {
+  const roomsById = new Map();
+  for (const conference of Object.values(conferences)) {
+    for (const room of toArray(conference.rooms)) {
+      if (room.id && !roomsById.has(room.id)) {
+        roomsById.set(room.id, normalizeRoom(room));
+      }
+    }
+  }
+  return [...roomsById.values()].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+}
+
+function presentationLibrary() {
+  const presentationsById = new Map();
+  for (const room of roomLibrary()) {
+    for (const presentation of toArray(room.presentations)) {
+      if (presentation.id && !presentationsById.has(presentation.id)) {
+        presentationsById.set(presentation.id, presentation);
+      }
+    }
+  }
+  return [...presentationsById.values()].sort((a, b) => (a.title || a.id).localeCompare(b.title || b.id));
+}
+
+function roomIdsInUse() {
+  return new Set([...roomLibrary().map((room) => room.id), ...roomIdsInForm()]);
+}
+
+function conferenceIdsInUse() {
+  return new Set([
+    ...Object.keys(conferences),
+    ...Object.values(conferences).map((conference) => conference.id).filter(Boolean),
+    value(els.conferenceId),
+  ].filter(Boolean));
+}
+
+function roomIdsInForm() {
+  return new Set(
+    [...els.roomsContainer.querySelectorAll(".room-id")].map((input) => value(input)).filter(Boolean),
+  );
+}
+
+function presentationIdsInUse() {
+  return new Set([
+    ...presentationLibrary().map((presentation) => presentation.id),
+    ...[...els.roomsContainer.querySelectorAll(".presentation-id")].map((input) => value(input)).filter(Boolean),
+  ]);
+}
+
+function generateUniqueId(prefix, usedIds) {
+  let index = 1;
+  let candidate = `${prefix}-${index}`;
+  while (usedIds.has(candidate)) {
+    index += 1;
+    candidate = `${prefix}-${index}`;
+  }
+  return candidate;
+}
+
+function cloneComponent(component) {
+  return JSON.parse(JSON.stringify(component));
+}
+
 async function saveConference(event) {
   event.preventDefault();
   if (!db) return;
@@ -483,6 +645,8 @@ async function saveConference(event) {
     conferences[key] = conference;
     editingConferenceKey = key;
     renderConferenceList();
+    renderExistingRoomOptions();
+    renderAllExistingPresentationOptions();
     renderRatingsFilter();
     showToast("Conference saved.");
   } catch (error) {

@@ -213,10 +213,22 @@ body.is-login .layout {
 .topbar,
 .section-title-row,
 .actions,
-.row-actions {
+.row-actions,
+.component-picker {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.component-picker,
+.row-actions {
+  flex-wrap: wrap;
+}
+
+.component-picker select,
+.row-actions select {
+  width: auto;
+  min-width: min(260px, 100%);
 }
 
 .topbar,
@@ -545,7 +557,8 @@ th {
   .topbar,
   .section-title-row,
   .actions,
-  .row-actions {
+  .row-actions,
+  .component-picker {
     align-items: stretch;
     flex-direction: column;
   }
@@ -558,7 +571,10 @@ th {
   .tab,
   .topbar-actions button,
   .actions button,
-  .row-actions button {
+  .row-actions button,
+  .component-picker button,
+  .component-picker select,
+  .row-actions select {
     width: 100%;
   }
 

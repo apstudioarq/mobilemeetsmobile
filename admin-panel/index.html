@@ -86,7 +86,11 @@
 
               <div class="section-title-row block-title">
                 <h3>Rooms</h3>
-                <button id="addRoomBtn" type="button" class="ghost">Add Room</button>
+                <div class="component-picker">
+                  <select id="existingRoomSelect" aria-label="Existing rooms"></select>
+                  <button id="addExistingRoomBtn" type="button" class="ghost">Add Existing</button>
+                  <button id="addRoomBtn" type="button" class="ghost">Create Room</button>
+                </div>
               </div>
               <div id="roomsContainer" class="rooms"></div>
 
@@ -134,7 +138,9 @@
               <small class="component-meta room-meta"></small>
             </div>
             <div class="row-actions">
-              <button type="button" class="ghost add-presentation-btn">Add Presentation</button>
+              <select class="existing-presentation-select" aria-label="Existing presentations"></select>
+              <button type="button" class="ghost add-existing-presentation-btn">Add Existing</button>
+              <button type="button" class="ghost add-presentation-btn">Create Presentation</button>
               <button type="button" class="danger remove-room-btn">Remove</button>
             </div>
           </div>
