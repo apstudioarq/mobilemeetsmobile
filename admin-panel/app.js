@@ -450,10 +450,12 @@ function addRoom(room = createBlankRoom(), isExisting = false) {
   node.querySelector(".remove-room-btn").addEventListener("click", () => {
     node.remove();
     renderExistingRoomOptions();
+    renderAllExistingPresentationOptions();
     updateConferenceSummaryFromForm();
   });
   node.querySelector(".add-presentation-btn").addEventListener("click", () => addPresentation(node));
   node.querySelector(".add-existing-presentation-btn").addEventListener("click", () => addSelectedExistingPresentation(node));
+  bindCollapseButton(node, ".toggle-room-btn", ".room-body");
 
   const presentations = toArray(room.presentations);
   for (const presentation of presentations) {
@@ -488,6 +490,7 @@ function addPresentation(roomNode, presentation = createGeneratedPresentation(),
     renderExistingPresentationOptions(roomNode);
     updateConferenceSummaryFromForm();
   });
+  bindCollapseButton(node, ".toggle-presentation-btn", ".presentation-body");
 
   container.appendChild(node);
   updatePresentationHeading(node);
@@ -503,13 +506,9 @@ function addSelectedExistingRoom() {
     return;
   }
 
-  if (roomIdsInForm().has(room.id)) {
-    showToast("That room is already in this conference.", true);
-    return;
-  }
-
-  addRoom(cloneComponent(room), true);
+  addRoom(cloneRoomWithNewIds(room), false);
   renderExistingRoomOptions();
+  renderAllExistingPresentationOptions();
 }
 
 function addSelectedExistingPresentation(roomNode) {
@@ -520,15 +519,7 @@ function addSelectedExistingPresentation(roomNode) {
     return;
   }
 
-  const currentIds = new Set(
-    [...roomNode.querySelectorAll(".presentation-id")].map((input) => value(input)).filter(Boolean),
-  );
-  if (currentIds.has(presentation.id)) {
-    showToast("That presentation is already in this room.", true);
-    return;
-  }
-
-  addPresentation(roomNode, cloneComponent(presentation), true);
+  addPresentation(roomNode, clonePresentationWithNewId(presentation), false);
   renderExistingPresentationOptions(roomNode);
 }
 
@@ -539,6 +530,7 @@ function renderExistingRoomOptions() {
     roomLibrary().filter((room) => !usedRoomIds.has(room.id)),
     "Select existing room",
     (room) => `${room.name || room.id} (${room.id})`,
+    "No existing rooms loaded",
   );
 }
 
@@ -551,6 +543,7 @@ function renderExistingPresentationOptions(roomNode) {
     presentationLibrary().filter((presentation) => !usedPresentationIds.has(presentation.id)),
     "Select existing presentation",
     (presentation) => `${presentation.title || presentation.id} (${presentation.id})`,
+    "No existing presentations loaded",
   );
 }
 
@@ -560,13 +553,13 @@ function renderAllExistingPresentationOptions() {
   }
 }
 
-function renderSelectOptions(select, items, placeholder, labelFor) {
+function renderSelectOptions(select, items, placeholder, labelFor, emptyLabel = "No options available") {
   if (!select) return;
 
   select.innerHTML = "";
   const placeholderOption = document.createElement("option");
   placeholderOption.value = "";
-  placeholderOption.textContent = placeholder;
+  placeholderOption.textContent = items.length ? placeholder : emptyLabel;
   select.appendChild(placeholderOption);
 
   for (const item of items) {
@@ -593,10 +586,12 @@ function roomLibrary() {
 
 function presentationLibrary() {
   const presentationsById = new Map();
-  for (const room of roomLibrary()) {
-    for (const presentation of toArray(room.presentations)) {
-      if (presentation.id && !presentationsById.has(presentation.id)) {
-        presentationsById.set(presentation.id, presentation);
+  for (const conference of Object.values(conferences)) {
+    for (const room of toArray(conference.rooms)) {
+      for (const presentation of toArray(room.presentations)) {
+        if (presentation.id && !presentationsById.has(presentation.id)) {
+          presentationsById.set(presentation.id, presentation);
+        }
       }
     }
   }
@@ -604,7 +599,7 @@ function presentationLibrary() {
 }
 
 function roomIdsInUse() {
-  return new Set([...roomLibrary().map((room) => room.id), ...roomIdsInForm()]);
+  return new Set([...roomIdsInDatabase(), ...roomIdsInForm()]);
 }
 
 function conferenceIdsInUse() {
@@ -623,19 +618,79 @@ function roomIdsInForm() {
 
 function presentationIdsInUse() {
   return new Set([
-    ...presentationLibrary().map((presentation) => presentation.id),
+    ...presentationIdsInDatabase(),
     ...[...els.roomsContainer.querySelectorAll(".presentation-id")].map((input) => value(input)).filter(Boolean),
   ]);
 }
 
+function roomIdsInDatabase() {
+  return Object.values(conferences)
+    .flatMap((conference) => toArray(conference.rooms).map((room) => room.id))
+    .filter(Boolean);
+}
+
+function presentationIdsInDatabase() {
+  return Object.values(conferences)
+    .flatMap((conference) => toArray(conference.rooms))
+    .flatMap((room) => toArray(room.presentations).map((presentation) => presentation.id))
+    .filter(Boolean);
+}
+
 function generateUniqueId(prefix, usedIds) {
-  let index = 1;
-  let candidate = `${prefix}-${index}`;
-  while (usedIds.has(candidate)) {
+  const safePrefix = String(prefix || "item")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "item";
+  let index = 0;
+  let candidate = "";
+  const randomPart = () => {
+    if (window.crypto?.getRandomValues) {
+      const values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      return values[0].toString(36);
+    }
+    return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
+  };
+
+  do {
+    const suffix = `${Date.now().toString(36)}-${randomPart()}`;
+    candidate = index ? `${safePrefix}-${suffix}-${index}` : `${safePrefix}-${suffix}`;
     index += 1;
-    candidate = `${prefix}-${index}`;
-  }
+  } while (usedIds.has(candidate));
+
+  usedIds.add(candidate);
   return candidate;
+}
+
+function cloneRoomWithNewIds(room) {
+  const copy = cloneComponent(room);
+  const usedPresentationIds = presentationIdsInUse();
+  copy.id = generateUniqueId("room", roomIdsInUse());
+  copy.presentations = toArray(copy.presentations).map((presentation) => {
+    const presentationCopy = cloneComponent(presentation);
+    presentationCopy.id = generateUniqueId("presentation", usedPresentationIds);
+    return presentationCopy;
+  });
+  return copy;
+}
+
+function clonePresentationWithNewId(presentation) {
+  const copy = cloneComponent(presentation);
+  copy.id = generateUniqueId("presentation", presentationIdsInUse());
+  return copy;
+}
+
+function bindCollapseButton(root, buttonSelector, bodySelector) {
+  const button = root.querySelector(buttonSelector);
+  const body = root.querySelector(bodySelector);
+  if (!button || !body) return;
+
+  button.addEventListener("click", () => {
+    const collapsed = root.classList.toggle("is-collapsed");
+    body.hidden = collapsed;
+    button.textContent = collapsed ? "Expand" : "Collapse";
+    button.setAttribute("aria-expanded", String(!collapsed));
+  });
 }
 
 function cloneComponent(component) {
@@ -652,6 +707,12 @@ async function saveConference(event) {
     return;
   }
 
+  const idErrors = validateUniqueIds(conference);
+  if (idErrors.length) {
+    showToast(idErrors[0], true);
+    return;
+  }
+
   const key = editingConferenceKey || conference.id;
   try {
     await set(ref(db, `${CONFERENCES_PATH}/${key}`), conference);
@@ -665,6 +726,75 @@ async function saveConference(event) {
   } catch (error) {
     showToast(readableError(error), true);
   }
+}
+
+function validateUniqueIds(conference) {
+  const errors = [];
+  const key = editingConferenceKey || conference.id;
+  const duplicateRoomIds = repeatedIds(conference.rooms.map((room) => room.id));
+  const duplicatePresentationIds = repeatedIds(
+    conference.rooms.flatMap((room) => room.presentations.map((presentation) => presentation.id)),
+  );
+
+  if (duplicateRoomIds.length) {
+    errors.push(`Duplicate room IDs in this conference: ${duplicateRoomIds.join(", ")}`);
+  }
+  if (duplicatePresentationIds.length) {
+    errors.push(`Duplicate presentation IDs in this conference: ${duplicatePresentationIds.join(", ")}`);
+  }
+  if (!editingConferenceKey && conferenceIdExistsInDatabase(conference.id)) {
+    errors.push(`Conference ID already exists: ${conference.id}`);
+  }
+
+  const externalRoomIds = idsFromOtherConferences("rooms", key);
+  const externalPresentationIds = idsFromOtherConferences("presentations", key);
+  const reusedRoomIds = conference.rooms.map((room) => room.id).filter((id) => externalRoomIds.has(id));
+  const reusedPresentationIds = conference.rooms
+    .flatMap((room) => room.presentations.map((presentation) => presentation.id))
+    .filter((id) => externalPresentationIds.has(id));
+
+  if (reusedRoomIds.length) {
+    errors.push(`Room IDs already exist in another conference: ${[...new Set(reusedRoomIds)].join(", ")}`);
+  }
+  if (reusedPresentationIds.length) {
+    errors.push(`Presentation IDs already exist in another conference: ${[...new Set(reusedPresentationIds)].join(", ")}`);
+  }
+
+  return errors;
+}
+
+function repeatedIds(ids) {
+  const seen = new Set();
+  const repeated = new Set();
+  for (const id of ids.filter(Boolean)) {
+    if (seen.has(id)) repeated.add(id);
+    seen.add(id);
+  }
+  return [...repeated];
+}
+
+function conferenceIdExistsInDatabase(conferenceId) {
+  return Object.entries(conferences).some(
+    ([key, conference]) => key === conferenceId || conference.id === conferenceId,
+  );
+}
+
+function idsFromOtherConferences(type, activeKey) {
+  const ids = new Set();
+  for (const [key, conference] of Object.entries(conferences)) {
+    if (key === activeKey) continue;
+    for (const room of toArray(conference.rooms)) {
+      if (type === "rooms" && room.id) {
+        ids.add(room.id);
+      }
+      if (type === "presentations") {
+        for (const presentation of toArray(room.presentations)) {
+          if (presentation.id) ids.add(presentation.id);
+        }
+      }
+    }
+  }
+  return ids;
 }
 
 function readConferenceForm() {
@@ -842,16 +972,28 @@ function aggregateRatings(sessionMap) {
       votes: 0,
       total: 0,
       distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      ratings: [],
     });
   }
 
-  for (const rating of Object.values(ratings || {})) {
+  for (const [ratingId, rating] of Object.entries(ratings || {})) {
     const ratingValue = Number(rating.rating);
     if (!stats.has(rating.sessionId) || ratingValue < 1 || ratingValue > 5) continue;
     const item = stats.get(rating.sessionId);
     item.votes += 1;
     item.total += ratingValue;
     item.distribution[ratingValue] += 1;
+    item.ratings.push({
+      id: ratingId,
+      value: ratingValue,
+      comment: rating.comment || "",
+      date: rating.date || "",
+      sessionTitle: rating.sessionTitle || item.title,
+    });
+  }
+
+  for (const item of stats.values()) {
+    item.ratings.sort((a, b) => ratingDateMs(b.date) - ratingDateMs(a.date));
   }
 
   return [...stats.values()].sort((a, b) => b.votes - a.votes || (a.startDate || 0) - (b.startDate || 0));
@@ -945,6 +1087,7 @@ function renderRatingsTable(stats) {
       <td>
         <strong>${escapeHtml(item.title)}</strong>
         <small>${escapeHtml(item.room || "")}</small>
+        ${renderSessionRatingDetails(item)}
       </td>
       <td>${item.votes}</td>
       <td>${item.votes ? (item.total / item.votes).toFixed(2) : "-"}</td>
@@ -956,6 +1099,31 @@ function renderRatingsTable(stats) {
     `;
     els.ratingsTableBody.appendChild(row);
   }
+}
+
+function renderSessionRatingDetails(item) {
+  if (!item.ratings.length) {
+    return `<p class="session-rating-empty">No rating details yet.</p>`;
+  }
+
+  const detailItems = item.ratings
+    .map((rating) => `
+      <li>
+        <div class="rating-detail-head">
+          <strong>${rating.value}★</strong>
+          <span>${escapeHtml(formatRatingDate(rating.date))}</span>
+        </div>
+        <p>${escapeHtml(rating.comment || "No comment")}</p>
+      </li>
+    `)
+    .join("");
+
+  return `
+    <details class="session-rating-details">
+      <summary>${item.ratings.length} rating${item.ratings.length === 1 ? "" : "s"} and comments</summary>
+      <ul>${detailItems}</ul>
+    </details>
+  `;
 }
 
 function metric(label, valueText) {
@@ -996,6 +1164,20 @@ function formatDateTime(epochSeconds) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(epochSeconds * 1000));
+}
+
+function formatRatingDate(dateText) {
+  const date = new Date(dateText);
+  if (!dateText || Number.isNaN(date.getTime())) return "No date";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function ratingDateMs(dateText) {
+  const date = new Date(dateText);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
 function csvToArray(input) {

@@ -88,7 +88,7 @@
                 <h3>Rooms</h3>
                 <div class="component-picker">
                   <select id="existingRoomSelect" aria-label="Existing rooms"></select>
-                  <button id="addExistingRoomBtn" type="button" class="ghost">Add Existing</button>
+                  <button id="addExistingRoomBtn" type="button" class="ghost">Copy Room</button>
                   <button id="addRoomBtn" type="button" class="ghost">Create Room</button>
                 </div>
               </div>
@@ -149,26 +149,29 @@
             </div>
             <div class="row-actions">
               <select class="existing-presentation-select" aria-label="Existing presentations"></select>
-              <button type="button" class="ghost add-existing-presentation-btn">Add Existing</button>
+              <button type="button" class="ghost add-existing-presentation-btn">Copy Presentation</button>
               <button type="button" class="ghost add-presentation-btn">Create Presentation</button>
+              <button type="button" class="ghost toggle-room-btn" aria-expanded="true">Collapse</button>
               <button type="button" class="danger remove-room-btn">Remove</button>
             </div>
           </div>
-          <div class="grid three-cols">
-            <label>
-              Room ID
-              <input class="room-id" required placeholder="main-stage" />
-            </label>
-            <label class="span-2">
-              Name
-              <input class="room-name" required placeholder="Main Stage" />
-            </label>
-            <label class="span-3">
-              Description
-              <input class="room-description" placeholder="Auditorium" />
-            </label>
+          <div class="room-body collapsible-body">
+            <div class="grid three-cols">
+              <label>
+                Room ID
+                <input class="room-id" required placeholder="main-stage" />
+              </label>
+              <label class="span-2">
+                Name
+                <input class="room-name" required placeholder="Main Stage" />
+              </label>
+              <label class="span-3">
+                Description
+                <input class="room-description" placeholder="Auditorium" />
+              </label>
+            </div>
+            <div class="presentations"></div>
           </div>
-          <div class="presentations"></div>
         </article>
       </template>
 
@@ -179,61 +182,66 @@
               <h4 class="presentation-heading">Presentation</h4>
               <small class="component-meta presentation-meta"></small>
             </div>
-            <button type="button" class="danger remove-presentation-btn">Remove</button>
+            <div class="row-actions">
+              <button type="button" class="ghost toggle-presentation-btn" aria-expanded="true">Collapse</button>
+              <button type="button" class="danger remove-presentation-btn">Remove</button>
+            </div>
           </div>
-          <div class="grid four-cols">
-            <label>
-              ID
-              <input class="presentation-id" required placeholder="session-opening" />
-            </label>
-            <label>
-              Start
-              <input class="presentation-start-date" type="datetime-local" required />
-            </label>
-            <label>
-              Duration
-              <input class="presentation-duration" type="number" min="0" step="5" required value="45" />
-            </label>
-            <label>
-              Technology
-              <select class="presentation-technology" required>
-                <option>Android</option>
-                <option>iOS</option>
-                <option>Firebase</option>
-                <option>Flutter</option>
-                <option>Web</option>
-                <option>Cloud</option>
-                <option>AI/ML</option>
-                <option>Design</option>
-                <option>Generic</option>
-              </select>
-            </label>
-            <label class="span-4">
-              Title
-              <input class="presentation-title" required />
-            </label>
-            <label class="span-4">
-              Description
-              <textarea class="presentation-description" rows="3"></textarea>
-            </label>
-            <label>
-              Type
-              <select class="presentation-type" required>
-                <option>Keynote</option>
-                <option>Session</option>
-                <option>Workshop</option>
-                <option>Codelab</option>
-                <option>Office Hours</option>
-              </select>
-            </label>
-            <label class="span-3">
-              Presenters
-              <input class="presentation-presenters" placeholder="Jane Doe, John Smith" />
-            </label>
-            <label class="span-4">
-              Tags
-              <input class="presentation-tags" placeholder="android,kmm,compose" />
-            </label>
+          <div class="presentation-body collapsible-body">
+            <div class="grid four-cols">
+              <label>
+                ID
+                <input class="presentation-id" required placeholder="session-opening" />
+              </label>
+              <label>
+                Start
+                <input class="presentation-start-date" type="datetime-local" required />
+              </label>
+              <label>
+                Duration
+                <input class="presentation-duration" type="number" min="0" step="5" required value="45" />
+              </label>
+              <label>
+                Technology
+                <select class="presentation-technology" required>
+                  <option>Android</option>
+                  <option>iOS</option>
+                  <option>Firebase</option>
+                  <option>Flutter</option>
+                  <option>Web</option>
+                  <option>Cloud</option>
+                  <option>AI/ML</option>
+                  <option>Design</option>
+                  <option>Generic</option>
+                </select>
+              </label>
+              <label class="span-4">
+                Title
+                <input class="presentation-title" required />
+              </label>
+              <label class="span-4">
+                Description
+                <textarea class="presentation-description" rows="3"></textarea>
+              </label>
+              <label>
+                Type
+                <select class="presentation-type" required>
+                  <option>Keynote</option>
+                  <option>Session</option>
+                  <option>Workshop</option>
+                  <option>Codelab</option>
+                  <option>Office Hours</option>
+                </select>
+              </label>
+              <label class="span-3">
+                Presenters
+                <input class="presentation-presenters" placeholder="Jane Doe, John Smith" />
+              </label>
+              <label class="span-4">
+                Tags
+                <input class="presentation-tags" placeholder="android,kmm,compose" />
+              </label>
+            </div>
           </div>
         </article>
       </template>

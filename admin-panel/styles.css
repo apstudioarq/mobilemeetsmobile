@@ -197,6 +197,10 @@ body.is-login .layout {
   font-size: 0.92rem;
 }
 
+.login-panel .actions {
+  justify-content: center;
+}
+
 #loginStatus {
   overflow-wrap: anywhere;
 }
@@ -436,6 +440,20 @@ td small {
   background: #ffffff;
 }
 
+.nested-item.is-collapsed {
+  gap: 0;
+}
+
+.collapsible-body {
+  display: grid;
+  gap: 12px;
+}
+
+.toggle-room-btn,
+.toggle-presentation-btn {
+  min-width: 92px;
+}
+
 .sticky-actions {
   position: sticky;
   bottom: 0;
@@ -581,6 +599,58 @@ td small {
 
 .votes-fill {
   background: var(--brand);
+}
+
+.session-rating-details {
+  margin-top: 8px;
+  max-width: 520px;
+}
+
+.session-rating-details summary {
+  width: fit-content;
+  color: var(--brand);
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.session-rating-details ul {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.session-rating-details li {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px;
+  background: var(--surface-muted);
+}
+
+.rating-detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.rating-detail-head strong {
+  color: var(--text);
+}
+
+.session-rating-details p,
+.session-rating-empty {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.session-rating-empty {
+  margin-bottom: 0;
 }
 
 .table-wrapper {
