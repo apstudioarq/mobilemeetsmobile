@@ -260,10 +260,11 @@ class ScheduleViewModel(
         val state = _uiState.value
         return sessions.filter { session ->
             val matchesBookmark = !state.showBookmarksOnly || bookmarkIds.contains(session.id)
+            val matchesTrack = state.selectedTrack == null || session.track == state.selectedTrack
             val matchesSearch = state.searchQuery.isBlank() ||
                 session.title.contains(state.searchQuery, ignoreCase = true) ||
                 session.description.contains(state.searchQuery, ignoreCase = true)
-            matchesBookmark && matchesSearch
+            matchesBookmark && matchesTrack && matchesSearch
         }
     }
 

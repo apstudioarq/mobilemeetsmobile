@@ -133,6 +133,14 @@ struct ScheduleView: View {
     @StateObject private var wrapper = ScheduleViewModelWrapper()
     @State private var selectedSessionId: String?
 
+    private var scheduleCategoryTracks: [Track] {
+        allCategoryTracks.filter { track in
+            wrapper.state.allSessions.contains { session in
+                session.day == wrapper.state.selectedDay && session.track == track
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -155,6 +163,21 @@ struct ScheduleView: View {
                         }
 
                         dayTabs
+
+                        CategoryFilter(
+                            tracks: scheduleCategoryTracks,
+                            selectedTrack: wrapper.state.selectedTrack,
+                            onTrackSelected: { track in
+                                wrapper.viewModel.selectTrack(track: track)
+                            }
+                        )
+                        .padding(.bottom, 10)
+
+                        if !wrapper.state.isLoading && wrapper.state.sessions.isEmpty && wrapper.state.error == nil {
+                            Text("No sessions match this category.")
+                                .font(.body)
+                                .foregroundStyle(Color.vibrantMuted)
+                        }
 
                         ForEach(wrapper.state.timeSlots.sorted { $0.key < $1.key }, id: \.key) { time, sessions in
                             Text(displayClock(time))
@@ -231,6 +254,18 @@ struct FavoritesView: View {
         })
     }
 
+    var categoryTracks: [Track] {
+        allCategoryTracks.filter { track in
+            savedSessions.contains { $0.track == track }
+        }
+    }
+
+    var filteredSavedSessions: [Session] {
+        savedSessions.filter { session in
+            wrapper.state.selectedTrack == nil || session.track == wrapper.state.selectedTrack
+        }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -245,9 +280,24 @@ struct FavoritesView: View {
                             .font(.system(size: 19))
                             .lineSpacing(7)
                             .foregroundStyle(Color.vibrantMuted)
-                            .padding(.bottom, 44)
+                            .padding(.bottom, 24)
 
-                        ForEach(savedSessions, id: \.id) { session in
+                        CategoryFilter(
+                            tracks: categoryTracks,
+                            selectedTrack: wrapper.state.selectedTrack,
+                            onTrackSelected: { track in
+                                wrapper.viewModel.selectTrack(track: track)
+                            }
+                        )
+                        .padding(.bottom, 20)
+
+                        if filteredSavedSessions.isEmpty {
+                            Text("No saved sessions match this category.")
+                                .font(.body)
+                                .foregroundStyle(Color.vibrantMuted)
+                        }
+
+                        ForEach(filteredSavedSessions, id: \.id) { session in
                             VibrantSessionCard(session: session) {
                                 selectedSessionId = session.id
                             } onBookmark: {
@@ -459,6 +509,72 @@ struct SectionHeader: View {
                 .fill(Color.vibrantBorder)
                 .frame(height: 1)
         }
+    }
+}
+
+private let allCategoryTracks: [Track] = [
+    .aiMl,
+    .android,
+    .ios,
+    .generic,
+    .web,
+    .cloud,
+    .firebase,
+    .flutter,
+    .design,
+]
+
+struct CategoryFilter: View {
+    let tracks: [Track]
+    let selectedTrack: Track?
+    let onTrackSelected: (Track?) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Category")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.vibrantMuted)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    CategoryChip(
+                        label: "All",
+                        isSelected: selectedTrack == nil,
+                        onTap: { onTrackSelected(nil) }
+                    )
+                    ForEach(tracks, id: \.self) { track in
+                        CategoryChip(
+                            label: track.displayName,
+                            isSelected: selectedTrack == track,
+                            onTap: { onTrackSelected(track) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct CategoryChip: View {
+    let label: String
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(label)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(isSelected ? Color.vibrantBackground : Color.vibrantText)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
+                .background(isSelected ? Color.ingOrange : Color.vibrantSurface)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.ingOrange : Color.vibrantBorder)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
