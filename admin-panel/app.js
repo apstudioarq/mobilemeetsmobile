@@ -150,7 +150,7 @@ function connectLocalEmulators() {
     disableWarnings: true,
   });
   connectDatabaseEmulator(db, DATABASE_EMULATOR_HOST, DATABASE_EMULATOR_PORT);
-  els.configStatus.textContent += " Local emulators enabled.";
+  appendText(els.configStatus, " Local emulators enabled.");
 }
 
 function isLocalhost() {
@@ -158,6 +158,10 @@ function isLocalhost() {
 }
 
 async function loadFirebaseHostingConfig() {
+  if (window.location.protocol === "file:") {
+    throw new Error("Open the admin panel through Firebase Hosting or the emulator, not as a file:// URL.");
+  }
+
   const response = await fetch("/__/firebase/init.json", {
     headers: { Accept: "application/json" },
   });
@@ -171,7 +175,7 @@ async function loadFirebaseHostingConfig() {
   const body = await response.text();
   if (!body.trim()) {
     if (isLocalhost()) {
-      els.configStatus.textContent = `Using local Firebase emulator config for ${LOCAL_FIREBASE_CONFIG.projectId}.`;
+      setElementText(els.configStatus, `Using local Firebase emulator config for ${LOCAL_FIREBASE_CONFIG.projectId}.`);
       return LOCAL_FIREBASE_CONFIG;
     }
 
@@ -191,7 +195,7 @@ async function loadFirebaseHostingConfig() {
     throw new Error("Firebase Hosting config is missing apiKey, databaseURL, or projectId.");
   }
 
-  els.configStatus.textContent = `Using Firebase project ${config.projectId}.`;
+  setElementText(els.configStatus, `Using Firebase project ${config.projectId}.`);
   return config;
 }
 
@@ -767,20 +771,37 @@ function value(input) {
 }
 
 function setStatus(message, isError = false) {
-  els.sessionStatus.textContent = message;
-  els.sessionStatus.classList.toggle("error", isError);
-  els.loginStatus.textContent = message;
-  els.loginStatus.classList.toggle("error", isError);
+  setElementText(els.sessionStatus, message);
+  setElementText(els.loginStatus, message);
+  els.sessionStatus?.classList.toggle("error", isError);
+  els.loginStatus?.classList.toggle("error", isError);
 }
 
 function showToast(message, isError = false) {
-  els.toast.textContent = message;
+  if (!els.toast) {
+    window.alert(message);
+    return;
+  }
+
+  setElementText(els.toast, message);
   els.toast.classList.toggle("error", isError);
   els.toast.classList.remove("hidden");
   window.clearTimeout(showToast.timeoutId);
   showToast.timeoutId = window.setTimeout(() => {
     els.toast.classList.add("hidden");
   }, 3200);
+}
+
+function setElementText(element, message) {
+  if (element) {
+    element.textContent = message;
+  }
+}
+
+function appendText(element, message) {
+  if (element) {
+    element.textContent += message;
+  }
 }
 
 function readableError(error) {
