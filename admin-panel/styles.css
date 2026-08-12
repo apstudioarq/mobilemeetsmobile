@@ -435,9 +435,17 @@ td small {
   background: var(--surface-muted);
 }
 
+.room-item {
+  border-color: #b7d7f4;
+  background: #f0f7ff;
+  box-shadow: inset 4px 0 0 var(--brand);
+}
+
 .presentation-item {
   margin-top: 12px;
-  background: #ffffff;
+  border-color: #f1cf96;
+  background: #fff8ec;
+  box-shadow: inset 4px 0 0 #ff8a00;
 }
 
 .nested-item.is-collapsed {
