@@ -77,8 +77,19 @@ let editingConferenceKey = null;
 boot();
 
 function boot() {
+  document.body.classList.add("is-login");
+  bindGlobalErrorHandlers();
   bindEvents();
   renderEmptyState();
+}
+
+function bindGlobalErrorHandlers() {
+  window.addEventListener("error", (event) => {
+    showToast(event.error?.message || event.message || "Unexpected runtime error.", true);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    showToast(readableError(event.reason), true);
+  });
 }
 
 function bindEvents() {
@@ -207,18 +218,28 @@ async function loadAllData() {
   if (!db) return;
 
   try {
-    const [conferenceSnapshot, ratingsSnapshot] = await Promise.all([
-      get(ref(db, CONFERENCES_PATH)),
-      get(ref(db, RATINGS_PATH)),
-    ]);
-
+    const conferenceSnapshot = await get(ref(db, CONFERENCES_PATH));
     conferences = normalizeConferences(conferenceSnapshot.val());
-    ratings = ratingsSnapshot.val() || {};
     renderConferenceList();
     renderRatingsFilter();
 
-    const selected = editingConferenceKey ? conferences[editingConferenceKey] : firstConference();
+    const selected = editingConferenceKey && conferences[editingConferenceKey]
+      ? { key: editingConferenceKey, conference: conferences[editingConferenceKey] }
+      : firstConference();
     openConferenceForm(selected?.conference || null, selected?.key || null);
+
+    try {
+      const ratingsSnapshot = await get(ref(db, RATINGS_PATH));
+      ratings = ratingsSnapshot.val() || {};
+    } catch (error) {
+      ratings = {};
+      if (isPermissionDenied(error)) {
+        showToast(readableError(error), true);
+      } else {
+        throw error;
+      }
+    }
+
     renderRatings();
     showToast("Data loaded.");
   } catch (error) {
@@ -235,19 +256,42 @@ function normalizeConferences(raw) {
     return raw.reduce((acc, conference, index) => {
       if (!conference) return acc;
       const key = conference.id || `conference-${index + 1}`;
-      acc[key] = { ...conference, id: conference.id || key };
+      acc[key] = normalizeConference(conference, key);
       return acc;
     }, {});
   }
 
   return Object.entries(raw).reduce((acc, [key, conference]) => {
     if (!conference) return acc;
-    acc[key] = { ...conference, id: conference.id || key };
+    acc[key] = normalizeConference(conference, key);
     return acc;
   }, {});
 }
 
+function normalizeConference(conference, key) {
+  return {
+    ...conference,
+    id: conference.id || key,
+    rooms: toArray(conference.rooms).map(normalizeRoom),
+  };
+}
+
+function normalizeRoom(room) {
+  return {
+    ...room,
+    presentations: toArray(room.presentations),
+  };
+}
+
+function toArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === "object") return Object.values(value).filter(Boolean);
+  return [];
+}
+
 function setConnectedUi(connected, email = "", uid = "") {
+  document.body.classList.toggle("is-login", !connected);
   els.loginScreen.hidden = connected;
   els.appShell.hidden = !connected;
   els.signOutBtn.hidden = !connected;
@@ -323,7 +367,8 @@ function openConferenceForm(conference = null, key = null) {
   els.conferenceStartDate.value = epochToInputValue(activeConference.startDate);
   els.roomsContainer.innerHTML = "";
 
-  const rooms = activeConference.rooms?.length ? activeConference.rooms : [createBlankRoom()];
+  const activeRooms = toArray(activeConference.rooms);
+  const rooms = activeRooms.length ? activeRooms : [createBlankRoom()];
   for (const room of rooms) {
     addRoom(room, Boolean(key));
   }
@@ -380,7 +425,7 @@ function addRoom(room = createBlankRoom(), isExisting = false) {
   });
   node.querySelector(".add-presentation-btn").addEventListener("click", () => addPresentation(node));
 
-  const presentations = room.presentations?.length ? room.presentations : [];
+  const presentations = toArray(room.presentations);
   for (const presentation of presentations) {
     addPresentation(node, presentation, isExisting);
   }
@@ -516,7 +561,7 @@ function updatePresentationHeading(node) {
 }
 
 function renderConferenceSummary(conference) {
-  const rooms = conference.rooms || [];
+  const rooms = toArray(conference.rooms);
   const presentationCount = rooms.reduce((total, room) => total + (room.presentations || []).length, 0);
   const roomItems = rooms
     .map((room) => {

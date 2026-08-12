@@ -153,8 +153,17 @@ h4 {
   gap: 16px;
 }
 
+body.is-login .layout {
+  max-width: none;
+  min-height: 100vh;
+  padding: 22px;
+  place-items: center;
+}
+
 .login-screen {
   min-height: calc(100vh - 44px);
+  width: 100%;
+  justify-self: center;
   display: grid;
   place-items: center;
 }
