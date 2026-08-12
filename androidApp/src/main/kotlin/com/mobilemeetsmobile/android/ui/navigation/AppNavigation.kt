@@ -67,6 +67,14 @@ sealed class Screen(
 
 val bottomNavItems = listOf(Screen.Home, Screen.Schedule, Screen.Favorites)
 
+private fun NavHostController.navigateToBottomTab(screen: Screen) {
+    navigate(screen.route) {
+        popUpTo(Screen.Home.route) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -101,7 +109,7 @@ fun AppNavigation() {
                     scheduleViewModel = scheduleViewModel,
                     speakersViewModel = speakersViewModel,
                     onSessionClick = { navController.navigate("session/$it") },
-                    onScheduleClick = { navController.navigate(Screen.Schedule.route) },
+                    onScheduleClick = { navController.navigateToBottomTab(Screen.Schedule) },
                 )
             }
             composable(Screen.Schedule.route) {
@@ -187,11 +195,7 @@ fun MobileMeetsMobileBottomBar(
                 selected = isSelected,
                 onClick = {
                     if (currentRoute != screen.route) {
-                        navController.navigate(screen.route) {
-                            popUpTo(Screen.Home.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateToBottomTab(screen)
                     }
                 },
                 icon = {

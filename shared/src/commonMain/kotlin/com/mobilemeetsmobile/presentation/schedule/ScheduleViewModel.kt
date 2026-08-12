@@ -27,6 +27,7 @@ data class ScheduleUiState(
     val selectedDay: Int = 1,
     val selectedTrack: Track? = null,
     val sessions: List<Session> = emptyList(),
+    val allSessions: List<Session> = emptyList(),
     val timeSlots: Map<String, List<Session>> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -61,7 +62,7 @@ class ScheduleViewModel(
         loadDayJob = scope.launch {
             try {
                 getSchedule(day, _uiState.value.selectedTrack).collect { sessions ->
-                    val filtered = applyFilters(sessions)
+                    val filtered = applyFilters(applyBookmarkState(sessions))
                     _uiState.update {
                         it.copy(
                             sessions = filtered,
@@ -92,7 +93,7 @@ class ScheduleViewModel(
         scope.launch {
             searchSessions(query).collect { results ->
                 val dayFiltered = results.filter { it.day == _uiState.value.selectedDay }
-                val filtered = applyFilters(dayFiltered)
+                val filtered = applyFilters(applyBookmarkState(dayFiltered))
                 _uiState.update {
                     it.copy(
                         sessions = filtered,
@@ -120,11 +121,19 @@ class ScheduleViewModel(
                     session
                 }
             }
+            val updatedAllSessions = state.allSessions.map { session ->
+                if (session.id == sessionId) {
+                    session.copy(isBookmarked = !session.isBookmarked)
+                } else {
+                    session
+                }
+            }
 
             val refiltered = applyFilters(updatedSessions, newBookmarks)
             state.copy(
                 bookmarkedIds = newBookmarks,
                 sessions = refiltered,
+                allSessions = updatedAllSessions,
                 timeSlots = refiltered.groupBy { session -> session.startTime },
             )
         }
@@ -138,7 +147,14 @@ class ScheduleViewModel(
     private fun observeBookmarks() {
         scope.launch {
             getBookmarks().collect { ids ->
-                _uiState.update { it.copy(bookmarkedIds = ids.toSet()) }
+                val bookmarkIds = ids.toSet()
+                _uiState.update {
+                    it.copy(
+                        bookmarkedIds = bookmarkIds,
+                        sessions = applyBookmarkState(it.sessions, bookmarkIds),
+                        allSessions = applyBookmarkState(it.allSessions, bookmarkIds),
+                    )
+                }
             }
         }
     }
@@ -147,7 +163,8 @@ class ScheduleViewModel(
         scope.launch {
             try {
                 getAllSessions().collect { sessions ->
-                    val derivedDays = buildConferenceDays(sessions)
+                    val allSessions = applyBookmarkState(sessions)
+                    val derivedDays = buildConferenceDays(allSessions)
                     if (derivedDays.isEmpty()) return@collect
 
                     val current = _uiState.value
@@ -161,6 +178,7 @@ class ScheduleViewModel(
 
                     _uiState.update {
                         it.copy(
+                            allSessions = allSessions,
                             days = derivedDays,
                             selectedDay = selectedDay,
                         )
@@ -246,6 +264,15 @@ class ScheduleViewModel(
                 session.title.contains(state.searchQuery, ignoreCase = true) ||
                 session.description.contains(state.searchQuery, ignoreCase = true)
             matchesBookmark && matchesSearch
+        }
+    }
+
+    private fun applyBookmarkState(
+        sessions: List<Session>,
+        bookmarkIds: Set<String> = _uiState.value.bookmarkedIds,
+    ): List<Session> {
+        return sessions.map { session ->
+            session.copy(isBookmarked = session.id in bookmarkIds)
         }
     }
 

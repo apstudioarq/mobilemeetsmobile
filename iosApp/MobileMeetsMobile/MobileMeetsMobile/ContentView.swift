@@ -11,7 +11,7 @@ struct ContentView: View {
                 SplashView()
             } else {
                 TabView(selection: $selectedTab) {
-                    HomeView()
+                    HomeView(onScheduleTap: { selectedTab = 1 })
                         .tabItem {
                             Label("HOME", systemImage: selectedTab == 0 ? "house.fill" : "house")
                         }

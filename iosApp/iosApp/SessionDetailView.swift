@@ -109,7 +109,7 @@ struct SessionDetailView: View {
                             .foregroundColor(.white)
 
                             Button(action: {}) {
-                                Text("Reserve Seat")
+                                Text("View Session Details")
                                     .font(.callout)
                                     .fontWeight(.semibold)
                             }

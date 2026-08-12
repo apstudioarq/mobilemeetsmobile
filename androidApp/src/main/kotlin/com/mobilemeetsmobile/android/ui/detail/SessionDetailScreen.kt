@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -21,7 +22,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
@@ -31,7 +31,6 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -250,34 +249,93 @@ private fun MetaLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text
 
 @Composable
 private fun ReserveCard(isBookmarked: Boolean, onBookmark: () -> Unit) {
+    val borderColor = if (isBookmarked) IngOrange.copy(alpha = 0.55f) else VibrantBorder
+    val statusBackground = if (isBookmarked) IngOrange.copy(alpha = 0.12f) else VibrantSurfaceWarm
+    val statusText = if (isBookmarked) "Saved" else "Not saved"
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
-            .clip(RoundedCornerShape(6.dp))
-            .background(VibrantSurface)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        VibrantSurface,
+                        if (isBookmarked) IngOrange.copy(alpha = 0.06f) else VibrantSurface,
+                    ),
+                ),
+            )
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        Text("Reserve your seat", style = MaterialTheme.typography.headlineSmall, color = VibrantText)
-        Text("Space is limited. Add to favorites to sync with your schedule.", style = MaterialTheme.typography.bodyMedium, color = VibrantMuted)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(IngOrange.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Favorite,
+                        contentDescription = null,
+                        tint = IngOrange,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Save this session", style = MaterialTheme.typography.headlineSmall, color = VibrantText)
+                    Text(
+                        text = if (isBookmarked) {
+                            "This talk is in your Saved Sessions."
+                        } else {
+                            "Keep this talk handy and sync it with your schedule."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VibrantMuted,
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(statusBackground)
+                    .border(1.dp, borderColor, RoundedCornerShape(50.dp))
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+            ) {
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isBookmarked) IngOrange else VibrantMuted,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
         Button(
             onClick = onBookmark,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = IngOrange, contentColor = Color.White),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isBookmarked) VibrantText else IngOrange,
+                contentColor = Color.White,
+            ),
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(if (isBookmarked) " Saved" else " Add to Favorites", fontWeight = FontWeight.Bold)
-        }
-        OutlinedButton(
-            onClick = {},
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = VibrantText),
-        ) {
-            Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(" Share Session", fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(8.dp))
+            Text(if (isBookmarked) "Saved Session" else "Save Session", fontWeight = FontWeight.Bold)
         }
     }
 }

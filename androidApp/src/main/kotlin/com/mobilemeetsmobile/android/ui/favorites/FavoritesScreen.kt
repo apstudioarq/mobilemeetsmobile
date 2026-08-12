@@ -43,11 +43,10 @@ fun FavoritesScreen(
     onSessionClick: (String) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
-    val savedSessions = state.sessions
+    val savedSessions = state.allSessions
         .filter { session ->
             session.isBookmarked ||
-                session.tags.any { it.equals("Saved", ignoreCase = true) } ||
-                session.id in setOf("async-workflows", "cognitive-load", "design-systems-scale")
+                session.tags.any { it.equals("Saved", ignoreCase = true) }
         }
         .distinctBy { it.id }
 
@@ -112,7 +111,7 @@ fun FavoritesScreen(
 
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                items(state.sessions.filter { it.tags.any { tag -> tag.equals("Recommended", ignoreCase = true) } }) {
+                items(state.allSessions.filter { it.tags.any { tag -> tag.equals("Recommended", ignoreCase = true) } }) {
                     RecommendedCard(session = it)
                 }
             }

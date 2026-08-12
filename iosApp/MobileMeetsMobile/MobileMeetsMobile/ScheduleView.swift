@@ -45,6 +45,7 @@ struct HomeView: View {
     @StateObject private var schedule = ScheduleViewModelWrapper()
     @StateObject private var speakers = SpeakersViewModelWrapper()
     @State private var selectedSessionId: String?
+    var onScheduleTap: () -> Void = {}
 
     var body: some View {
         NavigationStack {
@@ -53,7 +54,7 @@ struct HomeView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         hero
-                        SectionHeader(title: "Live Now", action: "View Schedule")
+                        SectionHeader(title: "Live Now", action: "View Schedule", onAction: onScheduleTap)
                         ForEach(Array(schedule.state.sessions.prefix(2)), id: \.id) { session in
                             LiveCard(session: session, speakers: speakers.state.speakers) {
                                 selectedSessionId = session.id
@@ -224,10 +225,9 @@ struct FavoritesView: View {
     @State private var selectedSessionId: String?
 
     var savedSessions: [Session] {
-        Array(wrapper.state.sessions.filter { session in
+        Array(wrapper.state.allSessions.filter { session in
             session.isBookmarked ||
-            session.tags.contains(where: { $0.caseInsensitiveCompare("Saved") == .orderedSame }) ||
-            ["async-workflows", "cognitive-load", "design-systems-scale"].contains(session.id)
+            session.tags.contains(where: { $0.caseInsensitiveCompare("Saved") == .orderedSame })
         })
     }
 
@@ -276,7 +276,7 @@ struct FavoritesView: View {
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 24) {
-                                ForEach(wrapper.state.sessions.filter { $0.tags.contains(where: { $0.caseInsensitiveCompare("Recommended") == .orderedSame }) }, id: \.id) { session in
+                                ForEach(wrapper.state.allSessions.filter { $0.tags.contains(where: { $0.caseInsensitiveCompare("Recommended") == .orderedSame }) }, id: \.id) { session in
                                     RecommendedCard(session: session)
                                 }
                             }
@@ -437,6 +437,7 @@ struct RecommendedCard: View {
 struct SectionHeader: View {
     let title: String
     var action: String?
+    var onAction: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 14) {
@@ -446,9 +447,12 @@ struct SectionHeader: View {
                     .foregroundStyle(Color.vibrantText)
                 Spacer()
                 if let action {
-                    Text(action)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.vibrantBrown)
+                    Button(action: { onAction?() }) {
+                        Text(action)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.vibrantBrown)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             Rectangle()
