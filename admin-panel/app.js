@@ -1,417 +1,604 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { deleteApp, getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  browserLocalPersistence,
+  getAuth,
+  onAuthStateChanged,
+  setPersistence,
+  signInWithEmailAndPassword,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {
+  get,
+  getDatabase,
+  ref,
+  remove,
+  set,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
-const STORAGE_KEY = "mmm_admin_supabase";
+const STORAGE_KEY = "mmm_admin_firebase";
+const CONFERENCES_PATH = "test/conferences";
+const RATINGS_PATH = "ratings";
 
 const els = {
-  projectUrl: document.querySelector("#projectUrl"),
-  apiKey: document.querySelector("#apiKey"),
-  connectBtn: document.querySelector("#connectBtn"),
-  loadAllBtn: document.querySelector("#loadAllBtn"),
-  connectionStatus: document.querySelector("#connectionStatus"),
+  sessionStatus: document.querySelector("#sessionStatus"),
+  loginPanel: document.querySelector("#loginPanel"),
+  loginForm: document.querySelector("#loginForm"),
+  configStatus: document.querySelector("#configStatus"),
+  email: document.querySelector("#email"),
+  password: document.querySelector("#password"),
+  refreshBtn: document.querySelector("#refreshBtn"),
+  signOutBtn: document.querySelector("#signOutBtn"),
+  tabs: [...document.querySelectorAll(".tab")],
+  conferencesView: document.querySelector("#conferencesView"),
+  ratingsView: document.querySelector("#ratingsView"),
+  newConferenceBtn: document.querySelector("#newConferenceBtn"),
+  conferenceList: document.querySelector("#conferenceList"),
+  conferenceForm: document.querySelector("#conferenceForm"),
+  conferenceFormTitle: document.querySelector("#conferenceFormTitle"),
+  conferenceId: document.querySelector("#conferenceId"),
+  conferenceTitle: document.querySelector("#conferenceTitle"),
+  audience: document.querySelector("#audience"),
+  eventType: document.querySelector("#eventType"),
+  organizingCountry: document.querySelector("#organizingCountry"),
+  conferenceStartDate: document.querySelector("#conferenceStartDate"),
+  roomsContainer: document.querySelector("#roomsContainer"),
+  addRoomBtn: document.querySelector("#addRoomBtn"),
+  cancelConferenceBtn: document.querySelector("#cancelConferenceBtn"),
+  deleteConferenceBtn: document.querySelector("#deleteConferenceBtn"),
+  ratingsConferenceFilter: document.querySelector("#ratingsConferenceFilter"),
+  ratingsSummary: document.querySelector("#ratingsSummary"),
+  ratingsTableBody: document.querySelector("#ratingsTableBody"),
+  roomTemplate: document.querySelector("#roomTemplate"),
+  presentationTemplate: document.querySelector("#presentationTemplate"),
   toast: document.querySelector("#toast"),
-
-  newSpeakerBtn: document.querySelector("#newSpeakerBtn"),
-  speakerFormContainer: document.querySelector("#speakerFormContainer"),
-  speakerFormTitle: document.querySelector("#speakerFormTitle"),
-  speakerForm: document.querySelector("#speakerForm"),
-  cancelSpeakerBtn: document.querySelector("#cancelSpeakerBtn"),
-  speakersTableBody: document.querySelector("#speakersTableBody"),
-
-  newSessionBtn: document.querySelector("#newSessionBtn"),
-  sessionFormContainer: document.querySelector("#sessionFormContainer"),
-  sessionFormTitle: document.querySelector("#sessionFormTitle"),
-  sessionForm: document.querySelector("#sessionForm"),
-  cancelSessionBtn: document.querySelector("#cancelSessionBtn"),
-  sessionsTableBody: document.querySelector("#sessionsTableBody"),
 };
 
-let supabase = null;
-let speakers = [];
-let sessions = [];
-let editingSpeakerId = null;
-let editingSessionId = null;
+let app = null;
+let auth = null;
+let db = null;
+let conferences = {};
+let ratings = {};
+let editingConferenceKey = null;
 
 boot();
 
 function boot() {
   hydrateConnectionForm();
   bindEvents();
+  renderEmptyState();
 }
 
 function bindEvents() {
-  els.connectBtn.addEventListener("click", connect);
-  els.loadAllBtn.addEventListener("click", loadAllData);
-
-  els.newSpeakerBtn.addEventListener("click", () => {
-    openSpeakerForm();
+  els.loginForm.addEventListener("submit", connect);
+  els.signOutBtn.addEventListener("click", disconnect);
+  els.refreshBtn.addEventListener("click", loadAllData);
+  els.newConferenceBtn.addEventListener("click", () => openConferenceForm());
+  els.addRoomBtn.addEventListener("click", () => addRoom());
+  els.cancelConferenceBtn.addEventListener("click", () => {
+    const selected = editingConferenceKey ? conferences[editingConferenceKey] : null;
+    openConferenceForm(selected, editingConferenceKey);
   });
-  els.cancelSpeakerBtn.addEventListener("click", closeSpeakerForm);
-  els.speakerForm.addEventListener("submit", saveSpeaker);
+  els.deleteConferenceBtn.addEventListener("click", deleteSelectedConference);
+  els.conferenceForm.addEventListener("submit", saveConference);
+  els.ratingsConferenceFilter.addEventListener("change", renderRatings);
 
-  els.newSessionBtn.addEventListener("click", () => {
-    openSessionForm();
-  });
-  els.cancelSessionBtn.addEventListener("click", closeSessionForm);
-  els.sessionForm.addEventListener("submit", saveSession);
+  for (const tab of els.tabs) {
+    tab.addEventListener("click", () => selectTab(tab.dataset.tab));
+  }
 }
 
 function hydrateConnectionForm() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const saved = JSON.parse(raw);
-    els.projectUrl.value = saved.projectUrl || "";
-    els.apiKey.value = saved.apiKey || "";
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    els.email.value = saved.email || "";
   } catch {
     localStorage.removeItem(STORAGE_KEY);
   }
 }
 
-function persistConnectionForm(projectUrl, apiKey) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ projectUrl, apiKey }));
+function persistConnectionForm() {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      email: value(els.email),
+    }),
+  );
 }
 
-function normalizeProjectUrl(url) {
-  const cleaned = url.trim().replace(/\/+$/, "");
-  return cleaned.endsWith("/rest/v1") ? cleaned.slice(0, -8) : cleaned;
-}
-
-async function connect() {
-  const projectUrl = normalizeProjectUrl(els.projectUrl.value);
-  const apiKey = els.apiKey.value.trim();
-
-  if (!projectUrl || !apiKey) {
-    setStatus("Please provide Project URL and API Key.", true);
-    return;
-  }
+async function connect(event) {
+  event.preventDefault();
+  setStatus("Connecting...");
 
   try {
-    supabase = createClient(projectUrl, apiKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: {
-        headers: {
-          apikey: apiKey,
-          Authorization: `Bearer ${apiKey}`,
-        },
-      },
+    await resetFirebaseApp();
+    const config = await loadFirebaseHostingConfig();
+    app = initializeApp(config);
+    auth = getAuth(app);
+    db = getDatabase(app);
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithEmailAndPassword(auth, value(els.email), value(els.password));
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setConnectedUi(false);
+        return;
+      }
+      setConnectedUi(true, user.email);
     });
 
-    const { error } = await supabase.from("speakers").select("id", { count: "exact", head: true });
-    if (error) throw error;
-
-    persistConnectionForm(projectUrl, apiKey);
-    setConnectedUi(true);
-    setStatus("Connected to Supabase.");
+    persistConnectionForm();
+    els.password.value = "";
     await loadAllData();
   } catch (error) {
     setConnectedUi(false);
-    setStatus(`Could not connect: ${error.message}`, true);
+    showToast(readableError(error), true);
+    setStatus("Connection failed", true);
   }
+}
+
+async function loadFirebaseHostingConfig() {
+  const response = await fetch("/__/firebase/init.json", {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      "Firebase config is not available. Run this through Firebase Hosting or the Firebase Hosting emulator.",
+    );
+  }
+
+  const config = await response.json();
+  if (!config.apiKey || !config.databaseURL || !config.projectId) {
+    throw new Error("Firebase Hosting config is missing apiKey, databaseURL, or projectId.");
+  }
+
+  els.configStatus.textContent = `Using Firebase project ${config.projectId}.`;
+  return config;
+}
+
+async function resetFirebaseApp() {
+  const apps = getApps();
+  await Promise.all(apps.map((existingApp) => deleteApp(existingApp)));
+  app = null;
+  auth = null;
+  db = null;
+}
+
+async function disconnect() {
+  if (auth) {
+    await signOut(auth);
+  }
+  conferences = {};
+  ratings = {};
+  editingConferenceKey = null;
+  renderEmptyState();
+  setConnectedUi(false);
 }
 
 async function loadAllData() {
-  if (!supabase) return;
-  await Promise.all([loadSpeakers(), loadSessions()]);
-}
+  if (!db) return;
 
-async function loadSpeakers() {
-  const { data, error } = await supabase
-    .from("speakers")
-    .select("id,name,role,company,bio,photo_url,social_links")
-    .order("name", { ascending: true });
-
-  if (error) {
-    showToast(`Error loading speakers: ${error.message}`, true);
-    return;
-  }
-
-  speakers = data || [];
-  renderSpeakers();
-}
-
-async function loadSessions() {
-  const { data, error } = await supabase
-    .from("sessions")
-    .select("id,title,description,start_time,end_time,duration,room,day,track,type,level,speaker_ids,capacity,registered,tags,livestream_url,slides_url")
-    .order("day", { ascending: true })
-    .order("start_time", { ascending: true });
-
-  if (error) {
-    showToast(`Error loading sessions: ${error.message}`, true);
-    return;
-  }
-
-  sessions = data || [];
-  renderSessions();
-}
-
-function renderSpeakers() {
-  els.speakersTableBody.innerHTML = "";
-
-  for (const speaker of speakers) {
-    const tr = document.createElement("tr");
-    tr.appendChild(cell(speaker.id));
-    tr.appendChild(cell(speaker.name));
-    tr.appendChild(cell(speaker.role));
-    tr.appendChild(cell(speaker.company));
-
-    const actionsTd = document.createElement("td");
-    const rowActions = document.createElement("div");
-    rowActions.className = "row-actions";
-
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "ghost";
-    editBtn.textContent = "Edit";
-    editBtn.addEventListener("click", () => openSpeakerForm(speaker));
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.type = "button";
-    deleteBtn.className = "danger";
-    deleteBtn.textContent = "Delete";
-    deleteBtn.addEventListener("click", () => deleteSpeaker(speaker.id));
-
-    rowActions.append(editBtn, deleteBtn);
-    actionsTd.appendChild(rowActions);
-    tr.appendChild(actionsTd);
-
-    els.speakersTableBody.appendChild(tr);
-  }
-}
-
-function renderSessions() {
-  els.sessionsTableBody.innerHTML = "";
-
-  for (const session of sessions) {
-    const tr = document.createElement("tr");
-    tr.appendChild(cell(session.id));
-    tr.appendChild(cell(String(session.day)));
-    tr.appendChild(cell(toHourLabel(session.start_time, session.end_time)));
-    tr.appendChild(cell(session.title));
-    tr.appendChild(cell(session.track));
-
-    const actionsTd = document.createElement("td");
-    const rowActions = document.createElement("div");
-    rowActions.className = "row-actions";
-
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "ghost";
-    editBtn.textContent = "Edit";
-    editBtn.addEventListener("click", () => openSessionForm(session));
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.type = "button";
-    deleteBtn.className = "danger";
-    deleteBtn.textContent = "Delete";
-    deleteBtn.addEventListener("click", () => deleteSession(session.id));
-
-    rowActions.append(editBtn, deleteBtn);
-    actionsTd.appendChild(rowActions);
-    tr.appendChild(actionsTd);
-
-    els.sessionsTableBody.appendChild(tr);
-  }
-}
-
-function cell(value) {
-  const td = document.createElement("td");
-  td.textContent = value ?? "";
-  return td;
-}
-
-function setConnectedUi(connected) {
-  els.loadAllBtn.disabled = !connected;
-  els.newSpeakerBtn.disabled = !connected;
-  els.newSessionBtn.disabled = !connected;
-}
-
-function setStatus(message, isError = false) {
-  els.connectionStatus.textContent = message;
-  els.connectionStatus.style.color = isError ? "#b42318" : "#475569";
-}
-
-function showToast(message, isError = false) {
-  els.toast.textContent = message;
-  els.toast.classList.remove("hidden");
-  els.toast.style.background = isError ? "#7a271a" : "#0f172a";
-  window.clearTimeout(showToast.timeoutId);
-  showToast.timeoutId = window.setTimeout(() => {
-    els.toast.classList.add("hidden");
-  }, 3200);
-}
-
-function openSpeakerForm(speaker = null) {
-  editingSpeakerId = speaker?.id || null;
-  els.speakerFormTitle.textContent = editingSpeakerId ? "Edit speaker" : "New speaker";
-
-  els.speakerForm.reset();
-  setValue("#speakerId", speaker?.id || "");
-  setValue("#speakerName", speaker?.name || "");
-  setValue("#speakerRole", speaker?.role || "");
-  setValue("#speakerCompany", speaker?.company || "");
-  setValue("#speakerBio", speaker?.bio || "");
-  setValue("#speakerPhotoUrl", speaker?.photo_url || "");
-  setValue("#speakerSocialLinks", speaker?.social_links ? JSON.stringify(speaker.social_links, null, 2) : "{}");
-
-  document.querySelector("#speakerId").readOnly = Boolean(editingSpeakerId);
-  els.speakerFormContainer.classList.remove("hidden");
-}
-
-function closeSpeakerForm() {
-  editingSpeakerId = null;
-  els.speakerFormContainer.classList.add("hidden");
-}
-
-async function saveSpeaker(event) {
-  event.preventDefault();
-  if (!supabase) return;
-
-  let socialLinks;
   try {
-    socialLinks = JSON.parse(value("#speakerSocialLinks") || "{}");
-  } catch {
-    showToast("Social links must be valid JSON.", true);
-    return;
+    const [conferenceSnapshot, ratingsSnapshot] = await Promise.all([
+      get(ref(db, CONFERENCES_PATH)),
+      get(ref(db, RATINGS_PATH)),
+    ]);
+
+    conferences = normalizeConferences(conferenceSnapshot.val());
+    ratings = ratingsSnapshot.val() || {};
+    renderConferenceList();
+    renderRatingsFilter();
+
+    const selected = editingConferenceKey ? conferences[editingConferenceKey] : firstConference();
+    openConferenceForm(selected?.conference || null, selected?.key || null);
+    renderRatings();
+    showToast("Data loaded.");
+  } catch (error) {
+    showToast(readableError(error), true);
   }
-
-  const payload = {
-    id: value("#speakerId").trim(),
-    name: value("#speakerName").trim(),
-    role: value("#speakerRole").trim(),
-    company: value("#speakerCompany").trim(),
-    bio: value("#speakerBio").trim(),
-    photo_url: value("#speakerPhotoUrl").trim(),
-    social_links: socialLinks,
-  };
-
-  const { error } = await supabase.from("speakers").upsert(payload, { onConflict: "id" });
-
-  if (error) {
-    showToast(`Error saving speaker: ${error.message}`, true);
-    return;
-  }
-
-  showToast("Speaker saved.");
-  closeSpeakerForm();
-  await loadSpeakers();
 }
 
-async function deleteSpeaker(speakerId) {
-  if (!supabase) return;
-  const confirmed = window.confirm(`Delete speaker ${speakerId}?`);
+function normalizeConferences(raw) {
+  if (!raw) return {};
+  if (Array.isArray(raw)) {
+    return raw.reduce((acc, conference, index) => {
+      if (!conference) return acc;
+      const key = conference.id || `conference-${index + 1}`;
+      acc[key] = { ...conference, id: conference.id || key };
+      return acc;
+    }, {});
+  }
+
+  return Object.entries(raw).reduce((acc, [key, conference]) => {
+    if (!conference) return acc;
+    acc[key] = { ...conference, id: conference.id || key };
+    return acc;
+  }, {});
+}
+
+function setConnectedUi(connected, email = "") {
+  els.loginPanel.hidden = connected;
+  els.signOutBtn.hidden = !connected;
+  els.refreshBtn.disabled = !connected;
+  els.newConferenceBtn.disabled = !connected;
+  els.ratingsConferenceFilter.disabled = !connected;
+
+  for (const tab of els.tabs) {
+    tab.disabled = !connected;
+  }
+
+  setStatus(connected ? `Connected as ${email}` : "Not connected");
+}
+
+function renderEmptyState() {
+  els.conferenceList.innerHTML = `<p class="empty">No conferences loaded.</p>`;
+  els.ratingsSummary.innerHTML = "";
+  els.ratingsTableBody.innerHTML = "";
+  els.ratingsConferenceFilter.innerHTML = "";
+  openConferenceForm(null, null);
+}
+
+function renderConferenceList() {
+  const entries = sortedConferences();
+  els.conferenceList.innerHTML = "";
+
+  if (!entries.length) {
+    els.conferenceList.innerHTML = `<p class="empty">No conferences yet.</p>`;
+    return;
+  }
+
+  for (const { key, conference } of entries) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `conference-list-item${key === editingConferenceKey ? " active" : ""}`;
+    button.innerHTML = `
+      <span>${escapeHtml(conference.title || conference.id || key)}</span>
+      <small>${formatConferenceMeta(conference)}</small>
+    `;
+    button.addEventListener("click", () => openConferenceForm(conference, key));
+    els.conferenceList.appendChild(button);
+  }
+}
+
+function firstConference() {
+  const [first] = sortedConferences();
+  return first || null;
+}
+
+function sortedConferences() {
+  return Object.entries(conferences)
+    .map(([key, conference]) => ({ key, conference }))
+    .sort((a, b) => (a.conference.startDate || 0) - (b.conference.startDate || 0));
+}
+
+function formatConferenceMeta(conference) {
+  const count = (conference.rooms || []).reduce(
+    (total, room) => total + (room.presentations || []).length,
+    0,
+  );
+  return `${formatDateTime(conference.startDate)} · ${count} sessions`;
+}
+
+function openConferenceForm(conference = null, key = null) {
+  editingConferenceKey = key;
+  const activeConference = conference || createBlankConference();
+
+  els.conferenceFormTitle.textContent = key ? "Edit Conference" : "New Conference";
+  els.deleteConferenceBtn.hidden = !key;
+  els.conferenceId.readOnly = Boolean(key);
+  els.conferenceId.value = activeConference.id || key || "";
+  els.conferenceTitle.value = activeConference.title || "";
+  els.audience.value = activeConference.audience || "";
+  els.eventType.value = activeConference.eventType || "";
+  els.organizingCountry.value = activeConference.organizingCountry || "";
+  els.conferenceStartDate.value = epochToInputValue(activeConference.startDate);
+  els.roomsContainer.innerHTML = "";
+
+  const rooms = activeConference.rooms?.length ? activeConference.rooms : [createBlankRoom()];
+  for (const room of rooms) {
+    addRoom(room);
+  }
+
+  renderConferenceList();
+}
+
+function createBlankConference() {
+  return {
+    id: "",
+    title: "",
+    audience: "",
+    eventType: "Conference",
+    organizingCountry: "",
+    startDate: Math.floor(Date.now() / 1000),
+    rooms: [createBlankRoom()],
+  };
+}
+
+function createBlankRoom() {
+  return {
+    id: "",
+    name: "",
+    description: "",
+    presentations: [],
+  };
+}
+
+function createBlankPresentation() {
+  return {
+    id: "",
+    title: "",
+    description: "",
+    durationMinutes: 45,
+    presenters: [],
+    startDate: inputValueToEpoch(els.conferenceStartDate.value) || Math.floor(Date.now() / 1000),
+    tags: [],
+    technology: "Android",
+    type: "Session",
+  };
+}
+
+function addRoom(room = createBlankRoom()) {
+  const node = els.roomTemplate.content.firstElementChild.cloneNode(true);
+  node.querySelector(".room-id").value = room.id || "";
+  node.querySelector(".room-name").value = room.name || "";
+  node.querySelector(".room-description").value = room.description || "";
+  node.querySelector(".remove-room-btn").addEventListener("click", () => node.remove());
+  node.querySelector(".add-presentation-btn").addEventListener("click", () => addPresentation(node));
+
+  const presentations = room.presentations?.length ? room.presentations : [];
+  for (const presentation of presentations) {
+    addPresentation(node, presentation);
+  }
+
+  els.roomsContainer.appendChild(node);
+  return node;
+}
+
+function addPresentation(roomNode, presentation = createBlankPresentation()) {
+  const container = roomNode.querySelector(".presentations");
+  const node = els.presentationTemplate.content.firstElementChild.cloneNode(true);
+
+  node.querySelector(".presentation-id").value = presentation.id || "";
+  node.querySelector(".presentation-title").value = presentation.title || "";
+  node.querySelector(".presentation-description").value = presentation.description || "";
+  node.querySelector(".presentation-duration").value = presentation.durationMinutes ?? 45;
+  node.querySelector(".presentation-presenters").value = (presentation.presenters || []).join(", ");
+  node.querySelector(".presentation-start-date").value = epochToInputValue(presentation.startDate);
+  node.querySelector(".presentation-tags").value = (presentation.tags || []).join(", ");
+  node.querySelector(".presentation-technology").value = presentation.technology || "Android";
+  node.querySelector(".presentation-type").value = presentation.type || "Session";
+  node.querySelector(".remove-presentation-btn").addEventListener("click", () => node.remove());
+
+  container.appendChild(node);
+}
+
+async function saveConference(event) {
+  event.preventDefault();
+  if (!db) return;
+
+  const conference = readConferenceForm();
+  if (!conference.rooms.length) {
+    showToast("Add at least one room.", true);
+    return;
+  }
+
+  const key = editingConferenceKey || conference.id;
+  try {
+    await set(ref(db, `${CONFERENCES_PATH}/${key}`), conference);
+    conferences[key] = conference;
+    editingConferenceKey = key;
+    renderConferenceList();
+    renderRatingsFilter();
+    showToast("Conference saved.");
+  } catch (error) {
+    showToast(readableError(error), true);
+  }
+}
+
+function readConferenceForm() {
+  return {
+    id: value(els.conferenceId),
+    title: value(els.conferenceTitle),
+    audience: value(els.audience),
+    eventType: value(els.eventType),
+    organizingCountry: value(els.organizingCountry),
+    startDate: inputValueToEpoch(els.conferenceStartDate.value),
+    rooms: [...els.roomsContainer.querySelectorAll(".room-item")].map(readRoom).filter(Boolean),
+  };
+}
+
+function readRoom(roomNode) {
+  const room = {
+    id: value(roomNode.querySelector(".room-id")),
+    name: value(roomNode.querySelector(".room-name")),
+    description: value(roomNode.querySelector(".room-description")),
+    presentations: [...roomNode.querySelectorAll(".presentation-item")]
+      .map(readPresentation)
+      .filter(Boolean),
+  };
+  return room.id && room.name ? room : null;
+}
+
+function readPresentation(node) {
+  const presentation = {
+    id: value(node.querySelector(".presentation-id")),
+    title: value(node.querySelector(".presentation-title")),
+    description: value(node.querySelector(".presentation-description")),
+    durationMinutes: Number(value(node.querySelector(".presentation-duration"))) || 0,
+    presenters: csvToArray(value(node.querySelector(".presentation-presenters"))),
+    startDate: inputValueToEpoch(value(node.querySelector(".presentation-start-date"))),
+    tags: csvToArray(value(node.querySelector(".presentation-tags"))),
+    technology: value(node.querySelector(".presentation-technology")),
+    type: value(node.querySelector(".presentation-type")),
+  };
+  return presentation.id && presentation.title ? presentation : null;
+}
+
+async function deleteSelectedConference() {
+  if (!db || !editingConferenceKey) return;
+
+  const conference = conferences[editingConferenceKey];
+  const confirmed = window.confirm(`Delete ${conference?.title || editingConferenceKey}?`);
   if (!confirmed) return;
 
-  const { error } = await supabase.from("speakers").delete().eq("id", speakerId);
-  if (error) {
-    showToast(`Error deleting speaker: ${error.message}`, true);
-    return;
-  }
-
-  showToast("Speaker deleted.");
-  await loadSpeakers();
-}
-
-function openSessionForm(session = null) {
-  editingSessionId = session?.id || null;
-  els.sessionFormTitle.textContent = editingSessionId ? "Edit session" : "New session";
-
-  els.sessionForm.reset();
-  setValue("#sessionId", session?.id || "");
-  setValue("#sessionDay", session?.day ?? 1);
-  setValue("#sessionRoom", session?.room || "");
-  setValue("#sessionTitle", session?.title || "");
-  setValue("#sessionDescription", session?.description || "");
-  setValue("#sessionStartTime", session?.start_time || "");
-  setValue("#sessionEndTime", session?.end_time || "");
-  setValue("#sessionDuration", session?.duration || "");
-  setValue("#sessionTrack", session?.track || "AI_ML");
-  setValue("#sessionType", session?.type || "SESSION");
-  setValue("#sessionLevel", session?.level || "BEGINNER");
-  setValue("#sessionCapacity", session?.capacity ?? 0);
-  setValue("#sessionRegistered", session?.registered ?? 0);
-  setValue("#sessionSpeakerIds", (session?.speaker_ids || []).join(","));
-  setValue("#sessionTags", (session?.tags || []).join(","));
-  setValue("#sessionLivestreamUrl", session?.livestream_url || "");
-  setValue("#sessionSlidesUrl", session?.slides_url || "");
-
-  document.querySelector("#sessionId").readOnly = Boolean(editingSessionId);
-  els.sessionFormContainer.classList.remove("hidden");
-}
-
-function closeSessionForm() {
-  editingSessionId = null;
-  els.sessionFormContainer.classList.add("hidden");
-}
-
-async function saveSession(event) {
-  event.preventDefault();
-  if (!supabase) return;
-
-  const speakerIds = csvToArray(value("#sessionSpeakerIds"));
-  const tags = csvToArray(value("#sessionTags"));
-
-  const payload = {
-    id: value("#sessionId").trim(),
-    title: value("#sessionTitle").trim(),
-    description: value("#sessionDescription").trim(),
-    start_time: value("#sessionStartTime").trim(),
-    end_time: value("#sessionEndTime").trim(),
-    duration: value("#sessionDuration").trim(),
-    room: value("#sessionRoom").trim(),
-    day: Number(value("#sessionDay")),
-    track: value("#sessionTrack"),
-    type: value("#sessionType"),
-    level: value("#sessionLevel"),
-    speaker_ids: speakerIds,
-    capacity: Number(value("#sessionCapacity")),
-    registered: Number(value("#sessionRegistered")),
-    tags,
-    livestream_url: emptyToNull(value("#sessionLivestreamUrl")),
-    slides_url: emptyToNull(value("#sessionSlidesUrl")),
-    updated_at: new Date().toISOString(),
-  };
-
-  const { error } = await supabase.from("sessions").upsert(payload, { onConflict: "id" });
-
-  if (error) {
-    showToast(`Error saving session: ${error.message}`, true);
-    return;
-  }
-
-  showToast("Session saved.");
-  closeSessionForm();
-  await loadSessions();
-}
-
-async function deleteSession(sessionId) {
-  if (!supabase) return;
-  const confirmed = window.confirm(`Delete session ${sessionId}?`);
-  if (!confirmed) return;
-
-  const { error } = await supabase.from("sessions").delete().eq("id", sessionId);
-
-  if (error) {
-    showToast(`Error deleting session: ${error.message}`, true);
-    return;
-  }
-
-  showToast("Session deleted.");
-  await loadSessions();
-}
-
-function toHourLabel(startIso, endIso) {
-  if (!startIso) return "";
   try {
-    const start = new Date(startIso);
-    const end = endIso ? new Date(endIso) : null;
-    const startLabel = start.toISOString().slice(11, 16);
-    if (!end) return startLabel;
-    const endLabel = end.toISOString().slice(11, 16);
-    return `${startLabel} - ${endLabel}`;
-  } catch {
-    return `${startIso || ""} ${endIso || ""}`.trim();
+    await remove(ref(db, `${CONFERENCES_PATH}/${editingConferenceKey}`));
+    delete conferences[editingConferenceKey];
+    const selected = firstConference();
+    openConferenceForm(selected?.conference || null, selected?.key || null);
+    renderRatingsFilter();
+    renderRatings();
+    showToast("Conference deleted.");
+  } catch (error) {
+    showToast(readableError(error), true);
   }
+}
+
+function renderRatingsFilter() {
+  const entries = sortedConferences();
+  els.ratingsConferenceFilter.innerHTML = `<option value="all">All conferences</option>`;
+
+  for (const { key, conference } of entries) {
+    const option = document.createElement("option");
+    option.value = key;
+    option.textContent = conference.title || conference.id || key;
+    els.ratingsConferenceFilter.appendChild(option);
+  }
+}
+
+function renderRatings() {
+  const filter = els.ratingsConferenceFilter.value || "all";
+  const sessionMap = buildSessionMap(filter);
+  const stats = aggregateRatings(sessionMap);
+  renderRatingsSummary(stats);
+  renderRatingsTable(stats);
+}
+
+function buildSessionMap(filter) {
+  const selectedEntries = sortedConferences().filter(({ key }) => filter === "all" || key === filter);
+  const map = new Map();
+
+  for (const { conference } of selectedEntries) {
+    for (const room of conference.rooms || []) {
+      for (const presentation of room.presentations || []) {
+        map.set(presentation.id, {
+          title: presentation.title || presentation.id,
+          room: room.name || room.id,
+          startDate: presentation.startDate || conference.startDate,
+        });
+      }
+    }
+  }
+
+  return map;
+}
+
+function aggregateRatings(sessionMap) {
+  const stats = new Map();
+
+  for (const [sessionId, session] of sessionMap.entries()) {
+    stats.set(sessionId, {
+      sessionId,
+      title: session.title,
+      room: session.room,
+      startDate: session.startDate,
+      votes: 0,
+      total: 0,
+      distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    });
+  }
+
+  for (const rating of Object.values(ratings || {})) {
+    const ratingValue = Number(rating.rating);
+    if (!stats.has(rating.sessionId) || ratingValue < 1 || ratingValue > 5) continue;
+    const item = stats.get(rating.sessionId);
+    item.votes += 1;
+    item.total += ratingValue;
+    item.distribution[ratingValue] += 1;
+  }
+
+  return [...stats.values()].sort((a, b) => b.votes - a.votes || (a.startDate || 0) - (b.startDate || 0));
+}
+
+function renderRatingsSummary(stats) {
+  const totalVotes = stats.reduce((sum, item) => sum + item.votes, 0);
+  const weightedTotal = stats.reduce((sum, item) => sum + item.total, 0);
+  const ratedSessions = stats.filter((item) => item.votes > 0).length;
+  const average = totalVotes ? weightedTotal / totalVotes : 0;
+
+  els.ratingsSummary.innerHTML = `
+    ${metric("Votes", totalVotes)}
+    ${metric("Average", average ? average.toFixed(2) : "-")}
+    ${metric("Rated sessions", ratedSessions)}
+    ${metric("Total sessions", stats.length)}
+  `;
+}
+
+function renderRatingsTable(stats) {
+  els.ratingsTableBody.innerHTML = "";
+
+  if (!stats.length) {
+    els.ratingsTableBody.innerHTML = `<tr><td colspan="8" class="empty-cell">No sessions available.</td></tr>`;
+    return;
+  }
+
+  for (const item of stats) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>
+        <strong>${escapeHtml(item.title)}</strong>
+        <small>${escapeHtml(item.room || "")}</small>
+      </td>
+      <td>${item.votes}</td>
+      <td>${item.votes ? (item.total / item.votes).toFixed(2) : "-"}</td>
+      <td>${item.distribution[5]}</td>
+      <td>${item.distribution[4]}</td>
+      <td>${item.distribution[3]}</td>
+      <td>${item.distribution[2]}</td>
+      <td>${item.distribution[1]}</td>
+    `;
+    els.ratingsTableBody.appendChild(row);
+  }
+}
+
+function metric(label, valueText) {
+  return `
+    <article class="metric">
+      <span>${label}</span>
+      <strong>${valueText}</strong>
+    </article>
+  `;
+}
+
+function selectTab(tabName) {
+  for (const tab of els.tabs) {
+    tab.classList.toggle("active", tab.dataset.tab === tabName);
+  }
+  els.conferencesView.classList.toggle("active", tabName === "conferences");
+  els.ratingsView.classList.toggle("active", tabName === "ratings");
+  if (tabName === "ratings") renderRatings();
+}
+
+function inputValueToEpoch(inputValue) {
+  if (!inputValue) return 0;
+  const date = new Date(inputValue);
+  return Number.isNaN(date.getTime()) ? 0 : Math.floor(date.getTime() / 1000);
+}
+
+function epochToInputValue(epochSeconds) {
+  if (!epochSeconds) return "";
+  const date = new Date(epochSeconds * 1000);
+  if (Number.isNaN(date.getTime())) return "";
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function formatDateTime(epochSeconds) {
+  if (!epochSeconds) return "No date";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(epochSeconds * 1000));
 }
 
 function csvToArray(input) {
@@ -421,15 +608,34 @@ function csvToArray(input) {
     .filter(Boolean);
 }
 
-function emptyToNull(value) {
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
+function value(input) {
+  return input.value.trim();
 }
 
-function value(selector) {
-  return document.querySelector(selector).value;
+function setStatus(message, isError = false) {
+  els.sessionStatus.textContent = message;
+  els.sessionStatus.classList.toggle("error", isError);
 }
 
-function setValue(selector, val) {
-  document.querySelector(selector).value = val;
+function showToast(message, isError = false) {
+  els.toast.textContent = message;
+  els.toast.classList.toggle("error", isError);
+  els.toast.classList.remove("hidden");
+  window.clearTimeout(showToast.timeoutId);
+  showToast.timeoutId = window.setTimeout(() => {
+    els.toast.classList.add("hidden");
+  }, 3200);
+}
+
+function readableError(error) {
+  return error?.message?.replace(/^Firebase:\s*/, "") || "Unexpected error.";
+}
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

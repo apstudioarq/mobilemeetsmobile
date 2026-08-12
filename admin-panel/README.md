@@ -1,66 +1,85 @@
-# Admin Panel (Web)
+# Conference Admin Panel
 
-Web panel to manage `speakers` and `sessions` in Supabase and reuse the KMM app for any event.
+Static Firebase Hosting panel to manage conference data stored in Firebase Realtime Database.
 
-## Open the panel
+## Run Locally
 
 From the repository root:
 
 ```bash
-cd admin-panel
-python3 -m http.server 8080
+firebase emulators:start --only hosting
 ```
 
-Then open:
+Open:
 
-- http://localhost:8080
+- http://localhost:5000
 
-## How to use it
+## Firebase Setup
 
-1. Paste `Project URL` (example: `https://xxxxx.supabase.co`).
-2. Paste `API Key`.
-3. Click `Connect` and then `Load data`.
-4. Create/edit/delete speakers and sessions.
+1. Keep the Firebase project on the Spark plan.
+2. Enable Realtime Database.
+3. Enable Firebase Authentication with Email/Password.
+4. Create an admin user.
+5. Add the admin UID to Realtime Database:
 
-## Recommended security setup
+```json
+{
+  "admins": {
+    "YOUR_ADMIN_UID": true
+  }
+}
+```
 
-- For local admin usage, you can use the `service_role` key.
-- Do not deploy this panel publicly with an embedded `service_role` key.
-- For a public deployment, use an `anon` key with admin RLS policies.
+6. Deploy Hosting and Realtime Database rules:
 
-## Data expected by the app
+```bash
+firebase deploy --only hosting,database
+```
 
-### `speakers` table
+The panel stores Firebase connection details in browser `localStorage`, but it does not store the admin password.
+When served by Firebase Hosting, the Firebase client config is loaded automatically from `/__/firebase/init.json`, so the login form only asks for the Firebase Authentication email and password.
 
-Used fields:
-- `id` (text, pk)
-- `name` (text)
-- `role` (text)
-- `company` (text)
-- `bio` (text)
-- `photo_url` (text)
-- `social_links` (jsonb)
+## Data Paths
 
-### `sessions` table
+The panel edits:
 
-Used fields:
-- `id` (text, pk)
-- `title` (text)
-- `description` (text)
-- `start_time` (timestamptz)
-- `end_time` (timestamptz)
-- `duration` (text)
-- `room` (text)
-- `day` (int)
-- `track` (text app enum: `AI_ML`, `ANDROID`, `WEB`, `CLOUD`, `FIREBASE`, `FLUTTER`, `DESIGN`)
-- `type` (text app enum: `KEYNOTE`, `SESSION`, `WORKSHOP`, `CODELAB`, `OFFICE_HOURS`)
-- `level` (text app enum: `BEGINNER`, `INTERMEDIATE`, `ADVANCED`)
-- `speaker_ids` (text[])
-- `capacity` (int)
-- `registered` (int)
-- `tags` (text[])
-- `livestream_url` (nullable text)
-- `slides_url` (nullable text)
-- `updated_at` (timestamptz)
+- `/test/conferences/{conferenceId}`
 
-Use [`../supabase/schema.sql`](../supabase/schema.sql) to create these tables in a new project.
+The ratings tab reads:
+
+- `/ratings/{ratingId}`
+
+The mobile app already reads `/test/conferences` and transforms each room presentation into app sessions and speakers.
+
+## Conference Shape
+
+```json
+{
+  "id": "mmm-2026",
+  "title": "Mobile Meets Mobile 2026",
+  "audience": "Developers",
+  "eventType": "Conference",
+  "organizingCountry": "ES",
+  "startDate": 1781942400,
+  "rooms": [
+    {
+      "id": "main-stage",
+      "name": "Main Stage",
+      "description": "Auditorium",
+      "presentations": [
+        {
+          "id": "session-opening",
+          "title": "Opening Keynote",
+          "description": "Welcome session.",
+          "durationMinutes": 45,
+          "presenters": ["Jane Doe"],
+          "startDate": 1781946000,
+          "tags": ["android", "kmm"],
+          "technology": "Android",
+          "type": "Keynote"
+        }
+      ]
+    }
+  ]
+}
+```

@@ -3,219 +3,218 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Event Admin Panel</title>
+    <title>Conference Admin</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="layout">
-      <header class="hero">
-        <h1>Event Admin Panel</h1>
-        <p>Manage speakers and sessions so the KMM app can be reused for any event.</p>
+      <header class="topbar">
+        <div>
+          <h1>Conference Admin</h1>
+          <p id="sessionStatus">Not connected</p>
+        </div>
+        <div class="topbar-actions">
+          <button id="refreshBtn" type="button" class="icon-button" title="Refresh" disabled aria-label="Refresh">↻</button>
+          <button id="signOutBtn" type="button" class="ghost" hidden>Sign out</button>
+        </div>
       </header>
 
-      <section class="card">
-        <h2>Supabase Connection</h2>
-        <div class="grid two-cols">
-          <label>
-            Project URL
-            <input id="projectUrl" type="url" placeholder="https://xxxxx.supabase.co" />
+      <section id="loginPanel" class="panel">
+        <h2>Firebase Access</h2>
+        <form id="loginForm" class="grid two-cols">
+          <label class="span-2">
+            Admin Email
+            <input id="email" type="email" autocomplete="username" required />
           </label>
-          <label>
-            API Key (service role or anon + admin RLS)
-            <input id="apiKey" type="password" placeholder="eyJ..." />
+          <label class="span-2">
+            Password
+            <input id="password" type="password" autocomplete="current-password" required />
           </label>
-        </div>
-        <div class="actions">
-          <button id="connectBtn">Connect</button>
-          <button id="loadAllBtn" class="ghost" disabled>Load data</button>
-        </div>
-        <p id="connectionStatus" class="status">Not connected</p>
+          <div class="actions span-2">
+            <button type="submit">Connect</button>
+          </div>
+        </form>
+        <p id="configStatus" class="config-status">Firebase config loads automatically from Hosting.</p>
       </section>
 
-      <section class="card">
-        <div class="section-title-row">
-          <h2>Speakers</h2>
-          <button id="newSpeakerBtn" class="ghost" disabled>New speaker</button>
-        </div>
+      <nav class="tabs" aria-label="Admin sections">
+        <button id="conferencesTab" type="button" class="tab active" data-tab="conferences" disabled>Conferences</button>
+        <button id="ratingsTab" type="button" class="tab" data-tab="ratings" disabled>Ratings</button>
+      </nav>
 
-        <div id="speakerFormContainer" class="form-container hidden">
-          <h3 id="speakerFormTitle">New speaker</h3>
-          <form id="speakerForm" class="grid two-cols">
-            <label>
-              ID
-              <input id="speakerId" required placeholder="spk-jane-doe" />
-            </label>
-            <label>
-              Name
-              <input id="speakerName" required placeholder="Jane Doe" />
-            </label>
-            <label>
-              Role
-              <input id="speakerRole" required placeholder="Developer Advocate" />
-            </label>
-            <label>
-              Company
-              <input id="speakerCompany" required placeholder="Google" />
-            </label>
-            <label class="span-2">
-              Bio
-              <textarea id="speakerBio" rows="3" required></textarea>
-            </label>
-            <label class="span-2">
-              Photo URL
-              <input id="speakerPhotoUrl" type="url" required placeholder="https://..." />
-            </label>
-            <label class="span-2">
-              Social Links (JSON)
-              <textarea id="speakerSocialLinks" rows="3" placeholder='{"x":"https://x.com/..."}'></textarea>
-            </label>
-            <div class="actions span-2">
-              <button type="submit">Save speaker</button>
-              <button type="button" id="cancelSpeakerBtn" class="ghost">Cancel</button>
+      <section id="conferencesView" class="view active">
+        <aside class="panel list-panel">
+          <div class="section-title-row">
+            <h2>Conferences</h2>
+            <button id="newConferenceBtn" type="button" class="ghost" disabled>New</button>
+          </div>
+          <div id="conferenceList" class="conference-list"></div>
+        </aside>
+
+        <section class="panel editor-panel">
+          <div class="section-title-row">
+            <h2 id="conferenceFormTitle">Conference</h2>
+            <button id="deleteConferenceBtn" type="button" class="danger" hidden>Delete</button>
+          </div>
+
+          <form id="conferenceForm" class="conference-form">
+            <fieldset class="grid three-cols">
+              <label>
+                ID
+                <input id="conferenceId" required placeholder="mmm-2026" />
+              </label>
+              <label>
+                Start Date
+                <input id="conferenceStartDate" type="datetime-local" required />
+              </label>
+              <label>
+                Country
+                <input id="organizingCountry" required placeholder="ES" />
+              </label>
+              <label class="span-2">
+                Title
+                <input id="conferenceTitle" required placeholder="Mobile Meets Mobile 2026" />
+              </label>
+              <label>
+                Event Type
+                <input id="eventType" required placeholder="Conference" />
+              </label>
+              <label class="span-3">
+                Audience
+                <input id="audience" required placeholder="Developers" />
+              </label>
+            </fieldset>
+
+            <div class="section-title-row block-title">
+              <h3>Rooms</h3>
+              <button id="addRoomBtn" type="button" class="ghost">Add Room</button>
+            </div>
+            <div id="roomsContainer" class="rooms"></div>
+
+            <div class="actions sticky-actions">
+              <button type="submit">Save Conference</button>
+              <button id="cancelConferenceBtn" type="button" class="ghost">Reset</button>
             </div>
           </form>
-        </div>
-
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Company</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="speakersTableBody"></tbody>
-          </table>
-        </div>
+        </section>
       </section>
 
-      <section class="card">
-        <div class="section-title-row">
-          <h2>Sessions</h2>
-          <button id="newSessionBtn" class="ghost" disabled>New session</button>
-        </div>
+      <section id="ratingsView" class="view">
+        <section class="panel">
+          <div class="section-title-row">
+            <h2>Ratings</h2>
+            <select id="ratingsConferenceFilter" disabled aria-label="Conference filter"></select>
+          </div>
+          <div id="ratingsSummary" class="metric-grid"></div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Votes</th>
+                  <th>Average</th>
+                  <th>5★</th>
+                  <th>4★</th>
+                  <th>3★</th>
+                  <th>2★</th>
+                  <th>1★</th>
+                </tr>
+              </thead>
+              <tbody id="ratingsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
 
-        <div id="sessionFormContainer" class="form-container hidden">
-          <h3 id="sessionFormTitle">New session</h3>
-          <form id="sessionForm" class="grid three-cols">
+      <template id="roomTemplate">
+        <article class="nested-item room-item">
+          <div class="section-title-row">
+            <h4>Room</h4>
+            <div class="row-actions">
+              <button type="button" class="ghost add-presentation-btn">Add Presentation</button>
+              <button type="button" class="danger remove-room-btn">Remove</button>
+            </div>
+          </div>
+          <div class="grid three-cols">
             <label>
-              ID
-              <input id="sessionId" required placeholder="sess-day1-keynote" />
+              Room ID
+              <input class="room-id" required placeholder="main-stage" />
             </label>
-            <label>
-              Day
-              <input id="sessionDay" type="number" min="1" required value="1" />
-            </label>
-            <label>
-              Room
-              <input id="sessionRoom" required placeholder="Main Stage" />
-            </label>
-
-            <label class="span-3">
-              Title
-              <input id="sessionTitle" required />
+            <label class="span-2">
+              Name
+              <input class="room-name" required placeholder="Main Stage" />
             </label>
             <label class="span-3">
               Description
-              <textarea id="sessionDescription" rows="3" required></textarea>
+              <input class="room-description" placeholder="Auditorium" />
             </label>
+          </div>
+          <div class="presentations"></div>
+        </article>
+      </template>
 
+      <template id="presentationTemplate">
+        <article class="nested-item presentation-item">
+          <div class="section-title-row">
+            <h4>Presentation</h4>
+            <button type="button" class="danger remove-presentation-btn">Remove</button>
+          </div>
+          <div class="grid four-cols">
             <label>
-              Start Time (ISO)
-              <input id="sessionStartTime" required placeholder="2026-05-20T09:00:00Z" />
+              ID
+              <input class="presentation-id" required placeholder="session-opening" />
             </label>
             <label>
-              End Time (ISO)
-              <input id="sessionEndTime" required placeholder="2026-05-20T10:00:00Z" />
+              Start
+              <input class="presentation-start-date" type="datetime-local" required />
             </label>
             <label>
               Duration
-              <input id="sessionDuration" required placeholder="60m" />
+              <input class="presentation-duration" type="number" min="0" step="5" required value="45" />
             </label>
-
             <label>
-              Track
-              <select id="sessionTrack" required>
-                <option>AI_ML</option>
-                <option>ANDROID</option>
-                <option>WEB</option>
-                <option>CLOUD</option>
-                <option>FIREBASE</option>
-                <option>FLUTTER</option>
-                <option>DESIGN</option>
+              Technology
+              <select class="presentation-technology" required>
+                <option>Android</option>
+                <option>iOS</option>
+                <option>Firebase</option>
+                <option>Flutter</option>
+                <option>Web</option>
+                <option>Cloud</option>
+                <option>AI/ML</option>
+                <option>Design</option>
+                <option>Generic</option>
               </select>
+            </label>
+            <label class="span-4">
+              Title
+              <input class="presentation-title" required />
+            </label>
+            <label class="span-4">
+              Description
+              <textarea class="presentation-description" rows="3"></textarea>
             </label>
             <label>
               Type
-              <select id="sessionType" required>
-                <option>KEYNOTE</option>
-                <option>SESSION</option>
-                <option>WORKSHOP</option>
-                <option>CODELAB</option>
-                <option>OFFICE_HOURS</option>
+              <select class="presentation-type" required>
+                <option>Keynote</option>
+                <option>Session</option>
+                <option>Workshop</option>
+                <option>Codelab</option>
+                <option>Office Hours</option>
               </select>
             </label>
-            <label>
-              Level
-              <select id="sessionLevel" required>
-                <option>BEGINNER</option>
-                <option>INTERMEDIATE</option>
-                <option>ADVANCED</option>
-              </select>
-            </label>
-
-            <label>
-              Capacity
-              <input id="sessionCapacity" type="number" min="0" required value="0" />
-            </label>
-            <label>
-              Registered
-              <input id="sessionRegistered" type="number" min="0" required value="0" />
-            </label>
-            <label>
-              Speaker IDs (comma)
-              <input id="sessionSpeakerIds" placeholder="spk-1,spk-2" />
-            </label>
-
             <label class="span-3">
-              Tags (comma)
-              <input id="sessionTags" placeholder="android,compose,performance" />
+              Presenters
+              <input class="presentation-presenters" placeholder="Jane Doe, John Smith" />
             </label>
-            <label class="span-3">
-              Livestream URL
-              <input id="sessionLivestreamUrl" type="url" placeholder="https://..." />
+            <label class="span-4">
+              Tags
+              <input class="presentation-tags" placeholder="android,kmm,compose" />
             </label>
-            <label class="span-3">
-              Slides URL
-              <input id="sessionSlidesUrl" type="url" placeholder="https://..." />
-            </label>
-
-            <div class="actions span-3">
-              <button type="submit">Save session</button>
-              <button type="button" id="cancelSessionBtn" class="ghost">Cancel</button>
-            </div>
-          </form>
-        </div>
-
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Day</th>
-                <th>Time</th>
-                <th>Title</th>
-                <th>Track</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="sessionsTableBody"></tbody>
-          </table>
-        </div>
-      </section>
+          </div>
+        </article>
+      </template>
 
       <p id="toast" class="toast hidden"></p>
     </main>
