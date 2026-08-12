@@ -1,5 +1,9 @@
+@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+
 package com.mobilemeetsmobile.data.remote.dto
 
+import com.mobilemeetsmobile.data.model.DEFAULT_WELCOME_MESSAGE
+import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.model.Level
 import com.mobilemeetsmobile.data.model.SessionType
 import com.mobilemeetsmobile.data.model.Track
@@ -7,6 +11,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
 @Serializable
 data class FirebaseConferenceDto(
@@ -15,6 +20,10 @@ data class FirebaseConferenceDto(
     val audience: String = "",
     val eventType: String = "",
     val organizingCountry: String = "",
+    @JsonNames("welcome_message")
+    val welcomeMessage: String = "",
+    @JsonNames("hero_image_url", "welcome_image_url")
+    val heroImageUrl: String = "",
     val rooms: List<FirebaseRoomDto> = emptyList(),
     val startDate: Long = 0,
 )
@@ -120,10 +129,27 @@ fun Map<String, FirebaseConferenceDto>.toSpeakerDtos(
         }
 }
 
+fun Map<String, FirebaseConferenceDto>.toHomeContent(
+    selectedConferenceId: String? = null,
+): HomeContent {
+    val conference = selectedConferences(selectedConferenceId).firstOrNull()
+    return HomeContent(
+        welcomeMessage = conference
+            ?.welcomeMessage
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?: DEFAULT_WELCOME_MESSAGE,
+        heroImageUrl = conference
+            ?.heroImageUrl
+            ?.trim()
+            .orEmpty(),
+    )
+}
+
 private fun Map<String, FirebaseConferenceDto>.selectedConferences(
     selectedConferenceId: String?,
 ): List<FirebaseConferenceDto> {
-    if (selectedConferenceId != null) {
+    if (!selectedConferenceId.isNullOrBlank()) {
         return values.filter { it.id == selectedConferenceId }
     }
 

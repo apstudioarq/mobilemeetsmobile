@@ -2,7 +2,9 @@ package com.mobilemeetsmobile.domain.usecase
 
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Speaker
+import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.model.Track
+import com.mobilemeetsmobile.data.repository.HomeContentRepository
 import com.mobilemeetsmobile.data.repository.SessionRepository
 import com.mobilemeetsmobile.data.repository.SpeakerRepository
 import com.mobilemeetsmobile.data.repository.RatingRepository
@@ -41,6 +43,12 @@ class ToggleBookmarkUseCase(private val repository: SessionRepository) {
 class GetBookmarksUseCase(private val repository: SessionRepository) {
     operator fun invoke(): Flow<List<String>> {
         return repository.getBookmarkedSessionIds()
+    }
+}
+
+class GetHomeContentUseCase(private val repository: HomeContentRepository) {
+    operator fun invoke(): Flow<HomeContent> {
+        return repository.getHomeContent()
     }
 }
 

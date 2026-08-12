@@ -1,10 +1,12 @@
 package com.mobilemeetsmobile.presentation.schedule
 
 import com.mobilemeetsmobile.data.model.ConferenceDay
+import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Track
 import com.mobilemeetsmobile.domain.usecase.GetAllSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.GetBookmarksUseCase
+import com.mobilemeetsmobile.domain.usecase.GetHomeContentUseCase
 import com.mobilemeetsmobile.domain.usecase.GetScheduleUseCase
 import com.mobilemeetsmobile.domain.usecase.SearchSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
@@ -35,6 +37,7 @@ data class ScheduleUiState(
     val searchQuery: String = "",
     val showBookmarksOnly: Boolean = false,
     val days: List<ConferenceDay> = listOf(ConferenceDay(1, "Day 1", "TBD")),
+    val homeContent: HomeContent = HomeContent(),
 )
 
 class ScheduleViewModel(
@@ -43,6 +46,7 @@ class ScheduleViewModel(
     private val searchSessions: SearchSessionsUseCase,
     private val toggleBookmark: ToggleBookmarkUseCase,
     private val getBookmarks: GetBookmarksUseCase,
+    private val getHomeContent: GetHomeContentUseCase,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var loadDayJob: Job? = null
@@ -54,6 +58,7 @@ class ScheduleViewModel(
         loadDay(_uiState.value.selectedDay)
         observeAvailableDays()
         observeBookmarks()
+        observeHomeContent()
     }
 
     fun loadDay(day: Int) {
@@ -155,6 +160,14 @@ class ScheduleViewModel(
                         allSessions = applyBookmarkState(it.allSessions, bookmarkIds),
                     )
                 }
+            }
+        }
+    }
+
+    private fun observeHomeContent() {
+        scope.launch {
+            getHomeContent().collect { content ->
+                _uiState.update { it.copy(homeContent = content) }
             }
         }
     }

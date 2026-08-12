@@ -2,6 +2,7 @@ package com.mobilemeetsmobile.data.remote
 
 import com.mobilemeetsmobile.data.model.BookmarkRequest
 import com.mobilemeetsmobile.data.model.BookmarkResponse
+import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.remote.auth.FirebaseIdTokenProvider
 import com.mobilemeetsmobile.data.remote.dto.SessionDto
 import com.mobilemeetsmobile.data.remote.dto.SessionsResponse
@@ -10,6 +11,7 @@ import com.mobilemeetsmobile.data.remote.dto.SpeakersResponse
 import com.mobilemeetsmobile.data.remote.dto.FirebaseConferenceDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingSubmissionDto
+import com.mobilemeetsmobile.data.remote.dto.toHomeContent
 import com.mobilemeetsmobile.data.remote.dto.toSessionDtos
 import com.mobilemeetsmobile.data.remote.dto.toSpeakerDtos
 import io.ktor.client.*
@@ -126,6 +128,16 @@ class MobileMeetsMobileApi(
             client.get("$baseUrl/speakers/$id").bodyAsText()
         }
         return decodeSingleSpeaker(payload, id)
+    }
+
+    // ── Home content ────────────────────────────────────────
+
+    suspend fun getHomeContent(): HomeContent {
+        if (BackendConfig.isFirebaseRealtimeDatabase) {
+            return getFirebaseConferences().toHomeContent(BackendConfig.selectedConferenceId)
+        }
+
+        return HomeContent()
     }
 
     // ── Bookmarks ───────────────────────────────────────────

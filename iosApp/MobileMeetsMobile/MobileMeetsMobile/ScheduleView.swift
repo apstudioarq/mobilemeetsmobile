@@ -77,8 +77,8 @@ struct HomeView: View {
     }
 
     private var hero: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 24) {
+        HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Global Summit 2024")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(Color.vibrantMuted)
@@ -86,46 +86,69 @@ struct HomeView: View {
                     .padding(.vertical, 7)
                     .background(Color.vibrantWarm, in: Capsule())
 
-                Text("Mobile\nMeets\nMobile.")
-                    .font(.system(size: 42, weight: .black))
+                Text("Mobile Meets Mobile")
+                    .font(.system(size: 30, weight: .black))
+                    .lineLimit(2)
                     .foregroundStyle(Color.vibrantText)
 
-                Text("The convergence of enterprise mobility, next-gen 5G architectures, and the future of connected experiences.")
-                    .font(.system(size: 18))
-                    .lineSpacing(5)
+                Text(schedule.state.homeContent.welcomeMessage)
+                    .font(.subheadline)
+                    .lineSpacing(3)
+                    .lineLimit(4)
                     .foregroundStyle(Color.vibrantMuted)
-
-                Button(action: {}) {
-                    Label("Join Stream", systemImage: "play.circle")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(OrangeButtonStyle())
             }
-            .padding(.horizontal, 42)
-            .padding(.vertical, 44)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            ZStack {
-                Color(hex: 0x30302F)
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color(hex: 0xC8FFFF), Color(hex: 0x61DDE4).opacity(0.45), .clear],
-                            center: .center,
-                            startRadius: 8,
-                            endRadius: 110
-                        )
-                    )
-                    .frame(width: 210, height: 210)
-                Rectangle()
-                    .fill(Color(hex: 0x72E9F1).opacity(0.35))
-                    .frame(height: 1)
-            }
-            .frame(height: 300)
+            HeroImage(imageUrl: schedule.state.homeContent.heroImageUrl)
         }
+        .padding(20)
         .background(Color.vibrantSurface)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+    }
+}
+
+private struct HeroImage: View {
+    let imageUrl: String
+
+    var body: some View {
+        ZStack {
+            Color(hex: 0x30302F)
+            if let url = URL(string: imageUrl), !imageUrl.isEmpty {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        fallback
+                    }
+                }
+            } else {
+                fallback
+            }
+        }
+        .frame(width: 108, height: 108)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var fallback: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color(hex: 0xC8FFFF), Color(hex: 0x61DDE4).opacity(0.45), .clear],
+                        center: .center,
+                        startRadius: 5,
+                        endRadius: 54
+                    )
+                )
+                .frame(width: 74, height: 74)
+            Rectangle()
+                .fill(Color(hex: 0x72E9F1).opacity(0.35))
+                .frame(height: 1)
+        }
     }
 }
 
@@ -560,16 +583,6 @@ struct Avatar: View {
                     .font(.headline.weight(.black))
                     .foregroundStyle(Color.white)
             )
-    }
-}
-
-struct OrangeButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.vertical, 13)
-            .background(Color.ingOrange.opacity(configuration.isPressed ? 0.75 : 1))
-            .foregroundStyle(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 

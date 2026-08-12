@@ -83,6 +83,27 @@ FIREBASE_FUNCTIONS_URL = https://europe-west1-your-project-id.cloudfunctions.net
 
 When `FIREBASE_FUNCTIONS_URL` is present, the app uses Firebase. Otherwise it falls back to Supabase.
 
+## Realtime Database Home Content
+
+The home hero reads editable content from the selected conference node in Firebase Realtime Database:
+
+```json
+{
+  "test": {
+    "conferences": {
+      "mobile-meets-mobile": {
+        "title": "Mobile Meets Mobile",
+        "welcomeMessage": "Welcome to Mobile Meets Mobile. Explore the agenda and enjoy the event.",
+        "heroImageUrl": "https://example.com/mobile-meets-mobile-hero.jpg"
+      }
+    }
+  }
+}
+```
+
+The app also accepts snake_case field names: `welcome_message`, `hero_image_url`, and `welcome_image_url`.
+Remote values are cached locally, so the latest loaded message and image URL remain available offline.
+
 ## Local Emulator
 
 Run Firestore and Functions locally:

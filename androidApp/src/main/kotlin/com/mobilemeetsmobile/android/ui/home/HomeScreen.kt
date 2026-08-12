@@ -13,16 +13,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,12 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.mobilemeetsmobile.android.ui.components.LiveSessionCard
 import com.mobilemeetsmobile.android.ui.components.SpeakerRowCard
-import com.mobilemeetsmobile.android.ui.theme.IngOrange
 import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
 import com.mobilemeetsmobile.android.ui.theme.VibrantBorder
 import com.mobilemeetsmobile.android.ui.theme.VibrantBrown
@@ -46,6 +42,7 @@ import com.mobilemeetsmobile.android.ui.theme.VibrantMuted
 import com.mobilemeetsmobile.android.ui.theme.VibrantSurface
 import com.mobilemeetsmobile.android.ui.theme.VibrantSurfaceWarm
 import com.mobilemeetsmobile.android.ui.theme.VibrantText
+import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
 import com.mobilemeetsmobile.presentation.speakers.SpeakersViewModel
 
@@ -69,7 +66,7 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(26.dp),
     ) {
         item {
-            HeroCard(onScheduleClick)
+            HeroCard(content = scheduleState.homeContent)
         }
 
         item {
@@ -107,17 +104,20 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeroCard(onScheduleClick: () -> Unit) {
-    Column(
+private fun HeroCard(content: HomeContent) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
             .clip(RoundedCornerShape(6.dp))
-            .background(VibrantSurface),
+            .background(VibrantSurface)
+            .padding(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 42.dp, vertical = 44.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
                 modifier = Modifier
@@ -133,39 +133,43 @@ private fun HeroCard(onScheduleClick: () -> Unit) {
                 )
             }
             Text(
-                text = "Mobile\nMeets\nMobile.",
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 40.sp, lineHeight = 48.sp),
+                text = "Mobile Meets Mobile",
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp),
                 color = VibrantText,
             )
             Text(
-                text = "The convergence of enterprise mobility, next-gen 5G architectures, and the future of connected experiences.",
-                style = MaterialTheme.typography.bodyLarge,
+                text = content.welcomeMessage,
+                style = MaterialTheme.typography.bodyMedium,
                 color = VibrantMuted,
+                maxLines = 4,
             )
-            Button(
-                onClick = onScheduleClick,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = IngOrange, contentColor = Color.White),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(Icons.Filled.PlayCircle, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Join Stream", fontWeight = FontWeight.Bold)
-            }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-                .background(Color(0xFF30302F)),
-            contentAlignment = Alignment.Center,
-        ) {
+        HeroImage(imageUrl = content.heroImageUrl)
+    }
+}
+
+@Composable
+private fun HeroImage(imageUrl: String) {
+    Box(
+        modifier = Modifier
+            .size(108.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color(0xFF30302F)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (imageUrl.isNotBlank()) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
             Box(
                 modifier = Modifier
-                    .width(190.dp)
-                    .height(190.dp)
-                    .clip(RoundedCornerShape(95.dp))
+                    .size(74.dp)
+                    .clip(RoundedCornerShape(37.dp))
                     .background(
                         Brush.radialGradient(
                             listOf(
