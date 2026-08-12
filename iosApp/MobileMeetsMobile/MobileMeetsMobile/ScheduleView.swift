@@ -304,33 +304,6 @@ struct FavoritesView: View {
                                 wrapper.viewModel.onBookmarkToggle(sessionId: session.id)
                             }
                         }
-
-                        Rectangle()
-                            .fill(Color.vibrantBorder)
-                            .frame(height: 1)
-                            .padding(.top, 56)
-
-                        HStack(alignment: .bottom) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Recommended for\nyou")
-                                    .font(.system(size: 32, weight: .black))
-                                    .foregroundStyle(Color.vibrantText)
-                                Text("Curated based on your saved sessions.")
-                                    .foregroundStyle(Color.vibrantMuted)
-                            }
-                            Spacer()
-                            Text("View\nall")
-                                .font(.headline.weight(.bold))
-                                .foregroundStyle(Color.vibrantBrown)
-                        }
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 24) {
-                                ForEach(wrapper.state.allSessions.filter { $0.tags.contains(where: { $0.caseInsensitiveCompare("Recommended") == .orderedSame }) }, id: \.id) { session in
-                                    RecommendedCard(session: session)
-                                }
-                            }
-                        }
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 90)
@@ -454,31 +427,6 @@ struct SpeakerRow: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 20)
         .background(Color.vibrantSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
-    }
-}
-
-struct RecommendedCard: View {
-    let session: Session
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Badge(text: session.type.displayName, color: .vibrantMuted)
-            Text(session.title)
-                .font(.title3.weight(.black))
-                .foregroundStyle(Color.vibrantText)
-            Text(session.description)
-                .font(.caption)
-                .lineLimit(2)
-                .foregroundStyle(Color.vibrantMuted)
-            Text("Tomorrow  •  10:00 AM")
-                .font(.headline.weight(.bold))
-                .foregroundStyle(Color.ingOrange)
-        }
-        .frame(width: 250, alignment: .leading)
-        .padding(24)
-        .background(Color.vibrantWarm)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
     }
