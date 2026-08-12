@@ -134,21 +134,11 @@ private struct HeroImage: View {
     }
 
     private var fallback: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(hex: 0xC8FFFF), Color(hex: 0x61DDE4).opacity(0.45), .clear],
-                        center: .center,
-                        startRadius: 5,
-                        endRadius: 54
-                    )
-                )
-                .frame(width: 74, height: 74)
-            Rectangle()
-                .fill(Color(hex: 0x72E9F1).opacity(0.35))
-                .frame(height: 1)
-        }
+        Image("SplashLogo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 76, height: 76)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 }
 

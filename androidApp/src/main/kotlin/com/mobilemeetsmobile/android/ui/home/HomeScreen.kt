@@ -1,5 +1,6 @@
 package com.mobilemeetsmobile.android.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,13 +27,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.mobilemeetsmobile.android.R
 import com.mobilemeetsmobile.android.ui.components.LiveSessionCard
 import com.mobilemeetsmobile.android.ui.components.SpeakerRowCard
 import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
@@ -166,25 +168,12 @@ private fun HeroImage(imageUrl: String) {
                 contentScale = ContentScale.Crop,
             )
         } else {
-            Box(
+            Image(
+                painter = painterResource(R.drawable.splash_logo),
+                contentDescription = "Mobile Meets Mobile",
                 modifier = Modifier
-                    .size(74.dp)
-                    .clip(RoundedCornerShape(37.dp))
-                    .background(
-                        Brush.radialGradient(
-                            listOf(
-                                Color(0xFFC8FFFF),
-                                Color(0xFF61DDE4).copy(alpha = 0.55f),
-                                Color.Transparent,
-                            )
-                        )
-                    ),
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(Color(0xFF72E9F1).copy(alpha = 0.35f)),
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(18.dp)),
             )
         }
     }
