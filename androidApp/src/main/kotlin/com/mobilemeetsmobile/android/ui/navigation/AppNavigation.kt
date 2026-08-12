@@ -1,9 +1,21 @@
 package com.mobilemeetsmobile.android.ui.navigation
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Favorite
@@ -11,8 +23,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -20,15 +30,19 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mobilemeetsmobile.android.R
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -46,6 +60,7 @@ import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
 import com.mobilemeetsmobile.android.ui.theme.VibrantBorder
 import com.mobilemeetsmobile.android.ui.theme.VibrantMuted
 import com.mobilemeetsmobile.android.ui.theme.VibrantSurface
+import com.mobilemeetsmobile.android.ui.theme.VibrantSurfaceWarm
 import com.mobilemeetsmobile.android.ui.theme.VibrantText
 import com.mobilemeetsmobile.presentation.detail.SessionDetailViewModel
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
@@ -87,7 +102,12 @@ fun AppNavigation() {
         topBar = {
             if (showBars) {
                 MobileMeetsMobileTopBar(
-                    title = if (currentRoute == Screen.Home.route) "Meets" else "Mobile Meets Mobile",
+                    sectionTitle = when (currentRoute) {
+                        Screen.Home.route -> Screen.Home.label
+                        Screen.Schedule.route -> Screen.Schedule.label
+                        Screen.Favorites.route -> Screen.Favorites.label
+                        else -> ""
+                    },
                 )
             }
         },
@@ -159,24 +179,69 @@ fun AppNavigation() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MobileMeetsMobileTopBar(title: String) {
-    CenterAlignedTopAppBar(
-        title = {
-            Text(
-                text = title,
-                modifier = Modifier.fillMaxWidth(),
-                color = IngOrange,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
-        },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = VibrantSurface,
-            scrolledContainerColor = VibrantSurface,
-        ),
-    )
+fun MobileMeetsMobileTopBar(sectionTitle: String) {
+    val statusBarHeight = with(LocalDensity.current) {
+        WindowInsets.statusBars.getTop(this).toDp()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VibrantSurface),
+    ) {
+        Spacer(Modifier.height(statusBarHeight))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 18.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.splash_logo),
+                    contentDescription = "Mobile Meets Mobile",
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = "Mobile Meets Mobile",
+                    color = VibrantText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(VibrantSurfaceWarm)
+                    .border(1.dp, VibrantBorder, RoundedCornerShape(16.dp))
+                    .padding(horizontal = 11.dp, vertical = 5.dp),
+            ) {
+                Text(
+                    text = sectionTitle.uppercase(),
+                    color = IngOrange,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(VibrantBorder.copy(alpha = 0.65f)),
+        )
+    }
 }
 
 @Composable

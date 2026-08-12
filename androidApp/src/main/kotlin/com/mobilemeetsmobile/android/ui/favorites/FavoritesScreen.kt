@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.mobilemeetsmobile.android.ui.components.SessionCard
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
 import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
@@ -58,28 +57,28 @@ fun FavoritesScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(VibrantBackground),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         item {
             Text(
-                text = "Saved\nSessions",
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 46.sp, lineHeight = 52.sp),
+                text = "Saved Sessions",
+                style = MaterialTheme.typography.headlineMedium,
                 color = VibrantText,
             )
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = "Your personalized schedule. These are the talks and workshops you've marked as high priority.",
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, lineHeight = 30.sp),
+                style = MaterialTheme.typography.bodyMedium,
                 color = VibrantMuted,
             )
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(16.dp))
             CategoryFilter(
                 tracks = categoryTracks,
                 selectedTrack = state.selectedTrack,
                 onTrackSelected = viewModel::selectTrack,
             )
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(14.dp))
         }
 
         if (filteredSavedSessions.isEmpty()) {

@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.mobilemeetsmobile.android.ui.components.DayTab
 import com.mobilemeetsmobile.android.ui.components.SessionCard
 import com.mobilemeetsmobile.android.ui.components.TimeSlotHeader
@@ -51,22 +50,22 @@ fun ScheduleScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(VibrantBackground),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 26.dp),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
             Text(
-                text = "Mobile Meets\nMobile",
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 46.sp, lineHeight = 52.sp),
+                text = "Schedule",
+                style = MaterialTheme.typography.headlineMedium,
                 color = VibrantText,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = "The premier gathering for mobile innovators.",
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp, lineHeight = 30.sp),
+                style = MaterialTheme.typography.bodyMedium,
                 color = VibrantMuted,
             )
-            Spacer(Modifier.height(42.dp))
+            Spacer(Modifier.height(14.dp))
         }
 
         item {

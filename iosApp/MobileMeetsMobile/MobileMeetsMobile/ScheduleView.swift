@@ -50,7 +50,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(title: "Meets")
+                EventTopBar(section: "Home")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         hero
@@ -144,17 +144,17 @@ struct ScheduleView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(title: "Mobile Meets Mobile")
+                EventTopBar(section: "Schedule")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        Text("Mobile Meets\nMobile")
-                            .font(.system(size: 48, weight: .black))
+                        Text("Schedule")
+                            .font(.system(size: 30, weight: .black))
                             .foregroundStyle(Color.vibrantText)
-                            .padding(.top, 26)
+                            .padding(.top, 18)
                         Text("The premier gathering for mobile innovators.")
-                            .font(.system(size: 20))
+                            .font(.subheadline)
                             .foregroundStyle(Color.vibrantMuted)
-                            .padding(.bottom, 34)
+                            .padding(.bottom, 12)
 
                         if let error = wrapper.state.error, wrapper.state.sessions.isEmpty {
                             FirebaseLoadError(message: error) {
@@ -269,18 +269,18 @@ struct FavoritesView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(title: "Mobile Meets Mobile")
+                EventTopBar(section: "Favorites")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        Text("Saved\nSessions")
-                            .font(.system(size: 48, weight: .black))
+                        Text("Saved Sessions")
+                            .font(.system(size: 30, weight: .black))
                             .foregroundStyle(Color.vibrantText)
-                            .padding(.top, 26)
+                            .padding(.top, 18)
                         Text("Your personalized schedule. These are the talks and workshops you've marked as high priority.")
-                            .font(.system(size: 19))
-                            .lineSpacing(7)
+                            .font(.subheadline)
+                            .lineSpacing(3)
                             .foregroundStyle(Color.vibrantMuted)
-                            .padding(.bottom, 24)
+                            .padding(.bottom, 10)
 
                         CategoryFilter(
                             tracks: categoryTracks,
@@ -289,7 +289,7 @@ struct FavoritesView: View {
                                 wrapper.viewModel.selectTrack(track: track)
                             }
                         )
-                        .padding(.bottom, 20)
+                        .padding(.bottom, 8)
 
                         if filteredSavedSessions.isEmpty {
                             Text("No saved sessions match this category.")
