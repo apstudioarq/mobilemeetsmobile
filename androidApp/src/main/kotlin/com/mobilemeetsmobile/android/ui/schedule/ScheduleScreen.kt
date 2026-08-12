@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -54,22 +55,10 @@ fun ScheduleScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text(
-                text = "Schedule",
-                style = MaterialTheme.typography.headlineMedium,
-                color = VibrantText,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = "The premier gathering for mobile innovators.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = VibrantMuted,
-            )
-            Spacer(Modifier.height(14.dp))
-        }
-
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            ) {
                 items(state.days) { day ->
                     DayTab(
                         label = day.label,

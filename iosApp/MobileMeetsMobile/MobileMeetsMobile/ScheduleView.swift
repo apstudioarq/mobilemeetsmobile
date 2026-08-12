@@ -160,15 +160,6 @@ struct ScheduleView: View {
                 EventTopBar(section: "Schedule")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        Text("Schedule")
-                            .font(.system(size: 30, weight: .black))
-                            .foregroundStyle(Color.vibrantText)
-                            .padding(.top, 18)
-                        Text("The premier gathering for mobile innovators.")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.vibrantMuted)
-                            .padding(.bottom, 12)
-
                         if let error = wrapper.state.error, wrapper.state.sessions.isEmpty {
                             FirebaseLoadError(message: error) {
                                 wrapper.viewModel.loadDay(day: wrapper.state.selectedDay)
@@ -219,23 +210,27 @@ struct ScheduleView: View {
     }
 
     private var dayTabs: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(wrapper.state.days, id: \.dayNumber) { day in
-                    Button {
-                        wrapper.viewModel.loadDay(day: day.dayNumber)
-                    } label: {
-                        VStack(spacing: 12) {
-                            Text(day.date)
-                                .font(.headline.weight(.bold))
-                            Rectangle()
-                                .frame(width: 96, height: 2)
+        GeometryReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(wrapper.state.days, id: \.dayNumber) { day in
+                        Button {
+                            wrapper.viewModel.loadDay(day: day.dayNumber)
+                        } label: {
+                            VStack(spacing: 12) {
+                                Text(day.date)
+                                    .font(.headline.weight(.bold))
+                                Rectangle()
+                                    .frame(width: 96, height: 2)
+                            }
+                            .foregroundStyle(wrapper.state.selectedDay == day.dayNumber ? Color.ingOrange : Color.vibrantMuted)
                         }
-                        .foregroundStyle(wrapper.state.selectedDay == day.dayNumber ? Color.ingOrange : Color.vibrantMuted)
                     }
                 }
+                .frame(minWidth: proxy.size.width, alignment: .center)
             }
         }
+        .frame(height: 48)
     }
 }
 
