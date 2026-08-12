@@ -1,0 +1,6 @@
+CREATE TABLE HomeContentEntity (
+    singletonId INTEGER NOT NULL PRIMARY KEY CHECK (singletonId = 1),
+    welcomeMessage TEXT NOT NULL,
+    heroImageUrl TEXT NOT NULL,
+    updatedAt INTEGER NOT NULL DEFAULT 0
+);
