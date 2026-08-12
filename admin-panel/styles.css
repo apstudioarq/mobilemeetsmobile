@@ -472,6 +472,117 @@ td small {
   font-size: 1.5rem;
 }
 
+.ratings-visuals {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.4fr);
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.chart-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface-muted);
+}
+
+.chart-panel h3 {
+  font-size: 0.95rem;
+}
+
+.rating-distribution,
+.session-performance {
+  display: grid;
+  gap: 10px;
+}
+
+.distribution-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.bar-track {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9eef7;
+}
+
+.bar-track.compact {
+  height: 7px;
+}
+
+.bar-fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+.rating-5 {
+  background: #078671;
+}
+
+.rating-4 {
+  background: #34a853;
+}
+
+.rating-3 {
+  background: #fbbc04;
+}
+
+.rating-2 {
+  background: #ff8a00;
+}
+
+.rating-1 {
+  background: var(--danger);
+}
+
+.session-bar {
+  display: grid;
+  gap: 7px;
+}
+
+.session-bar-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.session-bar-title strong {
+  overflow-wrap: anywhere;
+}
+
+.session-bar-title span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.dual-bars {
+  display: grid;
+  gap: 4px;
+}
+
+.average-fill {
+  background: var(--accent);
+}
+
+.votes-fill {
+  background: var(--brand);
+}
+
 .table-wrapper {
   overflow: auto;
 }
@@ -547,6 +658,10 @@ th {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .ratings-visuals {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -580,5 +695,9 @@ th {
 
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .session-bar-title {
+    display: grid;
   }
 }

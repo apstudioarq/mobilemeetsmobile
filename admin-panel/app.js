@@ -63,6 +63,8 @@ const els = {
   deleteConferenceBtn: document.querySelector("#deleteConferenceBtn"),
   ratingsConferenceFilter: document.querySelector("#ratingsConferenceFilter"),
   ratingsSummary: document.querySelector("#ratingsSummary"),
+  ratingDistributionChart: document.querySelector("#ratingDistributionChart"),
+  sessionPerformanceChart: document.querySelector("#sessionPerformanceChart"),
   ratingsTableBody: document.querySelector("#ratingsTableBody"),
   roomTemplate: document.querySelector("#roomTemplate"),
   presentationTemplate: document.querySelector("#presentationTemplate"),
@@ -312,6 +314,8 @@ function setConnectedUi(connected, email = "", uid = "") {
 function renderEmptyState() {
   els.conferenceList.innerHTML = `<p class="empty">No conferences loaded.</p>`;
   els.ratingsSummary.innerHTML = "";
+  els.ratingDistributionChart.innerHTML = "";
+  els.sessionPerformanceChart.innerHTML = "";
   els.ratingsTableBody.innerHTML = "";
   els.ratingsConferenceFilter.innerHTML = "";
   els.conferenceSummary.innerHTML = "";
@@ -445,6 +449,7 @@ function addRoom(room = createBlankRoom(), isExisting = false) {
   node.querySelector(".room-description").value = room.description || "";
   node.querySelector(".remove-room-btn").addEventListener("click", () => {
     node.remove();
+    renderExistingRoomOptions();
     updateConferenceSummaryFromForm();
   });
   node.querySelector(".add-presentation-btn").addEventListener("click", () => addPresentation(node));
@@ -480,12 +485,14 @@ function addPresentation(roomNode, presentation = createGeneratedPresentation(),
   node.querySelector(".remove-presentation-btn").addEventListener("click", () => {
     node.remove();
     updateRoomHeading(roomNode);
+    renderExistingPresentationOptions(roomNode);
     updateConferenceSummaryFromForm();
   });
 
   container.appendChild(node);
   updatePresentationHeading(node);
   updateRoomHeading(roomNode);
+  renderExistingPresentationOptions(roomNode);
   updateConferenceSummaryFromForm();
 }
 
@@ -502,6 +509,7 @@ function addSelectedExistingRoom() {
   }
 
   addRoom(cloneComponent(room), true);
+  renderExistingRoomOptions();
 }
 
 function addSelectedExistingPresentation(roomNode) {
@@ -521,21 +529,26 @@ function addSelectedExistingPresentation(roomNode) {
   }
 
   addPresentation(roomNode, cloneComponent(presentation), true);
+  renderExistingPresentationOptions(roomNode);
 }
 
 function renderExistingRoomOptions() {
+  const usedRoomIds = roomIdsInForm();
   renderSelectOptions(
     els.existingRoomSelect,
-    roomLibrary(),
+    roomLibrary().filter((room) => !usedRoomIds.has(room.id)),
     "Select existing room",
     (room) => `${room.name || room.id} (${room.id})`,
   );
 }
 
 function renderExistingPresentationOptions(roomNode) {
+  const usedPresentationIds = new Set(
+    [...roomNode.querySelectorAll(".presentation-id")].map((input) => value(input)).filter(Boolean),
+  );
   renderSelectOptions(
     roomNode.querySelector(".existing-presentation-select"),
-    presentationLibrary(),
+    presentationLibrary().filter((presentation) => !usedPresentationIds.has(presentation.id)),
     "Select existing presentation",
     (presentation) => `${presentation.title || presentation.id} (${presentation.id})`,
   );
@@ -793,6 +806,8 @@ function renderRatings() {
   const sessionMap = buildSessionMap(filter);
   const stats = aggregateRatings(sessionMap);
   renderRatingsSummary(stats);
+  renderRatingDistributionChart(stats);
+  renderSessionPerformanceChart(stats);
   renderRatingsTable(stats);
 }
 
@@ -854,6 +869,66 @@ function renderRatingsSummary(stats) {
     ${metric("Rated sessions", ratedSessions)}
     ${metric("Total sessions", stats.length)}
   `;
+}
+
+function renderRatingDistributionChart(stats) {
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  for (const item of stats) {
+    for (const rating of [1, 2, 3, 4, 5]) {
+      distribution[rating] += item.distribution[rating];
+    }
+  }
+
+  const max = Math.max(...Object.values(distribution), 1);
+  els.ratingDistributionChart.innerHTML = [5, 4, 3, 2, 1]
+    .map((rating) => {
+      const count = distribution[rating];
+      const width = Math.round((count / max) * 100);
+      return `
+        <div class="distribution-row">
+          <span>${rating} star</span>
+          <div class="bar-track">
+            <div class="bar-fill rating-${rating}" style="width: ${width}%"></div>
+          </div>
+          <strong>${count}</strong>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderSessionPerformanceChart(stats) {
+  const ratedStats = stats.filter((item) => item.votes > 0);
+  if (!ratedStats.length) {
+    els.sessionPerformanceChart.innerHTML = `<p class="empty">No ratings yet.</p>`;
+    return;
+  }
+
+  const maxVotes = Math.max(...ratedStats.map((item) => item.votes), 1);
+  els.sessionPerformanceChart.innerHTML = ratedStats
+    .slice(0, 12)
+    .map((item) => {
+      const average = item.total / item.votes;
+      const voteWidth = Math.round((item.votes / maxVotes) * 100);
+      const averageWidth = Math.round((average / 5) * 100);
+      return `
+        <article class="session-bar">
+          <div class="session-bar-title">
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${average.toFixed(2)} avg · ${item.votes} votes</span>
+          </div>
+          <div class="dual-bars">
+            <div class="bar-track" aria-label="Average rating">
+              <div class="bar-fill average-fill" style="width: ${averageWidth}%"></div>
+            </div>
+            <div class="bar-track compact" aria-label="Vote volume">
+              <div class="bar-fill votes-fill" style="width: ${voteWidth}%"></div>
+            </div>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
 }
 
 function renderRatingsTable(stats) {
