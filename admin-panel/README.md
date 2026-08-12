@@ -7,12 +7,32 @@ Static Firebase Hosting panel to manage conference data stored in Firebase Realt
 From the repository root:
 
 ```bash
-firebase emulators:start --only hosting
+firebase emulators:start --only hosting,database,auth
 ```
 
 Open:
 
 - http://localhost:5000
+
+When running on `localhost`, the panel automatically connects Firebase Auth to `127.0.0.1:9099` and Realtime Database to `127.0.0.1:9000`.
+If `/__/firebase/init.json` is empty locally, the panel falls back to a local emulator config for the `ingtechrating` Firebase project. That fallback is only used on `localhost`.
+
+For a fully local test:
+
+1. Open the Emulator UI at http://localhost:4000.
+2. Go to Authentication and create/sign in with a Google test user.
+3. Copy that local user's UID.
+4. Go to Realtime Database and create:
+
+```json
+{
+  "admins": {
+    "LOCAL_AUTH_UID": true
+  }
+}
+```
+
+5. Open http://localhost:5000 and use Google Sign-In.
 
 ## Firebase Setup
 

@@ -182,7 +182,7 @@ The project includes an admin panel in `admin-panel/` to create/edit/delete Fire
 ### Run
 
 ```bash
-firebase emulators:start --only hosting
+firebase emulators:start --only hosting,database,auth
 ```
 
 Open: `http://localhost:5000`

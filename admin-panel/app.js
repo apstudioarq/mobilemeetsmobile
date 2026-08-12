@@ -1,6 +1,7 @@
 import { deleteApp, getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   browserLocalPersistence,
+  connectAuthEmulator,
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -9,6 +10,7 @@ import {
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
+  connectDatabaseEmulator,
   get,
   getDatabase,
   ref,
@@ -18,6 +20,16 @@ import {
 
 const CONFERENCES_PATH = "test/conferences";
 const RATINGS_PATH = "ratings";
+const LOCAL_FIREBASE_CONFIG = {
+  apiKey: "demo-local-api-key",
+  authDomain: "ingtechrating.firebaseapp.com",
+  databaseURL: "https://ingtechrating-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ingtechrating",
+};
+const AUTH_EMULATOR_HOST = "127.0.0.1";
+const AUTH_EMULATOR_PORT = 9099;
+const DATABASE_EMULATOR_HOST = "127.0.0.1";
+const DATABASE_EMULATOR_PORT = 9000;
 
 const els = {
   sessionStatus: document.querySelector("#sessionStatus"),
@@ -94,6 +106,7 @@ async function connect(event) {
     app = initializeApp(config);
     auth = getAuth(app);
     db = getDatabase(app);
+    connectLocalEmulators();
     await setPersistence(auth, browserLocalPersistence);
     await signInWithPopup(auth, new GoogleAuthProvider());
 
@@ -113,6 +126,20 @@ async function connect(event) {
   }
 }
 
+function connectLocalEmulators() {
+  if (!isLocalhost()) return;
+
+  connectAuthEmulator(auth, `http://${AUTH_EMULATOR_HOST}:${AUTH_EMULATOR_PORT}`, {
+    disableWarnings: true,
+  });
+  connectDatabaseEmulator(db, DATABASE_EMULATOR_HOST, DATABASE_EMULATOR_PORT);
+  els.configStatus.textContent += " Local emulators enabled.";
+}
+
+function isLocalhost() {
+  return ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname);
+}
+
 async function loadFirebaseHostingConfig() {
   const response = await fetch("/__/firebase/init.json", {
     headers: { Accept: "application/json" },
@@ -126,6 +153,11 @@ async function loadFirebaseHostingConfig() {
 
   const body = await response.text();
   if (!body.trim()) {
+    if (isLocalhost()) {
+      els.configStatus.textContent = `Using local Firebase emulator config for ${LOCAL_FIREBASE_CONFIG.projectId}.`;
+      return LOCAL_FIREBASE_CONFIG;
+    }
+
     throw new Error(
       "Firebase Hosting returned an empty config. Link this Hosting site to a Firebase Web App in Project settings.",
     );
