@@ -18,8 +18,8 @@ Open:
 
 1. Keep the Firebase project on the Spark plan.
 2. Enable Realtime Database.
-3. Enable Firebase Authentication with Email/Password.
-4. Create an admin user.
+3. Enable Firebase Authentication with the Google provider.
+4. Sign in once with the Google account that will administer the panel.
 5. Add the admin UID to Realtime Database:
 
 ```json
@@ -36,8 +36,7 @@ Open:
 firebase deploy --only hosting,database
 ```
 
-The panel stores Firebase connection details in browser `localStorage`, but it does not store the admin password.
-When served by Firebase Hosting, the Firebase client config is loaded automatically from `/__/firebase/init.json`, so the login form only asks for the Firebase Authentication email and password.
+When served by Firebase Hosting, the Firebase client config is loaded automatically from `/__/firebase/init.json`, so the login form only shows Google Sign-In.
 
 ## Data Paths
 

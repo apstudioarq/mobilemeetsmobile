@@ -21,19 +21,9 @@
 
       <section id="loginPanel" class="panel">
         <h2>Firebase Access</h2>
-        <form id="loginForm" class="grid two-cols">
-          <label class="span-2">
-            Admin Email
-            <input id="email" type="email" autocomplete="username" required />
-          </label>
-          <label class="span-2">
-            Password
-            <input id="password" type="password" autocomplete="current-password" required />
-          </label>
-          <div class="actions span-2">
-            <button type="submit">Connect</button>
-          </div>
-        </form>
+        <div class="actions">
+          <button id="googleSignInBtn" type="button">Sign in with Google</button>
+        </div>
         <p id="configStatus" class="config-status">Firebase config loads automatically from Hosting.</p>
       </section>
 

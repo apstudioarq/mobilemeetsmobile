@@ -2,9 +2,10 @@ import { deleteApp, getApps, initializeApp } from "https://www.gstatic.com/fireb
 import {
   browserLocalPersistence,
   getAuth,
+  GoogleAuthProvider,
   onAuthStateChanged,
   setPersistence,
-  signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
@@ -15,17 +16,14 @@ import {
   set,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
-const STORAGE_KEY = "mmm_admin_firebase";
 const CONFERENCES_PATH = "test/conferences";
 const RATINGS_PATH = "ratings";
 
 const els = {
   sessionStatus: document.querySelector("#sessionStatus"),
   loginPanel: document.querySelector("#loginPanel"),
-  loginForm: document.querySelector("#loginForm"),
+  googleSignInBtn: document.querySelector("#googleSignInBtn"),
   configStatus: document.querySelector("#configStatus"),
-  email: document.querySelector("#email"),
-  password: document.querySelector("#password"),
   refreshBtn: document.querySelector("#refreshBtn"),
   signOutBtn: document.querySelector("#signOutBtn"),
   tabs: [...document.querySelectorAll(".tab")],
@@ -63,13 +61,12 @@ let editingConferenceKey = null;
 boot();
 
 function boot() {
-  hydrateConnectionForm();
   bindEvents();
   renderEmptyState();
 }
 
 function bindEvents() {
-  els.loginForm.addEventListener("submit", connect);
+  els.googleSignInBtn.addEventListener("click", connect);
   els.signOutBtn.addEventListener("click", disconnect);
   els.refreshBtn.addEventListener("click", loadAllData);
   els.newConferenceBtn.addEventListener("click", () => openConferenceForm());
@@ -87,26 +84,8 @@ function bindEvents() {
   }
 }
 
-function hydrateConnectionForm() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    els.email.value = saved.email || "";
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-}
-
-function persistConnectionForm() {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({
-      email: value(els.email),
-    }),
-  );
-}
-
 async function connect(event) {
-  event.preventDefault();
+  event.preventDefault?.();
   setStatus("Connecting...");
 
   try {
@@ -116,7 +95,7 @@ async function connect(event) {
     auth = getAuth(app);
     db = getDatabase(app);
     await setPersistence(auth, browserLocalPersistence);
-    await signInWithEmailAndPassword(auth, value(els.email), value(els.password));
+    await signInWithPopup(auth, new GoogleAuthProvider());
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -126,8 +105,6 @@ async function connect(event) {
       setConnectedUi(true, user.email);
     });
 
-    persistConnectionForm();
-    els.password.value = "";
     await loadAllData();
   } catch (error) {
     setConnectedUi(false);
