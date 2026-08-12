@@ -19,8 +19,10 @@ Open:
 1. Keep the Firebase project on the Spark plan.
 2. Enable Realtime Database.
 3. Enable Firebase Authentication with the Google provider.
-4. Sign in once with the Google account that will administer the panel.
-5. Add the admin UID to Realtime Database:
+4. Create a Firebase Web App in Project settings if the project does not have one.
+5. Link that Web App to the Firebase Hosting site. This is required for `/__/firebase/init.json`.
+6. Sign in once with the Google account that will administer the panel.
+7. Add the admin UID to Realtime Database:
 
 ```json
 {
@@ -30,7 +32,7 @@ Open:
 }
 ```
 
-6. Deploy Hosting and Realtime Database rules:
+8. Deploy Hosting and Realtime Database rules:
 
 ```bash
 firebase deploy --only hosting,database

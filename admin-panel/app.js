@@ -124,7 +124,20 @@ async function loadFirebaseHostingConfig() {
     );
   }
 
-  const config = await response.json();
+  const body = await response.text();
+  if (!body.trim()) {
+    throw new Error(
+      "Firebase Hosting returned an empty config. Link this Hosting site to a Firebase Web App in Project settings.",
+    );
+  }
+
+  let config;
+  try {
+    config = JSON.parse(body);
+  } catch {
+    throw new Error("Firebase Hosting config is not valid JSON.");
+  }
+
   if (!config.apiKey || !config.databaseURL || !config.projectId) {
     throw new Error("Firebase Hosting config is missing apiKey, databaseURL, or projectId.");
   }

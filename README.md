@@ -193,7 +193,7 @@ To deploy the panel to Firebase Hosting with Realtime Database rules:
 firebase deploy --only hosting,database
 ```
 
-Enable the Google provider in Firebase Authentication, sign in with the admin Google account, and add its UID under `/admins/{uid}: true` before using the hosted panel.
+Enable the Google provider in Firebase Authentication, link the Firebase Web App to the Hosting site, sign in with the admin Google account, and add its UID under `/admins/{uid}: true` before using the hosted panel.
 
 ## 📋 Backlog
 
