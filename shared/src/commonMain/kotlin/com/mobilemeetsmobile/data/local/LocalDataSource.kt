@@ -166,6 +166,29 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
         insertSessions(DesignSeedData.sessions)
     }
 
+    // ── Home content ────────────────────────────────────────
+
+    fun getHomeContent(): Flow<HomeContent> {
+        return sessionQueries.getHomeContent { welcomeMessage, heroImageUrl ->
+            HomeContent(
+                welcomeMessage = welcomeMessage,
+                heroImageUrl = heroImageUrl,
+            )
+        }
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { it.firstOrNull() ?: HomeContent() }
+    }
+
+    fun saveHomeContent(content: HomeContent) {
+        val now = kotlinx.datetime.Clock.System.now().epochSeconds
+        sessionQueries.saveHomeContent(
+            welcomeMessage = content.welcomeMessage,
+            heroImageUrl = content.heroImageUrl,
+            updatedAt = now,
+        )
+    }
+
     // ── Bookmarks ───────────────────────────────────────────
 
     fun getAllBookmarkIds(): Flow<List<String>> {

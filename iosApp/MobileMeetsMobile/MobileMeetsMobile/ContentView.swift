@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import shared
 
 struct ContentView: View {
@@ -11,7 +12,7 @@ struct ContentView: View {
                 SplashView()
             } else {
                 TabView(selection: $selectedTab) {
-                    HomeView()
+                    HomeView(onScheduleTap: { selectedTab = 1 })
                         .tabItem {
                             Label("HOME", systemImage: selectedTab == 0 ? "house.fill" : "house")
                         }
@@ -54,18 +55,53 @@ struct SplashView: View {
 }
 
 struct EventTopBar: View {
-    let title: String
+    let section: String
 
     var body: some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 22, weight: .black))
-                .foregroundStyle(Color.ingOrange)
-            Spacer()
+        VStack(spacing: 0) {
+            Color.clear
+                .frame(height: topSafeAreaInset)
+
+            HStack(spacing: 10) {
+                Image("SplashLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 30, height: 30)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Text("Mobile Meets Mobile")
+                    .font(.system(size: 16, weight: .black))
+                    .lineLimit(1)
+                    .foregroundStyle(Color.vibrantText)
+
+                Spacer(minLength: 10)
+
+                Text(section.uppercased())
+                    .font(.caption.weight(.bold))
+                    .lineLimit(1)
+                    .foregroundStyle(Color.ingOrange)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 5)
+                    .background(Color.vibrantWarm, in: Capsule())
+                    .overlay(Capsule().stroke(Color.vibrantBorder))
+            }
+            .padding(.horizontal, 18)
+            .frame(height: 56)
+
+            Rectangle()
+                .fill(Color.vibrantBorder.opacity(0.65))
+                .frame(height: 1)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 18)
         .background(Color.white)
+        .ignoresSafeArea(edges: .top)
+    }
+
+    private var topSafeAreaInset: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }?
+            .safeAreaInsets.top ?? 0
     }
 }
 

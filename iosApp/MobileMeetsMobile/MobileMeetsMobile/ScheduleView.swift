@@ -45,15 +45,16 @@ struct HomeView: View {
     @StateObject private var schedule = ScheduleViewModelWrapper()
     @StateObject private var speakers = SpeakersViewModelWrapper()
     @State private var selectedSessionId: String?
+    var onScheduleTap: () -> Void = {}
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(title: "Meets")
+                EventTopBar(section: "Home")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         hero
-                        SectionHeader(title: "Live Now", action: "View Schedule")
+                        SectionHeader(title: "Live Now", action: "View Schedule", onAction: onScheduleTap)
                         ForEach(Array(schedule.state.sessions.prefix(2)), id: \.id) { session in
                             LiveCard(session: session, speakers: speakers.state.speakers) {
                                 selectedSessionId = session.id
@@ -76,8 +77,8 @@ struct HomeView: View {
     }
 
     private var hero: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 24) {
+        HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Global Summit 2024")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(Color.vibrantMuted)
@@ -85,46 +86,59 @@ struct HomeView: View {
                     .padding(.vertical, 7)
                     .background(Color.vibrantWarm, in: Capsule())
 
-                Text("Mobile\nMeets\nMobile.")
-                    .font(.system(size: 42, weight: .black))
+                Text("Mobile Meets Mobile")
+                    .font(.system(size: 30, weight: .black))
+                    .lineLimit(2)
                     .foregroundStyle(Color.vibrantText)
 
-                Text("The convergence of enterprise mobility, next-gen 5G architectures, and the future of connected experiences.")
-                    .font(.system(size: 18))
-                    .lineSpacing(5)
+                Text(schedule.state.homeContent.welcomeMessage)
+                    .font(.subheadline)
+                    .lineSpacing(3)
+                    .lineLimit(4)
                     .foregroundStyle(Color.vibrantMuted)
-
-                Button(action: {}) {
-                    Label("Join Stream", systemImage: "play.circle")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(OrangeButtonStyle())
             }
-            .padding(.horizontal, 42)
-            .padding(.vertical, 44)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            ZStack {
-                Color(hex: 0x30302F)
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color(hex: 0xC8FFFF), Color(hex: 0x61DDE4).opacity(0.45), .clear],
-                            center: .center,
-                            startRadius: 8,
-                            endRadius: 110
-                        )
-                    )
-                    .frame(width: 210, height: 210)
-                Rectangle()
-                    .fill(Color(hex: 0x72E9F1).opacity(0.35))
-                    .frame(height: 1)
-            }
-            .frame(height: 300)
+            HeroImage(imageUrl: schedule.state.homeContent.heroImageUrl)
         }
+        .padding(20)
         .background(Color.vibrantSurface)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+    }
+}
+
+private struct HeroImage: View {
+    let imageUrl: String
+
+    var body: some View {
+        ZStack {
+            Color(hex: 0x30302F)
+            if let url = URL(string: imageUrl), !imageUrl.isEmpty {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        fallback
+                    }
+                }
+            } else {
+                fallback
+            }
+        }
+        .frame(width: 108, height: 108)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var fallback: some View {
+        Image("SplashLogo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 76, height: 76)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 }
 
@@ -132,21 +146,20 @@ struct ScheduleView: View {
     @StateObject private var wrapper = ScheduleViewModelWrapper()
     @State private var selectedSessionId: String?
 
+    private var scheduleCategoryTracks: [Track] {
+        allCategoryTracks.filter { track in
+            wrapper.state.allSessions.contains { session in
+                session.day == wrapper.state.selectedDay && session.track == track
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(title: "Mobile Meets Mobile")
+                EventTopBar(section: "Schedule")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        Text("Mobile Meets\nMobile")
-                            .font(.system(size: 48, weight: .black))
-                            .foregroundStyle(Color.vibrantText)
-                            .padding(.top, 26)
-                        Text("The premier gathering for mobile innovators.")
-                            .font(.system(size: 20))
-                            .foregroundStyle(Color.vibrantMuted)
-                            .padding(.bottom, 34)
-
                         if let error = wrapper.state.error, wrapper.state.sessions.isEmpty {
                             FirebaseLoadError(message: error) {
                                 wrapper.viewModel.loadDay(day: wrapper.state.selectedDay)
@@ -154,6 +167,21 @@ struct ScheduleView: View {
                         }
 
                         dayTabs
+
+                        CategoryFilter(
+                            tracks: scheduleCategoryTracks,
+                            selectedTrack: wrapper.state.selectedTrack,
+                            onTrackSelected: { track in
+                                wrapper.viewModel.selectTrack(track: track)
+                            }
+                        )
+                        .padding(.bottom, 10)
+
+                        if !wrapper.state.isLoading && wrapper.state.sessions.isEmpty && wrapper.state.error == nil {
+                            Text("No sessions match this category.")
+                                .font(.body)
+                                .foregroundStyle(Color.vibrantMuted)
+                        }
 
                         ForEach(wrapper.state.timeSlots.sorted { $0.key < $1.key }, id: \.key) { time, sessions in
                             Text(displayClock(time))
@@ -182,23 +210,27 @@ struct ScheduleView: View {
     }
 
     private var dayTabs: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(wrapper.state.days, id: \.dayNumber) { day in
-                    Button {
-                        wrapper.viewModel.loadDay(day: day.dayNumber)
-                    } label: {
-                        VStack(spacing: 12) {
-                            Text(day.date)
-                                .font(.headline.weight(.bold))
-                            Rectangle()
-                                .frame(width: 96, height: 2)
+        GeometryReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(wrapper.state.days, id: \.dayNumber) { day in
+                        Button {
+                            wrapper.viewModel.loadDay(day: day.dayNumber)
+                        } label: {
+                            VStack(spacing: 12) {
+                                Text(day.date)
+                                    .font(.headline.weight(.bold))
+                                Rectangle()
+                                    .frame(width: 96, height: 2)
+                            }
+                            .foregroundStyle(wrapper.state.selectedDay == day.dayNumber ? Color.ingOrange : Color.vibrantMuted)
                         }
-                        .foregroundStyle(wrapper.state.selectedDay == day.dayNumber ? Color.ingOrange : Color.vibrantMuted)
                     }
                 }
+                .frame(minWidth: proxy.size.width, alignment: .center)
             }
         }
+        .frame(height: 48)
     }
 }
 
@@ -224,61 +256,60 @@ struct FavoritesView: View {
     @State private var selectedSessionId: String?
 
     var savedSessions: [Session] {
-        Array(wrapper.state.sessions.filter { session in
+        Array(wrapper.state.allSessions.filter { session in
             session.isBookmarked ||
-            session.tags.contains(where: { $0.caseInsensitiveCompare("Saved") == .orderedSame }) ||
-            ["async-workflows", "cognitive-load", "design-systems-scale"].contains(session.id)
+            session.tags.contains(where: { $0.caseInsensitiveCompare("Saved") == .orderedSame })
         })
+    }
+
+    var categoryTracks: [Track] {
+        allCategoryTracks.filter { track in
+            savedSessions.contains { $0.track == track }
+        }
+    }
+
+    var filteredSavedSessions: [Session] {
+        savedSessions.filter { session in
+            wrapper.state.selectedTrack == nil || session.track == wrapper.state.selectedTrack
+        }
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(title: "Mobile Meets Mobile")
+                EventTopBar(section: "Favorites")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        Text("Saved\nSessions")
-                            .font(.system(size: 48, weight: .black))
+                        Text("Saved Sessions")
+                            .font(.system(size: 30, weight: .black))
                             .foregroundStyle(Color.vibrantText)
-                            .padding(.top, 26)
+                            .padding(.top, 18)
                         Text("Your personalized schedule. These are the talks and workshops you've marked as high priority.")
-                            .font(.system(size: 19))
-                            .lineSpacing(7)
+                            .font(.subheadline)
+                            .lineSpacing(3)
                             .foregroundStyle(Color.vibrantMuted)
-                            .padding(.bottom, 44)
+                            .padding(.bottom, 10)
 
-                        ForEach(savedSessions, id: \.id) { session in
+                        CategoryFilter(
+                            tracks: categoryTracks,
+                            selectedTrack: wrapper.state.selectedTrack,
+                            onTrackSelected: { track in
+                                wrapper.viewModel.selectTrack(track: track)
+                            }
+                        )
+                        .padding(.bottom, 8)
+
+                        if filteredSavedSessions.isEmpty {
+                            Text("No saved sessions match this category.")
+                                .font(.body)
+                                .foregroundStyle(Color.vibrantMuted)
+                        }
+
+                        ForEach(filteredSavedSessions, id: \.id) { session in
                             VibrantSessionCard(session: session) {
                                 selectedSessionId = session.id
                             } onBookmark: {
                                 wrapper.viewModel.onBookmarkToggle(sessionId: session.id)
-                            }
-                        }
-
-                        Rectangle()
-                            .fill(Color.vibrantBorder)
-                            .frame(height: 1)
-                            .padding(.top, 56)
-
-                        HStack(alignment: .bottom) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Recommended for\nyou")
-                                    .font(.system(size: 32, weight: .black))
-                                    .foregroundStyle(Color.vibrantText)
-                                Text("Curated based on your saved sessions.")
-                                    .foregroundStyle(Color.vibrantMuted)
-                            }
-                            Spacer()
-                            Text("View\nall")
-                                .font(.headline.weight(.bold))
-                                .foregroundStyle(Color.vibrantBrown)
-                        }
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 24) {
-                                ForEach(wrapper.state.sessions.filter { $0.tags.contains(where: { $0.caseInsensitiveCompare("Recommended") == .orderedSame }) }, id: \.id) { session in
-                                    RecommendedCard(session: session)
-                                }
                             }
                         }
                     }
@@ -409,34 +440,10 @@ struct SpeakerRow: View {
     }
 }
 
-struct RecommendedCard: View {
-    let session: Session
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Badge(text: session.type.displayName, color: .vibrantMuted)
-            Text(session.title)
-                .font(.title3.weight(.black))
-                .foregroundStyle(Color.vibrantText)
-            Text(session.description)
-                .font(.caption)
-                .lineLimit(2)
-                .foregroundStyle(Color.vibrantMuted)
-            Text("Tomorrow  •  10:00 AM")
-                .font(.headline.weight(.bold))
-                .foregroundStyle(Color.ingOrange)
-        }
-        .frame(width: 250, alignment: .leading)
-        .padding(24)
-        .background(Color.vibrantWarm)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
-    }
-}
-
 struct SectionHeader: View {
     let title: String
     var action: String?
+    var onAction: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 14) {
@@ -446,15 +453,84 @@ struct SectionHeader: View {
                     .foregroundStyle(Color.vibrantText)
                 Spacer()
                 if let action {
-                    Text(action)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.vibrantBrown)
+                    Button(action: { onAction?() }) {
+                        Text(action)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.vibrantBrown)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             Rectangle()
                 .fill(Color.vibrantBorder)
                 .frame(height: 1)
         }
+    }
+}
+
+private let allCategoryTracks: [Track] = [
+    .aiMl,
+    .android,
+    .ios,
+    .generic,
+    .web,
+    .cloud,
+    .firebase,
+    .flutter,
+    .design,
+]
+
+struct CategoryFilter: View {
+    let tracks: [Track]
+    let selectedTrack: Track?
+    let onTrackSelected: (Track?) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Category")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.vibrantMuted)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    CategoryChip(
+                        label: "All",
+                        isSelected: selectedTrack == nil,
+                        onTap: { onTrackSelected(nil) }
+                    )
+                    ForEach(tracks, id: \.self) { track in
+                        CategoryChip(
+                            label: track.displayName,
+                            isSelected: selectedTrack == track,
+                            onTap: { onTrackSelected(track) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct CategoryChip: View {
+    let label: String
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(label)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(isSelected ? Color.vibrantBackground : Color.vibrantText)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
+                .background(isSelected ? Color.ingOrange : Color.vibrantSurface)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.ingOrange : Color.vibrantBorder)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -492,16 +568,6 @@ struct Avatar: View {
                     .font(.headline.weight(.black))
                     .foregroundStyle(Color.white)
             )
-    }
-}
-
-struct OrangeButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.vertical, 13)
-            .background(Color.ingOrange.opacity(configuration.isPressed ? 0.75 : 1))
-            .foregroundStyle(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 

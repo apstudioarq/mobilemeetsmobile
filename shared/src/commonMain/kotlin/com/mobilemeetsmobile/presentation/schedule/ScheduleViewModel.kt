@@ -1,12 +1,14 @@
 package com.mobilemeetsmobile.presentation.schedule
 
 import com.mobilemeetsmobile.data.model.ConferenceDay
+import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Track
 import com.mobilemeetsmobile.domain.usecase.GetAllSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.GetBookmarksUseCase
+import com.mobilemeetsmobile.domain.usecase.GetHomeContentUseCase
 import com.mobilemeetsmobile.domain.usecase.GetScheduleUseCase
-import com.mobilemeetsmobile.domain.usecase.SearchSessionsUseCase
+import com.mobilemeetsmobile.domain.usecase.GetSpeakersUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +29,7 @@ data class ScheduleUiState(
     val selectedDay: Int = 1,
     val selectedTrack: Track? = null,
     val sessions: List<Session> = emptyList(),
+    val allSessions: List<Session> = emptyList(),
     val timeSlots: Map<String, List<Session>> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -34,17 +37,20 @@ data class ScheduleUiState(
     val searchQuery: String = "",
     val showBookmarksOnly: Boolean = false,
     val days: List<ConferenceDay> = listOf(ConferenceDay(1, "Day 1", "TBD")),
+    val homeContent: HomeContent = HomeContent(),
 )
 
 class ScheduleViewModel(
     private val getSchedule: GetScheduleUseCase,
     private val getAllSessions: GetAllSessionsUseCase,
-    private val searchSessions: SearchSessionsUseCase,
     private val toggleBookmark: ToggleBookmarkUseCase,
     private val getBookmarks: GetBookmarksUseCase,
+    private val getHomeContent: GetHomeContentUseCase,
+    private val getSpeakers: GetSpeakersUseCase,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var loadDayJob: Job? = null
+    private var speakerNamesById: Map<String, String> = emptyMap()
 
     private val _uiState = MutableStateFlow(ScheduleUiState())
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
@@ -53,6 +59,8 @@ class ScheduleViewModel(
         loadDay(_uiState.value.selectedDay)
         observeAvailableDays()
         observeBookmarks()
+        observeHomeContent()
+        observeSpeakers()
     }
 
     fun loadDay(day: Int) {
@@ -61,7 +69,7 @@ class ScheduleViewModel(
         loadDayJob = scope.launch {
             try {
                 getSchedule(day, _uiState.value.selectedTrack).collect { sessions ->
-                    val filtered = applyFilters(sessions)
+                    val filtered = applyFilters(applyBookmarkState(sessions))
                     _uiState.update {
                         it.copy(
                             sessions = filtered,
@@ -89,18 +97,7 @@ class ScheduleViewModel(
             return
         }
 
-        scope.launch {
-            searchSessions(query).collect { results ->
-                val dayFiltered = results.filter { it.day == _uiState.value.selectedDay }
-                val filtered = applyFilters(dayFiltered)
-                _uiState.update {
-                    it.copy(
-                        sessions = filtered,
-                        timeSlots = filtered.groupBy { session -> session.startTime },
-                    )
-                }
-            }
-        }
+        refilterCurrentDayFromAllSessions()
     }
 
     fun onBookmarkToggle(sessionId: String) {
@@ -120,11 +117,19 @@ class ScheduleViewModel(
                     session
                 }
             }
+            val updatedAllSessions = state.allSessions.map { session ->
+                if (session.id == sessionId) {
+                    session.copy(isBookmarked = !session.isBookmarked)
+                } else {
+                    session
+                }
+            }
 
             val refiltered = applyFilters(updatedSessions, newBookmarks)
             state.copy(
                 bookmarkedIds = newBookmarks,
                 sessions = refiltered,
+                allSessions = updatedAllSessions,
                 timeSlots = refiltered.groupBy { session -> session.startTime },
             )
         }
@@ -138,7 +143,33 @@ class ScheduleViewModel(
     private fun observeBookmarks() {
         scope.launch {
             getBookmarks().collect { ids ->
-                _uiState.update { it.copy(bookmarkedIds = ids.toSet()) }
+                val bookmarkIds = ids.toSet()
+                _uiState.update {
+                    it.copy(
+                        bookmarkedIds = bookmarkIds,
+                        sessions = applyBookmarkState(it.sessions, bookmarkIds),
+                        allSessions = applyBookmarkState(it.allSessions, bookmarkIds),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun observeHomeContent() {
+        scope.launch {
+            getHomeContent().collect { content ->
+                _uiState.update { it.copy(homeContent = content) }
+            }
+        }
+    }
+
+    private fun observeSpeakers() {
+        scope.launch {
+            getSpeakers().collect { speakers ->
+                speakerNamesById = speakers.associate { speaker -> speaker.id to speaker.name }
+                if (_uiState.value.searchQuery.isNotBlank()) {
+                    refilterCurrentDayFromAllSessions()
+                }
             }
         }
     }
@@ -147,7 +178,8 @@ class ScheduleViewModel(
         scope.launch {
             try {
                 getAllSessions().collect { sessions ->
-                    val derivedDays = buildConferenceDays(sessions)
+                    val allSessions = applyBookmarkState(sessions)
+                    val derivedDays = buildConferenceDays(allSessions)
                     if (derivedDays.isEmpty()) return@collect
 
                     val current = _uiState.value
@@ -161,6 +193,7 @@ class ScheduleViewModel(
 
                     _uiState.update {
                         it.copy(
+                            allSessions = allSessions,
                             days = derivedDays,
                             selectedDay = selectedDay,
                         )
@@ -242,10 +275,40 @@ class ScheduleViewModel(
         val state = _uiState.value
         return sessions.filter { session ->
             val matchesBookmark = !state.showBookmarksOnly || bookmarkIds.contains(session.id)
-            val matchesSearch = state.searchQuery.isBlank() ||
-                session.title.contains(state.searchQuery, ignoreCase = true) ||
-                session.description.contains(state.searchQuery, ignoreCase = true)
-            matchesBookmark && matchesSearch
+            val matchesTrack = state.selectedTrack == null || session.track == state.selectedTrack
+            val matchesSearch = state.searchQuery.isBlank() || sessionMatchesSearch(session, state.searchQuery)
+            matchesBookmark && matchesTrack && matchesSearch
+        }
+    }
+
+    private fun sessionMatchesSearch(session: Session, query: String): Boolean {
+        return session.title.contains(query, ignoreCase = true) ||
+            session.description.contains(query, ignoreCase = true) ||
+            session.speakerIds.any { speakerId ->
+                speakerId.contains(query, ignoreCase = true) ||
+                    speakerNamesById[speakerId]?.contains(query, ignoreCase = true) == true
+            }
+    }
+
+    private fun refilterCurrentDayFromAllSessions() {
+        val state = _uiState.value
+        val allDaySessions = state.allSessions.filter { session -> session.day == state.selectedDay }
+        val daySessions = allDaySessions.ifEmpty { state.sessions }
+        val filtered = applyFilters(applyBookmarkState(daySessions))
+        _uiState.update {
+            it.copy(
+                sessions = filtered,
+                timeSlots = filtered.groupBy { session -> session.startTime },
+            )
+        }
+    }
+
+    private fun applyBookmarkState(
+        sessions: List<Session>,
+        bookmarkIds: Set<String> = _uiState.value.bookmarkedIds,
+    ): List<Session> {
+        return sessions.map { session ->
+            session.copy(isBookmarked = session.id in bookmarkIds)
         }
     }
 

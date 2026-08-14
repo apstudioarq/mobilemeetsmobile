@@ -145,7 +145,7 @@ fun SessionCard(
                     contentColor = Color.White,
                 ),
             ) {
-                Text("Reserve Seat", fontWeight = FontWeight.Bold)
+                Text("View Session Details", fontWeight = FontWeight.Bold)
             }
         }
     }

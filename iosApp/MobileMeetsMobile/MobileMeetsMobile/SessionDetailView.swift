@@ -144,34 +144,79 @@ struct SessionDetailView: View {
     }
 
     private func reserveCard(session: Session) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Reserve your seat")
-                .font(.title3.weight(.black))
-                .foregroundStyle(Color.vibrantText)
-            Text("Space is limited. Add to favorites to sync with your schedule.")
-                .foregroundStyle(Color.vibrantMuted)
+        let isBookmarked = session.isBookmarked
+
+        return VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.ingOrange.opacity(0.12))
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Color.ingOrange)
+                }
+                .frame(width: 46, height: 46)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Save this session")
+                        .font(.title3.weight(.black))
+                        .foregroundStyle(Color.vibrantText)
+                    Text(
+                        isBookmarked
+                            ? "This talk is in your Saved Sessions."
+                            : "Keep this talk handy and sync it with your schedule."
+                    )
+                    .foregroundStyle(Color.vibrantMuted)
+                }
+
+                Spacer(minLength: 12)
+
+                Text(isBookmarked ? "Saved" : "Not saved")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(isBookmarked ? Color.ingOrange : Color.vibrantMuted)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(
+                        isBookmarked
+                            ? Color.ingOrange.opacity(0.12)
+                            : Color.vibrantWarm
+                    )
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(isBookmarked ? Color.ingOrange.opacity(0.55) : Color.vibrantBorder)
+                    )
+            }
+
             Button {
                 wrapper.viewModel.onBookmarkToggle()
             } label: {
-                Label(session.isBookmarked ? "Saved" : "Add to Favorites", systemImage: "heart.fill")
+                Label(isBookmarked ? "Saved Session" : "Save Session", systemImage: "heart.fill")
+                    .font(.headline.weight(.bold))
                     .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .foregroundStyle(Color.white)
+                    .background(isBookmarked ? Color.vibrantText : Color.ingOrange)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-            .buttonStyle(OrangeButtonStyle())
-
-            Button(action: {}) {
-                Label("Share Session", systemImage: "square.and.arrow.up")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .foregroundStyle(Color.vibrantText)
-                    .background(Color.vibrantSurface)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.vibrantBorder))
-            }
+            .buttonStyle(.plain)
         }
-        .padding(24)
-        .background(Color.vibrantSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.vibrantSurface,
+                    isBookmarked ? Color.ingOrange.opacity(0.06) : Color.vibrantSurface
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isBookmarked ? Color.ingOrange.opacity(0.55) : Color.vibrantBorder)
+        )
     }
 
     private var feedbackCard: some View {
