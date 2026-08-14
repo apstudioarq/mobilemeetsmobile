@@ -160,14 +160,16 @@ struct ScheduleView: View {
             VStack(spacing: 0) {
                 EventTopBar(section: "Schedule")
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if let error = wrapper.state.error, wrapper.state.sessions.isEmpty {
                             FirebaseLoadError(message: error) {
                                 wrapper.viewModel.loadDay(day: wrapper.state.selectedDay)
                             }
                         }
 
-                        dayTabs
+                        if wrapper.state.days.count > 1 {
+                            dayTabs
+                        }
 
                         CategoryFilter(
                             tracks: scheduleCategoryTracks,
@@ -176,7 +178,6 @@ struct ScheduleView: View {
                                 wrapper.viewModel.selectTrack(track: track)
                             }
                         )
-                        .padding(.bottom, 10)
 
                         if !wrapper.state.isLoading && wrapper.state.sessions.isEmpty && wrapper.state.error == nil {
                             Text("No sessions match this category.")
@@ -188,7 +189,7 @@ struct ScheduleView: View {
                             Text(displayClock(time))
                                 .font(.headline.weight(.bold))
                                 .foregroundStyle(Color.vibrantMuted)
-                                .padding(.top, 28)
+                                .padding(.top, 6)
 
                             ForEach(sessions, id: \.id) { session in
                                 VibrantSessionCard(session: session) {
@@ -554,7 +555,7 @@ struct Avatar: View {
     let size: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 10)
+        Circle()
             .fill(
                 RadialGradient(
                     colors: [avatarColor(name), Color(hex: 0x111111)],
@@ -582,7 +583,7 @@ struct SpeakerAvatar: View {
                 .resizable()
                 .scaledToFill()
                 .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .clipShape(Circle())
         } else if let url = URL(string: speaker.photoUrl), !speaker.photoUrl.isEmpty {
             AsyncImage(url: url) { phase in
                 switch phase {
@@ -595,7 +596,7 @@ struct SpeakerAvatar: View {
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(Circle())
         } else {
             Avatar(name: speaker.name, size: size)
         }
@@ -628,7 +629,7 @@ func displayTimeRange(_ session: Session) -> String {
 }
 
 func initials(_ name: String) -> String {
-    name.split(separator: " ").compactMap { $0.first }.map(String.init).joined()
+    String(name.split(separator: " ").compactMap { $0.first }.prefix(2)).uppercased()
 }
 
 func avatarColor(_ seed: String) -> Color {

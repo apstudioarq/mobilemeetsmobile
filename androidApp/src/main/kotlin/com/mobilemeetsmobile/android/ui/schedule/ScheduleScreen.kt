@@ -54,21 +54,23 @@ fun ScheduleScreen(
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-            ) {
-                items(state.days) { day ->
-                    DayTab(
-                        label = day.label,
-                        date = day.date,
-                        isSelected = state.selectedDay == day.dayNumber,
-                        onClick = { viewModel.loadDay(day.dayNumber) },
-                    )
+        if (state.days.size > 1) {
+            item {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                ) {
+                    items(state.days) { day ->
+                        DayTab(
+                            label = day.label,
+                            date = day.date,
+                            isSelected = state.selectedDay == day.dayNumber,
+                            onClick = { viewModel.loadDay(day.dayNumber) },
+                        )
+                    }
                 }
+                Spacer(Modifier.height(18.dp))
             }
-            Spacer(Modifier.height(18.dp))
         }
 
         item {
@@ -83,7 +85,6 @@ fun ScheduleScreen(
                 selectedTrack = state.selectedTrack,
                 onTrackSelected = viewModel::selectTrack,
             )
-            Spacer(Modifier.height(20.dp))
         }
 
         if (state.error != null && state.sessions.isEmpty()) {

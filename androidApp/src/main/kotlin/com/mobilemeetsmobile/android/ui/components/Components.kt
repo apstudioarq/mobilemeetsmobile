@@ -1,6 +1,9 @@
 package com.mobilemeetsmobile.android.ui.components
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,11 +33,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -338,7 +343,7 @@ fun DayTab(
 fun TimeSlotHeader(time: String) {
     Text(
         text = displayClock(time),
-        modifier = Modifier.padding(top = 28.dp, bottom = 12.dp),
+        modifier = Modifier.padding(top = 6.dp, bottom = 8.dp),
         style = MaterialTheme.typography.titleMedium,
         color = VibrantMuted,
         fontWeight = FontWeight.Bold,
@@ -425,7 +430,7 @@ fun SpeakerAvatar(
     Box(
         modifier = Modifier
             .size(size.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(CircleShape)
             .background(
                 Brush.radialGradient(
                     listOf(color.copy(alpha = 0.95f), Color(0xFF151515)),
@@ -433,7 +438,18 @@ fun SpeakerAvatar(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (imageModel != null) {
+        val imageSource = imageModel as? String
+        val base64Bitmap = remember(imageModel) {
+            imageSource?.decodeBase64Bitmap()
+        }
+        if (base64Bitmap != null) {
+            Image(
+                bitmap = base64Bitmap.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else if (imageModel != null && imageSource?.looksLikeBase64Image() != true) {
             AsyncImage(
                 model = imageModel,
                 contentDescription = null,
@@ -450,6 +466,22 @@ fun SpeakerAvatar(
             )
         }
     }
+}
+
+private fun String.decodeBase64Bitmap() = runCatching {
+    val cleanBase64 = trim()
+        .substringAfter("base64,", missingDelimiterValue = this)
+        .trim()
+    if (cleanBase64.isBlank() || cleanBase64.startsWith("http", ignoreCase = true)) return@runCatching null
+
+    val bytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+}.getOrNull()
+
+private fun String.looksLikeBase64Image(): Boolean {
+    val clean = trim()
+    return clean.startsWith("data:", ignoreCase = true) ||
+        clean.length > 120 && !clean.startsWith("http", ignoreCase = true)
 }
 
 @Composable
