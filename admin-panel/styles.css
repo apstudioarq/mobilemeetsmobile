@@ -448,7 +448,7 @@ td small {
 
 .speaker-row {
   display: grid;
-  grid-template-columns: 58px minmax(160px, 1fr) minmax(180px, 1fr) auto;
+  grid-template-columns: 58px minmax(140px, 1fr) minmax(140px, 0.8fr) minmax(180px, 1fr) auto;
   align-items: end;
   gap: 10px;
   padding: 10px;
@@ -479,6 +479,10 @@ td small {
 
 .speaker-actions {
   align-self: end;
+}
+
+.speaker-description-field {
+  grid-column: 2 / -1;
 }
 
 .nested-item {
@@ -801,6 +805,7 @@ th {
   }
 
   .speaker-row label,
+  .speaker-description-field,
   .speaker-actions {
     grid-column: 1 / -1;
   }

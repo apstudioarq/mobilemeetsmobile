@@ -257,6 +257,10 @@ private fun String.toSessionType(): SessionType {
     val normalized = trim().lowercase()
     return when {
         normalized.contains("keynote") -> SessionType.KEYNOTE
+        normalized.contains("short") -> SessionType.SHORT_TALK
+        normalized.contains("interactive") && normalized.contains("workshop") -> SessionType.INTERACTIVE_WORKSHOP
+        normalized.contains("lightning") -> SessionType.LIGHTNING_TALK
+        normalized.contains("deep") && normalized.contains("dive") -> SessionType.DEEP_DIVE_TALK
         normalized.contains("workshop") -> SessionType.WORKSHOP
         normalized.contains("codelab") -> SessionType.CODELAB
         normalized.contains("office") -> SessionType.OFFICE_HOURS

@@ -18,9 +18,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
@@ -92,14 +92,9 @@ fun SessionDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = VibrantMuted)
+                Icon(Icons.Filled.Close, contentDescription = "Close", tint = VibrantText)
             }
-            Text(
-                text = "Back to Schedule",
-                style = MaterialTheme.typography.labelLarge,
-                color = VibrantMuted,
-                fontWeight = FontWeight.Bold,
-            )
+            Spacer(modifier = Modifier.weight(1f))
         }
         Divider(color = VibrantBorder)
 

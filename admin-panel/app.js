@@ -543,8 +543,16 @@ function addSpeakerRow(presentationNode, speaker = {}) {
       <input class="speaker-name" placeholder="Jane Doe" value="${escapeAttribute(speaker.name || "")}" />
     </label>
     <label>
+      Role
+      <input class="speaker-role" placeholder="Presenter" value="${escapeAttribute(speaker.role || "Presenter")}" />
+    </label>
+    <label>
       Image
       <input class="speaker-image-input" type="file" accept="image/*" />
+    </label>
+    <label class="speaker-description-field">
+      Description
+      <textarea class="speaker-description" rows="2" placeholder="Short speaker description">${escapeHtml(speaker.bio || "")}</textarea>
     </label>
     <div class="row-actions speaker-actions">
       <button type="button" class="ghost clear-speaker-image-btn">Clear Image</button>
@@ -567,6 +575,8 @@ function addSpeakerRow(presentationNode, speaker = {}) {
     updateConferenceSummaryFromForm();
   });
   row.querySelector(".speaker-name").addEventListener("input", updateConferenceSummaryFromForm);
+  row.querySelector(".speaker-role").addEventListener("input", updateConferenceSummaryFromForm);
+  row.querySelector(".speaker-description").addEventListener("input", updateConferenceSummaryFromForm);
   list.appendChild(row);
 }
 
@@ -952,7 +962,8 @@ function readSpeakerProfiles(node) {
   return [...node.querySelectorAll(".speaker-row")]
     .map((row) => normalizeSpeakerProfile({
       name: value(row.querySelector(".speaker-name")),
-      role: "Presenter",
+      role: value(row.querySelector(".speaker-role")) || "Presenter",
+      bio: value(row.querySelector(".speaker-description")),
       photoBase64: row.dataset.photoBase64 || "",
       photoMimeType: row.dataset.photoMimeType || "",
     }))

@@ -33,13 +33,12 @@ struct SessionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 6) {
+            HStack {
                 Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                    Text("Back to Schedule")
+                    Image(systemName: "xmark")
                 }
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color.vibrantMuted)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.vibrantText)
                 Spacer()
             }
             .padding(.horizontal, 18)
