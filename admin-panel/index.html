@@ -36,11 +36,56 @@
         </header>
 
         <nav class="tabs" aria-label="Admin sections">
-          <button id="conferencesTab" type="button" class="tab active" data-tab="conferences">Conferences</button>
+          <button id="homeTab" type="button" class="tab active" data-tab="home">Home</button>
+          <button id="conferencesTab" type="button" class="tab" data-tab="conferences">Conferences</button>
           <button id="ratingsTab" type="button" class="tab" data-tab="ratings">Ratings</button>
         </nav>
 
-        <section id="conferencesView" class="view active">
+        <section id="homeView" class="view active">
+          <section class="panel home-panel">
+            <div class="section-title-row">
+              <div>
+                <h2>Home</h2>
+                <p class="section-copy">Configure the hero content shown on the app home screen.</p>
+              </div>
+            </div>
+
+            <form id="homeForm" class="home-form">
+              <div class="home-editor">
+                <div class="home-fields">
+                  <label>
+                    Title
+                    <input id="homeTitle" required placeholder="Mobile Meets Mobile" />
+                  </label>
+                  <label>
+                    Description
+                    <textarea
+                      id="homeDescription"
+                      rows="5"
+                      required
+                      placeholder="Welcome to Mobile Meets Mobile..."
+                    ></textarea>
+                  </label>
+                  <label>
+                    Image
+                    <input id="homeImageInput" type="file" accept="image/*" />
+                  </label>
+                </div>
+
+                <aside class="home-image-card">
+                  <div id="homeImagePreview" class="home-image-preview" aria-hidden="true">IMG</div>
+                  <button id="clearHomeImageBtn" type="button" class="ghost">Clear Image</button>
+                </aside>
+              </div>
+
+              <div class="actions sticky-actions">
+                <button type="submit">Save Home</button>
+              </div>
+            </form>
+          </section>
+        </section>
+
+        <section id="conferencesView" class="view">
           <aside class="panel list-panel">
             <div class="section-title-row">
               <h2>Conferences</h2>

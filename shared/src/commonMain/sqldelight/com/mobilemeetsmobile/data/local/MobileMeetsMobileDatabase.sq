@@ -52,6 +52,11 @@ CREATE TABLE HomeContentEntity (
     singletonId INTEGER NOT NULL PRIMARY KEY CHECK (singletonId = 1),
     welcomeMessage TEXT NOT NULL,
     heroImageUrl TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT "Mobile Meets Mobile",
+    description TEXT NOT NULL DEFAULT "Welcome to Mobile Meets Mobile. Explore the agenda, discover live sessions, and make the event your own.",
+    imageBase64 TEXT NOT NULL DEFAULT "",
+    imageMimeType TEXT NOT NULL DEFAULT "",
+    imageUrl TEXT NOT NULL DEFAULT "",
     updatedAt INTEGER NOT NULL DEFAULT 0
 );
 
@@ -135,11 +140,11 @@ DELETE FROM FirebaseAuthSessionEntity WHERE singletonId = 1;
 
 -- Home content
 getHomeContent:
-SELECT welcomeMessage, heroImageUrl
+SELECT title, description, imageBase64, imageMimeType, imageUrl
 FROM HomeContentEntity
 WHERE singletonId = 1;
 
 saveHomeContent:
 INSERT OR REPLACE INTO HomeContentEntity(
-    singletonId, welcomeMessage, heroImageUrl, updatedAt
-) VALUES (1, ?, ?, ?);
+    singletonId, welcomeMessage, heroImageUrl, title, description, imageBase64, imageMimeType, imageUrl, updatedAt
+) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?);

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
@@ -29,6 +30,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -222,39 +224,65 @@ fun LiveSessionCard(
 }
 
 @Composable
-fun SpeakerRowCard(speaker: Speaker, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier
+fun SpeakerRowCard(
+    speaker: Speaker,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
+    val cardModifier = if (onClick != null) {
+        modifier
             .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp)),
+            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+    } else {
+        modifier
+            .fillMaxWidth()
+            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
+    }
+
+    Card(
+        modifier = cardModifier,
         shape = RoundedCornerShape(6.dp),
         colors = CardDefaults.cardColors(containerColor = VibrantSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(18.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SpeakerAvatar(
                 initials = initials(speaker.name),
                 color = avatarColor(speaker.name),
-                size = 58,
+                size = 52,
                 imageModel = speaker.photoImageSource.takeIf(String::isNotBlank),
             )
-            Column {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
                 Text(
                     text = speaker.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = VibrantText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "${speaker.role}, ${speaker.company}",
+                    text = speaker.role,
                     style = MaterialTheme.typography.labelMedium,
-                    color = VibrantBrown,
+                    color = VibrantMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = "View speaker profile",
+                tint = IngOrange,
+                modifier = Modifier.size(24.dp),
+            )
         }
     }
 }

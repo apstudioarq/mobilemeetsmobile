@@ -2,7 +2,8 @@
 
 package com.mobilemeetsmobile.data.remote.dto
 
-import com.mobilemeetsmobile.data.model.DEFAULT_WELCOME_MESSAGE
+import com.mobilemeetsmobile.data.model.DEFAULT_HOME_DESCRIPTION
+import com.mobilemeetsmobile.data.model.DEFAULT_HOME_TITLE
 import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.model.Level
 import com.mobilemeetsmobile.data.model.SessionType
@@ -34,6 +35,19 @@ data class FirebaseRoomDto(
     val name: String = "",
     val description: String = "",
     val presentations: List<FirebasePresentationDto> = emptyList(),
+)
+
+@Serializable
+data class FirebaseHomeContentDto(
+    val title: String = "",
+    @JsonNames("description", "welcome_message", "welcomeMessage")
+    val description: String = "",
+    @JsonNames("image_base64", "imageBase64")
+    val imageBase64: String = "",
+    @JsonNames("image_mime_type", "imageMimeType")
+    val imageMimeType: String = "",
+    @JsonNames("image_url", "imageUrl", "hero_image_url", "welcome_image_url")
+    val imageUrl: String = "",
 )
 
 @Serializable
@@ -157,15 +171,30 @@ fun Map<String, FirebaseConferenceDto>.toHomeContent(
 ): HomeContent {
     val conference = selectedConferences(selectedConferenceId).firstOrNull()
     return HomeContent(
-        welcomeMessage = conference
+        title = conference
+            ?.title
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?: DEFAULT_HOME_TITLE,
+        description = conference
             ?.welcomeMessage
             ?.trim()
             ?.takeIf(String::isNotBlank)
-            ?: DEFAULT_WELCOME_MESSAGE,
-        heroImageUrl = conference
+            ?: DEFAULT_HOME_DESCRIPTION,
+        imageUrl = conference
             ?.heroImageUrl
             ?.trim()
             .orEmpty(),
+    )
+}
+
+fun FirebaseHomeContentDto.toHomeContent(): HomeContent {
+    return HomeContent(
+        title = title.trim().takeIf(String::isNotBlank) ?: DEFAULT_HOME_TITLE,
+        description = description.trim().takeIf(String::isNotBlank) ?: DEFAULT_HOME_DESCRIPTION,
+        imageBase64 = imageBase64.trim(),
+        imageMimeType = imageMimeType.trim(),
+        imageUrl = imageUrl.trim(),
     )
 }
 

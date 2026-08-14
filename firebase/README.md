@@ -85,24 +85,24 @@ When `FIREBASE_FUNCTIONS_URL` is present, the app uses Firebase. Otherwise it fa
 
 ## Realtime Database Home Content
 
-The home hero reads editable content from the selected conference node in Firebase Realtime Database:
+The home hero reads editable content from `test/home` in Firebase Realtime Database:
 
 ```json
 {
   "test": {
-    "conferences": {
-      "mobile-meets-mobile": {
-        "title": "Mobile Meets Mobile",
-        "welcomeMessage": "Welcome to Mobile Meets Mobile. Explore the agenda and enjoy the event.",
-        "heroImageUrl": "https://example.com/mobile-meets-mobile-hero.jpg"
-      }
+    "home": {
+      "title": "Mobile Meets Mobile",
+      "description": "Welcome to Mobile Meets Mobile. Explore the agenda and enjoy the event.",
+      "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA...",
+      "imageMimeType": "image/png",
+      "imageUrl": ""
     }
   }
 }
 ```
 
-The app also accepts snake_case field names: `welcome_message`, `hero_image_url`, and `welcome_image_url`.
-Remote values are cached locally, so the latest loaded message and image URL remain available offline.
+The app also accepts the legacy conference fields as a fallback: `welcomeMessage`, `welcome_message`, `heroImageUrl`, `hero_image_url`, and `welcome_image_url`.
+Remote values are cached locally, so the latest loaded title, description, and image remain available offline.
 
 ## Local Emulator
 

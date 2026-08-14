@@ -19,7 +19,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 const CONFERENCES_PATH = "test/conferences";
+const HOME_CONTENT_PATH = "test/home";
 const RATINGS_PATH = "ratings";
+const DEFAULT_HOME_TITLE = "Mobile Meets Mobile";
+const DEFAULT_HOME_DESCRIPTION =
+  "Welcome to Mobile Meets Mobile. Explore the agenda, discover live sessions, and make the event your own.";
 const LOCAL_FIREBASE_CONFIG = {
   apiKey: "demo-local-api-key",
   authDomain: "ingtechrating.firebaseapp.com",
@@ -42,6 +46,13 @@ const els = {
   refreshBtn: document.querySelector("#refreshBtn"),
   signOutBtn: document.querySelector("#signOutBtn"),
   tabs: [...document.querySelectorAll(".tab")],
+  homeView: document.querySelector("#homeView"),
+  homeForm: document.querySelector("#homeForm"),
+  homeTitle: document.querySelector("#homeTitle"),
+  homeDescription: document.querySelector("#homeDescription"),
+  homeImageInput: document.querySelector("#homeImageInput"),
+  homeImagePreview: document.querySelector("#homeImagePreview"),
+  clearHomeImageBtn: document.querySelector("#clearHomeImageBtn"),
   conferencesView: document.querySelector("#conferencesView"),
   ratingsView: document.querySelector("#ratingsView"),
   newConferenceBtn: document.querySelector("#newConferenceBtn"),
@@ -74,6 +85,7 @@ const els = {
 let app = null;
 let auth = null;
 let db = null;
+let homeContent = createDefaultHomeContent();
 let conferences = {};
 let ratings = {};
 let editingConferenceKey = null;
@@ -110,6 +122,9 @@ function bindEvents() {
   els.deleteConferenceBtn.addEventListener("click", deleteSelectedConference);
   els.conferenceForm.addEventListener("submit", saveConference);
   els.conferenceForm.addEventListener("input", updateConferenceSummaryFromForm);
+  els.homeForm.addEventListener("submit", saveHomeContent);
+  els.homeImageInput.addEventListener("change", readHomeImage);
+  els.clearHomeImageBtn.addEventListener("click", clearHomeImage);
   els.ratingsConferenceFilter.addEventListener("change", renderRatings);
 
   for (const tab of els.tabs) {
@@ -217,6 +232,7 @@ async function disconnect() {
     await signOut(auth);
   }
   conferences = {};
+  homeContent = createDefaultHomeContent();
   ratings = {};
   editingConferenceKey = null;
   renderEmptyState();
@@ -229,6 +245,11 @@ async function loadAllData() {
   try {
     const conferenceSnapshot = await get(ref(db, CONFERENCES_PATH));
     conferences = normalizeConferences(conferenceSnapshot.val());
+
+    const homeSnapshot = await get(ref(db, HOME_CONTENT_PATH));
+    homeContent = normalizeHomeContent(homeSnapshot.val(), firstConference()?.conference || null);
+    renderHomeForm();
+
     renderConferenceList();
     renderRatingsFilter();
 
@@ -257,6 +278,41 @@ async function loadAllData() {
     }
     showToast(readableError(error), true);
   }
+}
+
+function createDefaultHomeContent() {
+  return {
+    title: DEFAULT_HOME_TITLE,
+    description: DEFAULT_HOME_DESCRIPTION,
+    imageBase64: "",
+    imageMimeType: "",
+    imageUrl: "",
+  };
+}
+
+function normalizeHomeContent(raw, fallbackConference = null) {
+  const fallback = createDefaultHomeContent();
+  const source = raw && typeof raw === "object" ? raw : {};
+  return {
+    title: String(source.title || fallbackConference?.title || fallback.title).trim(),
+    description: String(
+      source.description ||
+        source.welcomeMessage ||
+        source.welcome_message ||
+        fallbackConference?.welcomeMessage ||
+        fallback.description,
+    ).trim(),
+    imageBase64: String(source.imageBase64 || source.image_base64 || "").trim(),
+    imageMimeType: String(source.imageMimeType || source.image_mime_type || "").trim(),
+    imageUrl: String(
+      source.imageUrl ||
+        source.image_url ||
+        source.heroImageUrl ||
+        source.hero_image_url ||
+        fallbackConference?.heroImageUrl ||
+        "",
+    ).trim(),
+  };
 }
 
 function normalizeConferences(raw) {
@@ -330,12 +386,18 @@ function setConnectedUi(connected, email = "", uid = "") {
   els.signOutBtn.hidden = !connected;
   els.refreshBtn.disabled = !connected;
   els.newConferenceBtn.disabled = !connected;
+  els.homeTitle.disabled = !connected;
+  els.homeDescription.disabled = !connected;
+  els.homeImageInput.disabled = !connected;
+  els.clearHomeImageBtn.disabled = !connected;
   els.ratingsConferenceFilter.disabled = !connected;
 
   setStatus(connected ? `Connected as ${email} · UID ${uid}` : "Not connected");
 }
 
 function renderEmptyState() {
+  homeContent = createDefaultHomeContent();
+  renderHomeForm();
   els.conferenceList.innerHTML = `<p class="empty">No conferences loaded.</p>`;
   els.ratingsSummary.innerHTML = "";
   els.ratingDistributionChart.innerHTML = "";
@@ -345,6 +407,70 @@ function renderEmptyState() {
   els.conferenceSummary.innerHTML = "";
   renderExistingRoomOptions();
   openConferenceForm(null, null);
+}
+
+function renderHomeForm() {
+  els.homeTitle.value = homeContent.title || DEFAULT_HOME_TITLE;
+  els.homeDescription.value = homeContent.description || DEFAULT_HOME_DESCRIPTION;
+  els.homeImageInput.value = "";
+  renderHomeImagePreview();
+}
+
+function renderHomeImagePreview() {
+  const photoBase64 = homeContent.imageBase64 || "";
+  const photoMimeType = homeContent.imageMimeType || "image/*";
+  if (photoBase64) {
+    els.homeImagePreview.innerHTML = `<img src="data:${photoMimeType};base64,${photoBase64}" alt="" />`;
+    return;
+  }
+
+  if (homeContent.imageUrl) {
+    els.homeImagePreview.innerHTML = `<img src="${escapeAttribute(homeContent.imageUrl)}" alt="" />`;
+    return;
+  }
+
+  els.homeImagePreview.textContent = "IMG";
+}
+
+function readHomeImage() {
+  const [file] = els.homeImageInput.files || [];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showToast("Select an image file.", true);
+    els.homeImageInput.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    const result = String(reader.result || "");
+    const match = result.match(/^data:([^;]+);base64,(.*)$/);
+    if (!match) {
+      showToast("Unable to encode this image.", true);
+      return;
+    }
+    homeContent = {
+      ...homeContent,
+      imageMimeType: match[1],
+      imageBase64: match[2],
+      imageUrl: "",
+    };
+    renderHomeImagePreview();
+    showToast("Home image encoded as base64.");
+  });
+  reader.addEventListener("error", () => showToast("Unable to read the selected image.", true));
+  reader.readAsDataURL(file);
+}
+
+function clearHomeImage() {
+  homeContent = {
+    ...homeContent,
+    imageBase64: "",
+    imageMimeType: "",
+    imageUrl: "",
+  };
+  els.homeImageInput.value = "";
+  renderHomeImagePreview();
 }
 
 function renderConferenceList() {
@@ -817,6 +943,31 @@ function cloneComponent(component) {
   return JSON.parse(JSON.stringify(component));
 }
 
+async function saveHomeContent(event) {
+  event.preventDefault();
+  if (!db) return;
+
+  const content = readHomeForm();
+  try {
+    await set(ref(db, HOME_CONTENT_PATH), content);
+    homeContent = content;
+    renderHomeForm();
+    showToast("Home content saved.");
+  } catch (error) {
+    showToast(readableError(error), true);
+  }
+}
+
+function readHomeForm() {
+  return {
+    title: value(els.homeTitle) || DEFAULT_HOME_TITLE,
+    description: value(els.homeDescription) || DEFAULT_HOME_DESCRIPTION,
+    imageBase64: homeContent.imageBase64 || "",
+    imageMimeType: homeContent.imageMimeType || "",
+    imageUrl: homeContent.imageUrl || "",
+  };
+}
+
 async function saveConference(event) {
   event.preventDefault();
   if (!db) return;
@@ -1273,6 +1424,7 @@ function selectTab(tabName) {
   for (const tab of els.tabs) {
     tab.classList.toggle("active", tab.dataset.tab === tabName);
   }
+  els.homeView.classList.toggle("active", tabName === "home");
   els.conferencesView.classList.toggle("active", tabName === "conferences");
   els.ratingsView.classList.toggle("active", tabName === "ratings");
   if (tabName === "ratings") renderRatings();

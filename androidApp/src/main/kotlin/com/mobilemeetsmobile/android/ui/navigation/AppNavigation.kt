@@ -151,6 +151,7 @@ fun AppNavigation() {
                     scheduleViewModel = scheduleViewModel,
                     speakersViewModel = speakersViewModel,
                     onSessionClick = { navController.navigate("session/$it") },
+                    onSpeakerClick = { navController.navigate("speaker/$it") },
                     onScheduleClick = { navController.navigateToBottomTab(Screen.Schedule) },
                 )
             }

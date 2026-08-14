@@ -183,23 +183,12 @@ fun SessionDetailScreen(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
-                                        text = listOf(speaker.role, speaker.company)
-                                            .filter(String::isNotBlank)
-                                            .joinToString(", "),
+                                        text = speaker.role,
                                         style = MaterialTheme.typography.labelMedium,
                                         color = VibrantMuted,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
-                                    if (speaker.bio.isNotBlank()) {
-                                        Text(
-                                            text = speaker.bio,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = VibrantMuted,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    }
                                 }
                                 Icon(
                                     imageVector = Icons.Filled.ChevronRight,

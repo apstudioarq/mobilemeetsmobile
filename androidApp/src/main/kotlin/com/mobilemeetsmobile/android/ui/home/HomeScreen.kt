@@ -1,5 +1,7 @@
 package com.mobilemeetsmobile.android.ui.home
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,13 +26,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -42,7 +47,6 @@ import com.mobilemeetsmobile.android.ui.theme.VibrantBorder
 import com.mobilemeetsmobile.android.ui.theme.VibrantBrown
 import com.mobilemeetsmobile.android.ui.theme.VibrantMuted
 import com.mobilemeetsmobile.android.ui.theme.VibrantSurface
-import com.mobilemeetsmobile.android.ui.theme.VibrantSurfaceWarm
 import com.mobilemeetsmobile.android.ui.theme.VibrantText
 import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
@@ -53,6 +57,7 @@ fun HomeScreen(
     scheduleViewModel: ScheduleViewModel,
     speakersViewModel: SpeakersViewModel,
     onSessionClick: (String) -> Unit,
+    onSpeakerClick: (String) -> Unit,
     onScheduleClick: () -> Unit,
 ) {
     val scheduleState by scheduleViewModel.uiState.collectAsState()
@@ -96,7 +101,10 @@ fun HomeScreen(
         }
 
         items(speakers.take(3), key = { "speaker_${it.id}" }) { speaker ->
-            SpeakerRowCard(speaker = speaker)
+            SpeakerRowCard(
+                speaker = speaker,
+                onClick = { onSpeakerClick(speaker.id) },
+            )
         }
 
         item {
@@ -119,40 +127,39 @@ private fun HeroCard(content: HomeContent) {
     ) {
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(VibrantSurfaceWarm)
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-            ) {
-                Text(
-                    text = "Global Summit 2024",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = VibrantMuted,
-                )
-            }
             Text(
-                text = "Mobile Meets Mobile",
+                text = content.title,
                 style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp),
                 color = VibrantText,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = content.welcomeMessage,
+                text = content.description,
                 style = MaterialTheme.typography.bodyMedium,
                 color = VibrantMuted,
                 maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
-        HeroImage(imageUrl = content.heroImageUrl)
+        HeroImage(
+            imageBase64 = content.imageBase64,
+            imageUrl = content.imageUrl,
+        )
     }
 }
 
 @Composable
-private fun HeroImage(imageUrl: String) {
+private fun HeroImage(
+    imageBase64: String,
+    imageUrl: String,
+) {
+    val base64Bitmap = remember(imageBase64) {
+        imageBase64.decodeBase64Bitmap()
+    }
     Box(
         modifier = Modifier
             .size(108.dp)
@@ -160,7 +167,14 @@ private fun HeroImage(imageUrl: String) {
             .background(Color(0xFF30302F)),
         contentAlignment = Alignment.Center,
     ) {
-        if (imageUrl.isNotBlank()) {
+        if (base64Bitmap != null) {
+            Image(
+                bitmap = base64Bitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        } else if (imageUrl.isNotBlank()) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
@@ -178,6 +192,16 @@ private fun HeroImage(imageUrl: String) {
         }
     }
 }
+
+private fun String.decodeBase64Bitmap() = runCatching {
+    val cleanBase64 = trim()
+        .substringAfter("base64,", missingDelimiterValue = this)
+        .trim()
+    if (cleanBase64.isBlank() || cleanBase64.startsWith("http", ignoreCase = true)) return@runCatching null
+
+    val bytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+}.getOrNull()
 
 @Composable
 private fun SectionHeader(

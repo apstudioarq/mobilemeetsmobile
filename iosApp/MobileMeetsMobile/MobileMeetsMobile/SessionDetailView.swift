@@ -348,16 +348,10 @@ struct SpeakerProfileCard: View {
                     Text(speaker.name)
                         .font(.headline.weight(.bold))
                         .foregroundStyle(Color.vibrantText)
-                    Text("\(speaker.role), \(speaker.company)")
+                    Text(speaker.role)
                         .font(.caption)
                         .foregroundStyle(Color.vibrantMuted)
                         .lineLimit(1)
-                    if !speaker.bio.isEmpty {
-                        Text(speaker.bio)
-                            .font(.caption)
-                            .foregroundStyle(Color.vibrantMuted)
-                            .lineLimit(2)
-                    }
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")

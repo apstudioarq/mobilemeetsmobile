@@ -173,10 +173,13 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
     // ── Home content ────────────────────────────────────────
 
     fun getHomeContent(): Flow<HomeContent> {
-        return sessionQueries.getHomeContent { welcomeMessage, heroImageUrl ->
+        return sessionQueries.getHomeContent { title, description, imageBase64, imageMimeType, imageUrl ->
             HomeContent(
-                welcomeMessage = welcomeMessage,
-                heroImageUrl = heroImageUrl,
+                title = title,
+                description = description,
+                imageBase64 = imageBase64,
+                imageMimeType = imageMimeType,
+                imageUrl = imageUrl,
             )
         }
             .asFlow()
@@ -187,8 +190,13 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
     fun saveHomeContent(content: HomeContent) {
         val now = kotlinx.datetime.Clock.System.now().epochSeconds
         sessionQueries.saveHomeContent(
-            welcomeMessage = content.welcomeMessage,
-            heroImageUrl = content.heroImageUrl,
+            welcomeMessage = content.description,
+            heroImageUrl = content.imageUrl,
+            title = content.title,
+            description = content.description,
+            imageBase64 = content.imageBase64,
+            imageMimeType = content.imageMimeType,
+            imageUrl = content.imageUrl,
             updatedAt = now,
         )
     }
