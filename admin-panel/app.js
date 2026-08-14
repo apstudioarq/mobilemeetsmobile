@@ -302,7 +302,7 @@ function normalizeHomeContent(raw, fallbackConference = null) {
         fallbackConference?.welcomeMessage ||
         fallback.description,
     ).trim(),
-    imageBase64: String(source.imageBase64 || source.image_base64 || "").trim(),
+    imageBase64: String(source.imageBase64 || source.image_base64 || source.image || "").trim(),
     imageMimeType: String(source.imageMimeType || source.image_mime_type || "").trim(),
     imageUrl: String(
       source.imageUrl ||

@@ -90,17 +90,18 @@ The home hero reads editable content from `test/home` in Firebase Realtime Datab
 ```json
 {
   "test": {
-    "home": {
-      "title": "Mobile Meets Mobile",
-      "description": "Welcome to Mobile Meets Mobile. Explore the agenda and enjoy the event.",
-      "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA...",
-      "imageMimeType": "image/png",
+      "home": {
+        "title": "Mobile Meets Mobile",
+        "description": "Welcome to Mobile Meets Mobile. Explore the agenda and enjoy the event.",
+        "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA...",
+        "imageMimeType": "image/png",
       "imageUrl": ""
     }
   }
 }
 ```
 
+The image can also be stored as `image` when it contains base64 data.
 The app also accepts the legacy conference fields as a fallback: `welcomeMessage`, `welcome_message`, `heroImageUrl`, `hero_image_url`, and `welcome_image_url`.
 Remote values are cached locally, so the latest loaded title, description, and image remain available offline.
 

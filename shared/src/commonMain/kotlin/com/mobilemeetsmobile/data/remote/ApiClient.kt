@@ -12,6 +12,7 @@ import com.mobilemeetsmobile.data.remote.dto.FirebaseConferenceDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseHomeContentDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingSubmissionDto
+import com.mobilemeetsmobile.data.remote.dto.hasConfiguredContent
 import com.mobilemeetsmobile.data.remote.dto.toHomeContent
 import com.mobilemeetsmobile.data.remote.dto.toSessionDtos
 import com.mobilemeetsmobile.data.remote.dto.toSpeakerDtos
@@ -135,8 +136,8 @@ class MobileMeetsMobileApi(
 
     suspend fun getHomeContent(): HomeContent {
         if (BackendConfig.isFirebaseRealtimeDatabase) {
-            val fallback = getFirebaseConferences().toHomeContent(BackendConfig.selectedConferenceId)
-            return getFirebaseHomeContent() ?: fallback
+            return getFirebaseHomeContent()
+                ?: getFirebaseConferences().toHomeContent(BackendConfig.selectedConferenceId)
         }
 
         return HomeContent()
@@ -223,7 +224,9 @@ class MobileMeetsMobileApi(
             ?: return null
 
         return runCatching {
-            json.decodeFromString<FirebaseHomeContentDto>(payload).toHomeContent()
+            json.decodeFromString<FirebaseHomeContentDto>(payload)
+                .takeIf { it.hasConfiguredContent() }
+                ?.toHomeContent()
         }.getOrNull()
     }
 

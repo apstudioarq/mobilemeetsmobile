@@ -50,8 +50,6 @@ CREATE TABLE FirebaseAuthSessionEntity (
 -- Home content configured from Firebase Realtime Database
 CREATE TABLE HomeContentEntity (
     singletonId INTEGER NOT NULL PRIMARY KEY CHECK (singletonId = 1),
-    welcomeMessage TEXT NOT NULL,
-    heroImageUrl TEXT NOT NULL,
     title TEXT NOT NULL DEFAULT "Mobile Meets Mobile",
     description TEXT NOT NULL DEFAULT "Welcome to Mobile Meets Mobile. Explore the agenda, discover live sessions, and make the event your own.",
     imageBase64 TEXT NOT NULL DEFAULT "",
@@ -146,5 +144,5 @@ WHERE singletonId = 1;
 
 saveHomeContent:
 INSERT OR REPLACE INTO HomeContentEntity(
-    singletonId, welcomeMessage, heroImageUrl, title, description, imageBase64, imageMimeType, imageUrl, updatedAt
-) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?);
+    singletonId, title, description, imageBase64, imageMimeType, imageUrl, updatedAt
+) VALUES (1, ?, ?, ?, ?, ?, ?);

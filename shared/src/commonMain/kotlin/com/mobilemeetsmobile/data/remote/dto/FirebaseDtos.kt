@@ -42,7 +42,7 @@ data class FirebaseHomeContentDto(
     val title: String = "",
     @JsonNames("description", "welcome_message", "welcomeMessage")
     val description: String = "",
-    @JsonNames("image_base64", "imageBase64")
+    @JsonNames("image", "image_base64", "imageBase64", "image_data", "imageData")
     val imageBase64: String = "",
     @JsonNames("image_mime_type", "imageMimeType")
     val imageMimeType: String = "",
@@ -196,6 +196,11 @@ fun FirebaseHomeContentDto.toHomeContent(): HomeContent {
         imageMimeType = imageMimeType.trim(),
         imageUrl = imageUrl.trim(),
     )
+}
+
+fun FirebaseHomeContentDto.hasConfiguredContent(): Boolean {
+    return listOf(title, description, imageBase64, imageUrl)
+        .any { it.trim().isNotBlank() }
 }
 
 private fun Map<String, FirebaseConferenceDto>.selectedConferences(

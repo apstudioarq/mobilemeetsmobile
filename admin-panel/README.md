@@ -64,13 +64,14 @@ When served by Firebase Hosting, the Firebase client config is loaded automatica
 
 The panel edits:
 
+- `/test/home`
 - `/test/conferences/{conferenceId}`
 
 The ratings tab reads:
 
 - `/ratings/{ratingId}`
 
-The mobile app already reads `/test/conferences` and transforms each room presentation into app sessions and speakers.
+The mobile app reads `/test/home` for the Home hero and `/test/conferences` for sessions and speakers.
 
 ## Conference Shape
 

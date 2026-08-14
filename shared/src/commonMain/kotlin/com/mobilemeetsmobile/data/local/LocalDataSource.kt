@@ -190,8 +190,6 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
     fun saveHomeContent(content: HomeContent) {
         val now = kotlinx.datetime.Clock.System.now().epochSeconds
         sessionQueries.saveHomeContent(
-            welcomeMessage = content.description,
-            heroImageUrl = content.imageUrl,
             title = content.title,
             description = content.description,
             imageBase64 = content.imageBase64,
