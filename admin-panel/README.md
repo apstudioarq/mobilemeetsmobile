@@ -1,66 +1,106 @@
-# Admin Panel (Web)
+# Conference Admin Panel
 
-Web panel to manage `speakers` and `sessions` in Supabase and reuse the KMM app for any event.
+Static Firebase Hosting panel to manage conference data stored in Firebase Realtime Database.
 
-## Open the panel
+## Run Locally
 
 From the repository root:
 
 ```bash
-cd admin-panel
-python3 -m http.server 8080
+firebase emulators:start --only hosting,database,auth
 ```
 
-Then open:
+Open:
 
-- http://localhost:8080
+- http://localhost:5002
 
-## How to use it
+When running on `localhost`, the panel automatically connects Firebase Auth to `127.0.0.1:9099` and Realtime Database to `127.0.0.1:9000`.
+If `/__/firebase/init.json` is empty locally, the panel falls back to a local emulator config for the `ingtechrating` Firebase project. That fallback is only used on `localhost`.
 
-1. Paste `Project URL` (example: `https://xxxxx.supabase.co`).
-2. Paste `API Key`.
-3. Click `Connect` and then `Load data`.
-4. Create/edit/delete speakers and sessions.
+For a fully local test:
 
-## Recommended security setup
+1. Open the Emulator UI at http://localhost:4000.
+2. Go to Authentication and create/sign in with a Google test user.
+3. Copy that local user's UID.
+4. Go to Realtime Database and create:
 
-- For local admin usage, you can use the `service_role` key.
-- Do not deploy this panel publicly with an embedded `service_role` key.
-- For a public deployment, use an `anon` key with admin RLS policies.
+```json
+{
+  "admins": {
+    "LOCAL_AUTH_UID": true
+  }
+}
+```
 
-## Data expected by the app
+5. Open http://localhost:5002 and use Google Sign-In.
 
-### `speakers` table
+## Firebase Setup
 
-Used fields:
-- `id` (text, pk)
-- `name` (text)
-- `role` (text)
-- `company` (text)
-- `bio` (text)
-- `photo_url` (text)
-- `social_links` (jsonb)
+1. Keep the Firebase project on the Spark plan.
+2. Enable Realtime Database.
+3. Enable Firebase Authentication with the Google provider.
+4. Create a Firebase Web App in Project settings if the project does not have one.
+5. Link that Web App to the Firebase Hosting site. This is required for `/__/firebase/init.json`.
+6. Sign in once with the Google account that will administer the panel.
+7. Add the admin UID to Realtime Database:
 
-### `sessions` table
+```json
+{
+  "admins": {
+    "YOUR_ADMIN_UID": true
+  }
+}
+```
 
-Used fields:
-- `id` (text, pk)
-- `title` (text)
-- `description` (text)
-- `start_time` (timestamptz)
-- `end_time` (timestamptz)
-- `duration` (text)
-- `room` (text)
-- `day` (int)
-- `track` (text app enum: `AI_ML`, `ANDROID`, `WEB`, `CLOUD`, `FIREBASE`, `FLUTTER`, `DESIGN`)
-- `type` (text app enum: `KEYNOTE`, `SESSION`, `WORKSHOP`, `CODELAB`, `OFFICE_HOURS`)
-- `level` (text app enum: `BEGINNER`, `INTERMEDIATE`, `ADVANCED`)
-- `speaker_ids` (text[])
-- `capacity` (int)
-- `registered` (int)
-- `tags` (text[])
-- `livestream_url` (nullable text)
-- `slides_url` (nullable text)
-- `updated_at` (timestamptz)
+8. Deploy Hosting and Realtime Database rules:
 
-Use [`../supabase/schema.sql`](../supabase/schema.sql) to create these tables in a new project.
+```bash
+firebase deploy --only hosting,database
+```
+
+When served by Firebase Hosting, the Firebase client config is loaded automatically from `/__/firebase/init.json`, so the login form only shows Google Sign-In.
+
+## Data Paths
+
+The panel edits:
+
+- `/test/conferences/{conferenceId}`
+
+The ratings tab reads:
+
+- `/ratings/{ratingId}`
+
+The mobile app already reads `/test/conferences` and transforms each room presentation into app sessions and speakers.
+
+## Conference Shape
+
+```json
+{
+  "id": "mmm-2026",
+  "title": "Mobile Meets Mobile 2026",
+  "audience": "Developers",
+  "eventType": "Conference",
+  "organizingCountry": "ES",
+  "startDate": 1781942400,
+  "rooms": [
+    {
+      "id": "main-stage",
+      "name": "Main Stage",
+      "description": "Auditorium",
+      "presentations": [
+        {
+          "id": "session-opening",
+          "title": "Opening Keynote",
+          "description": "Welcome session.",
+          "durationMinutes": 45,
+          "presenters": ["Jane Doe"],
+          "startDate": 1781946000,
+          "tags": ["android", "kmm"],
+          "technology": "Android",
+          "type": "Keynote"
+        }
+      ]
+    }
+  ]
+}
+```

@@ -155,37 +155,8 @@ For iOS, place the Firebase configuration at
 `FIREBASE_DATABASE_URL` or `FIREBASE_API_KEY`, and optionally define
 `FIREBASE_CONFERENCE_ID`, as user-defined Xcode build settings.
 
-Enable the Anonymous provider in Firebase Authentication and require authentication in Realtime Database rules:
-
-```json
-{
-  "rules": {
-    "test": {
-      "conferences": {
-        ".read": "auth != null",
-        ".write": false
-      }
-    },
-    "ratings": {
-      ".read": "auth != null",
-      "$ratingId": {
-        ".write": "auth != null && auth.provider == 'anonymous' && !data.exists()",
-        ".validate": "newData.hasChildren(['audience', 'country', 'date', 'event', 'name', 'rating', 'sessionId', 'sessionTitle', 'comment'])",
-        "audience": { ".validate": "newData.isString() && newData.val().length <= 200" },
-        "country": { ".validate": "newData.isString() && newData.val().length <= 100" },
-        "date": { ".validate": "newData.isString() && newData.val().length <= 64" },
-        "event": { ".validate": "newData.isString() && newData.val().length <= 200" },
-        "name": { ".validate": "newData.isString() && newData.val().length <= 500" },
-        "rating": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5" },
-        "sessionId": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
-        "sessionTitle": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500" },
-        "comment": { ".validate": "newData.isString() && newData.val().length <= 2000" },
-        "$other": { ".validate": false }
-      }
-    }
-  }
-}
-```
+Enable the Anonymous provider in Firebase Authentication and deploy the Realtime Database rules from `firebase/database.rules.json`.
+The mobile app can read conferences and submit anonymous ratings; the web admin panel can write conferences and read rating statistics only when the signed-in UID exists under `/admins/{uid}: true`.
 
 Do not place a service-account JSON, private key, database secret, or shared email/password in either app.
 
@@ -202,25 +173,27 @@ Do not place a service-account JSON, private key, database secret, or shared ema
 - [x] Bottom navigation (Android) / Tab view (iOS)
 - [x] Branded dark theme
 - [x] Offline-first flow: local cache -> server sync
-- [x] Web admin panel for speakers/sessions (`admin-panel/`)
+- [x] Web admin panel for Firebase conferences and ratings (`admin-panel/`)
 
 ## 🧰 Web Admin Panel
 
-The project includes an admin panel in `admin-panel/` to create/edit/delete `speakers` and `sessions` in Supabase.
+The project includes an admin panel in `admin-panel/` to create/edit/delete Firebase Realtime Database conferences and inspect session rating statistics.
 
 ### Run
 
 ```bash
-cd admin-panel
-python3 -m http.server 8080
+firebase emulators:start --only hosting,database,auth
 ```
 
-Open: `http://localhost:8080`
+Open: `http://localhost:5002`
 
-To bootstrap a new backend from scratch, use:
+To deploy the panel to Firebase Hosting with Realtime Database rules:
 
-- `supabase/schema.sql`
-- `supabase/seed.sql`
+```bash
+firebase deploy --only hosting,database
+```
+
+Enable the Google provider in Firebase Authentication, link the Firebase Web App to the Hosting site, sign in with the admin Google account, and add its UID under `/admins/{uid}: true` before using the hosted panel.
 
 ## 📋 Backlog
 
