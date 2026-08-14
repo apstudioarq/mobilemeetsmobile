@@ -177,7 +177,7 @@ fun AppNavigation() {
                 SessionDetailScreen(
                     viewModel = viewModel,
                     sessionId = sessionId,
-                    onBackClick = { navController.popBackStack() },
+                    onCloseClick = { navController.popBackStack() },
                     onSpeakerProfileClick = { navController.navigate("speaker/$it") },
                 )
             }
@@ -192,8 +192,7 @@ fun AppNavigation() {
                     speakerId = speakerId,
                     speakersViewModel = speakersViewModel,
                     scheduleViewModel = scheduleViewModel,
-                    onBackClick = { navController.popBackStack() },
-                    onCloseClick = { navController.popBackStack(Screen.Home.route, inclusive = false) },
+                    onCloseClick = { navController.popBackStack() },
                     onSessionClick = { sessionId -> navController.navigate("session/$sessionId") },
                 )
             }
@@ -223,7 +222,7 @@ fun MobileMeetsMobileTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .height(58.dp)
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -236,15 +235,15 @@ fun MobileMeetsMobileTopBar(
                     painter = painterResource(R.drawable.splash_logo),
                     contentDescription = "Mobile Meets Mobile",
                     modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(7.dp)),
                 )
-                Spacer(Modifier.width(9.dp))
+                Spacer(Modifier.width(11.dp))
                 Text(
-                    text = "Mobile Meets Mobile",
+                    text = sectionTitle,
                     color = VibrantText,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -266,7 +265,13 @@ fun MobileMeetsMobileTopBar(
                         )
                     }
                 }
-                TopBarSectionChip(sectionTitle = sectionTitle)
+                Text(
+                    text = "MMM",
+                    color = IngOrange,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                )
             }
         }
         if (isSearchExpanded) {
@@ -283,25 +288,6 @@ fun MobileMeetsMobileTopBar(
                 .fillMaxWidth()
                 .height(1.dp)
                 .background(VibrantBorder.copy(alpha = 0.65f)),
-        )
-    }
-}
-
-@Composable
-private fun TopBarSectionChip(sectionTitle: String) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(VibrantSurfaceWarm)
-            .border(1.dp, VibrantBorder, RoundedCornerShape(16.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        Text(
-            text = sectionTitle.uppercase(),
-            color = IngOrange,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
         )
     }
 }
@@ -327,10 +313,10 @@ private fun TopBarSearchField(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(17.dp))
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(5.dp))
                     .background(VibrantSurfaceWarm)
-                    .border(1.dp, VibrantBorder, RoundedCornerShape(17.dp))
+                    .border(1.dp, VibrantBorder, RoundedCornerShape(5.dp))
                     .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -399,7 +385,7 @@ fun MobileMeetsMobileBottomBar(
                 },
                 label = {
                     Text(
-                        text = screen.label.uppercase(),
+                        text = screen.label,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                     )
@@ -407,7 +393,7 @@ fun MobileMeetsMobileBottomBar(
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = IngOrange,
                     selectedTextColor = IngOrange,
-                    indicatorColor = Color(0xFFFFE9DF),
+                    indicatorColor = Color.Transparent,
                     unselectedIconColor = VibrantMuted.copy(alpha = 0.7f),
                     unselectedTextColor = VibrantMuted.copy(alpha = 0.7f),
                 ),

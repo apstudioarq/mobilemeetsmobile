@@ -38,7 +38,7 @@ struct SessionDetailView: View {
                     Image(systemName: "xmark")
                 }
                 .font(.headline.weight(.bold))
-                .foregroundStyle(Color.vibrantText)
+                .foregroundStyle(Color.ingOrange)
                 Spacer()
             }
             .padding(.horizontal, 18)
@@ -56,7 +56,7 @@ struct SessionDetailView: View {
                     .background(Color.vibrantBackground)
             } else if let session = wrapper.state.session {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
+                    VStack(alignment: .leading, spacing: 22) {
                         heroImage
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 8) {
@@ -64,7 +64,7 @@ struct SessionDetailView: View {
                                 Badge(text: session.track.displayName, color: trackColor(session.track))
                             }
                             Text(session.title)
-                                .font(.system(size: 38, weight: .black))
+                                .font(.system(size: 34, weight: .semibold))
                                 .foregroundStyle(Color.vibrantText)
                             MetaLine(systemImage: "calendar", text: "October 24, 2024 • \(displayTimeRange(session))")
                             MetaLine(systemImage: "mappin", text: session.room)
@@ -103,7 +103,7 @@ struct SessionDetailView: View {
 
                         feedbackCard
                     }
-                    .padding(22)
+                    .padding(16)
                     .padding(.bottom, 40)
                 }
                 .background(Color.vibrantBackground)
@@ -116,30 +116,28 @@ struct SessionDetailView: View {
     }
 
     private var heroImage: some View {
-        ZStack {
-            Color(hex: 0x061015)
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [.clear, .ingOrange, Color(hex: 0x18DDF2), .clear],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 16)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(hex: 0xA9FCFF), Color(hex: 0x1FB9E0).opacity(0.35), .clear],
-                        center: .center,
-                        startRadius: 8,
-                        endRadius: 72
-                    )
-                )
-                .frame(width: 130, height: 130)
+        HStack {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("MOBILE MEETS MOBILE")
+                    .font(.caption.weight(.bold))
+                    .tracking(1.4)
+                    .foregroundStyle(Color.white.opacity(0.82))
+                Text("Ideas in motion.")
+                    .font(.title.weight(.semibold))
+                    .foregroundStyle(Color.white)
+            }
+            Spacer()
+            Image(systemName: "mic.fill")
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .frame(width: 72, height: 72)
+                .background(Color.ingPurple, in: Circle())
         }
-        .frame(height: 180)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(22)
+        .frame(maxWidth: .infinity)
+        .frame(height: 164)
+        .background(Color.ingOrange)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private func reserveCard(session: Session) -> some View {

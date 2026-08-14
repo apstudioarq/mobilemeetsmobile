@@ -54,7 +54,7 @@ struct SpeakerProfileView: View {
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark")
             }
-            .foregroundStyle(Color.vibrantText)
+            .foregroundStyle(Color.ingOrange)
             Spacer()
         }
         .padding(.horizontal, 18)

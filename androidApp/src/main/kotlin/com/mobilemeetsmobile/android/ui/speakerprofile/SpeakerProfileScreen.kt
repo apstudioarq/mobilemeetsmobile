@@ -55,7 +55,6 @@ fun SpeakerProfileScreen(
     speakerId: String,
     speakersViewModel: SpeakersViewModel,
     scheduleViewModel: ScheduleViewModel,
-    onBackClick: () -> Unit,
     onCloseClick: () -> Unit,
     onSessionClick: (String) -> Unit,
 ) {
@@ -79,7 +78,7 @@ fun SpeakerProfileScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onCloseClick) {
-                Icon(Icons.Filled.Close, contentDescription = "Close", tint = VibrantText)
+                Icon(Icons.Filled.Close, contentDescription = "Close", tint = IngOrange)
             }
         }
         Divider(color = VibrantBorder)

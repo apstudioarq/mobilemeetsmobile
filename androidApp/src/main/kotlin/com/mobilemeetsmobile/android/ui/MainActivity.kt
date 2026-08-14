@@ -13,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.mobilemeetsmobile.android.ui.navigation.AppNavigation
-import com.mobilemeetsmobile.android.ui.theme.DarkBackground
 import com.mobilemeetsmobile.android.ui.theme.MobileMeetsMobileTheme
 import com.mobilemeetsmobile.android.ui.splash.SplashScreen
 import kotlinx.coroutines.delay
@@ -31,7 +30,7 @@ class MainActivity : ComponentActivity() {
                 }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = DarkBackground,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.background,
                 ) {
                     if (showSplash) {
                         SplashScreen()

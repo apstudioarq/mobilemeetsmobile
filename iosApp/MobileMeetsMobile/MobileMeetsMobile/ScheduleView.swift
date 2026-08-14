@@ -53,7 +53,7 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 EventTopBar(section: "Home")
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
+                    VStack(alignment: .leading, spacing: 18) {
                         hero
                         SectionHeader(title: "Live Now", action: "View Schedule", onAction: onScheduleTap)
                         ForEach(Array(schedule.state.sessions.prefix(2)), id: \.id) { session in
@@ -71,7 +71,7 @@ struct HomeView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(20)
+                    .padding(16)
                     .padding(.bottom, 70)
                 }
                 .background(Color.vibrantBackground)
@@ -83,27 +83,39 @@ struct HomeView: View {
     }
 
     private var hero: some View {
-        HStack(spacing: 18) {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("MOBILE MEETS MOBILE")
+                    .font(.caption.weight(.bold))
+                    .tracking(1.4)
+                    .foregroundStyle(Color.white.opacity(0.84))
                 Text(schedule.state.homeContent.title)
-                    .font(.system(size: 30, weight: .black))
+                    .font(.system(size: 32, weight: .semibold))
                     .lineLimit(2)
-                    .foregroundStyle(Color.vibrantText)
+                    .foregroundStyle(Color.white)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(Color.ingOrange)
 
+            HeroImage(content: schedule.state.homeContent)
+
+            HStack(spacing: 12) {
+                Rectangle()
+                    .fill(Color.ingPurple)
+                    .frame(width: 4, height: 44)
                 Text(schedule.state.homeContent.description_)
                     .font(.subheadline)
                     .lineSpacing(3)
-                    .lineLimit(4)
+                    .lineLimit(3)
                     .foregroundStyle(Color.vibrantMuted)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            HeroImage(content: schedule.state.homeContent)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
         }
-        .padding(20)
         .background(Color.vibrantSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.vibrantBorder.opacity(0.55)))
     }
 }
 
@@ -132,8 +144,9 @@ private struct HeroImage: View {
                 fallback
             }
         }
-        .frame(width: 108, height: 108)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .frame(maxWidth: .infinity)
+        .frame(height: 138)
+        .clipped()
     }
 
     private var decodedImage: UIImage? {
@@ -236,7 +249,7 @@ struct ScheduleView: View {
                                 Text(day.date)
                                     .font(.headline.weight(.bold))
                                 Rectangle()
-                                    .frame(width: 96, height: 2)
+                        .frame(width: 96, height: 3)
                             }
                             .foregroundStyle(wrapper.state.selectedDay == day.dayNumber ? Color.ingOrange : Color.vibrantMuted)
                         }
@@ -347,7 +360,11 @@ struct VibrantSessionCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 13) {
+            VStack(alignment: .leading, spacing: 0) {
+                Rectangle()
+                    .fill(Color.ingOrange)
+                    .frame(height: 4)
+                VStack(alignment: .leading, spacing: 11) {
                 HStack(alignment: .top) {
                     HStack(spacing: 6) {
                         Badge(text: session.type.displayName, color: .ingOrange)
@@ -356,31 +373,41 @@ struct VibrantSessionCard: View {
                     Spacer()
                     Button(action: onBookmark) {
                         Image(systemName: (session.isBookmarked || session.tags.contains(where: { $0.caseInsensitiveCompare("Saved") == .orderedSame })) ? "star.fill" : "star")
-                            .foregroundStyle(Color.vibrantBrown)
+                            .foregroundStyle(session.isBookmarked ? Color.ingOrange : Color.vibrantMuted)
                     }
                 }
                 Text(session.title)
-                    .font(.title2.weight(.black))
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.vibrantText)
                     .multilineTextAlignment(.leading)
                 Text(session.description)
                     .font(.body)
-                    .lineLimit(3)
+                    .lineLimit(2)
                     .foregroundStyle(Color.vibrantMuted)
                 Rectangle()
                     .fill(Color.vibrantBorder)
                     .frame(height: 1)
-                Text(displayTimeRange(session))
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.vibrantBrown)
-                Text(session.room.uppercased())
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.vibrantMuted)
+                HStack(spacing: 9) {
+                    Image(systemName: "clock")
+                        .foregroundStyle(Color.ingOrange)
+                    Text(displayTimeRange(session))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.vibrantText)
+                    Text("•").foregroundStyle(Color.vibrantSoftMuted)
+                    Text(session.room)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.vibrantMuted)
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(Color.ingPurple)
+                }
+                }
+                .padding(18)
             }
-            .padding(24)
             .background(Color.vibrantSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .shadow(color: Color.black.opacity(0.12), radius: 2, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -393,21 +420,25 @@ struct LiveCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(Color.ingOrange)
+                    .frame(width: 5)
+                VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("● LIVE")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Color(hex: 0xEA4335))
+                        .foregroundStyle(Color.ingOrange)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .background(Color(hex: 0xFFD8D8), in: Capsule())
+                        .background(Color.ingOrange.opacity(0.10), in: RoundedRectangle(cornerRadius: 4))
                     Spacer()
                     Text(session.room)
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color.vibrantSoftMuted)
                 }
                 Text(session.title)
-                    .font(.title2.weight(.black))
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.vibrantText)
                     .multilineTextAlignment(.leading)
                 Text(session.description)
@@ -417,11 +448,12 @@ struct LiveCard: View {
                 Text(speakerNames)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.vibrantMuted)
+                }
+                .padding(18)
             }
-            .padding(22)
             .background(Color.vibrantSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .shadow(color: Color.black.opacity(0.12), radius: 2, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -449,13 +481,13 @@ struct SpeakerRow: View {
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.headline.weight(.bold))
-                .foregroundStyle(Color.ingOrange)
+                .foregroundStyle(Color.ingPurple)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(Color.vibrantSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(color: Color.black.opacity(0.08), radius: 1, y: 1)
     }
 }
 
@@ -468,14 +500,14 @@ struct SectionHeader: View {
         VStack(spacing: 14) {
             HStack(alignment: .bottom) {
                 Text(title)
-                    .font(.title.weight(.black))
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.vibrantText)
                 Spacer()
                 if let action {
                     Button(action: { onAction?() }) {
                         Text(action)
                             .font(.headline.weight(.bold))
-                            .foregroundStyle(Color.vibrantBrown)
+                            .foregroundStyle(Color.ingPurple)
                     }
                     .buttonStyle(.plain)
                 }
@@ -563,7 +595,7 @@ struct Badge: View {
             .foregroundStyle(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.vibrantWarm, in: Capsule())
+            .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 4))
     }
 }
 
