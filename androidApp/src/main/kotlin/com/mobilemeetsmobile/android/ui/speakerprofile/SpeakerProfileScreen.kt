@@ -81,14 +81,6 @@ fun SpeakerProfileScreen(
             IconButton(onClick = onCloseClick) {
                 Icon(Icons.Filled.Close, contentDescription = "Close", tint = VibrantText)
             }
-            Text(
-                text = "MOBILE MEETS MOBILE",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.labelSmall,
-                letterSpacing = 1.5.sp,
-                color = VibrantBrown,
-                fontWeight = FontWeight.Bold,
-            )
         }
         Divider(color = VibrantBorder)
 

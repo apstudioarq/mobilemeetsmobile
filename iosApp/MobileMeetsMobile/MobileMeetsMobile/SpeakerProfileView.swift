@@ -55,11 +55,7 @@ struct SpeakerProfileView: View {
                 Image(systemName: "xmark")
             }
             .foregroundStyle(Color.vibrantText)
-
-            Text("MOBILE MEETS MOBILE")
-                .font(.system(size: 9, weight: .bold))
-                .tracking(1.5)
-                .foregroundStyle(Color.vibrantBrown)
+            Spacer()
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
