@@ -167,7 +167,12 @@ fun SessionDetailScreen(
                                 verticalArrangement = Arrangement.spacedBy(20.dp),
                             ) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    SpeakerAvatar(initials(speaker.name), avatarColor(speaker.name), 58)
+                                    SpeakerAvatar(
+                                        initials = initials(speaker.name),
+                                        color = avatarColor(speaker.name),
+                                        size = 58,
+                                        imageModel = speaker.photoImageSource.takeIf(String::isNotBlank),
+                                    )
                                     Column {
                                         Text(speaker.name, style = MaterialTheme.typography.titleMedium, color = VibrantText)
                                         Text("${speaker.role}, ${speaker.company}", style = MaterialTheme.typography.labelMedium, color = VibrantMuted)

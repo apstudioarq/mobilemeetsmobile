@@ -130,6 +130,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
                     company = dto.company,
                     bio = dto.bio,
                     photoUrl = dto.photoUrl,
+                    photoBase64 = dto.photoBase64,
+                    photoMimeType = dto.photoMimeType,
                     socialLinks = json.encodeToString(dto.socialLinks),
                 )
             }
@@ -147,6 +149,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
                     company = dto.company,
                     bio = dto.bio,
                     photoUrl = dto.photoUrl,
+                    photoBase64 = dto.photoBase64,
+                    photoMimeType = dto.photoMimeType,
                     socialLinks = json.encodeToString(dto.socialLinks),
                 )
             }
@@ -294,6 +298,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
         company: String,
         bio: String,
         photoUrl: String,
+        photoBase64: String,
+        photoMimeType: String,
         socialLinks: String,
     ): Speaker {
         val links: Map<String, String> = try {
@@ -307,6 +313,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
             company = company,
             bio = bio,
             photoUrl = photoUrl,
+            photoBase64 = photoBase64,
+            photoMimeType = photoMimeType,
             socialLinks = links,
         )
     }

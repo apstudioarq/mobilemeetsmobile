@@ -344,7 +344,7 @@ struct SpeakerProfileCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 16) {
-                Avatar(name: speaker.name, size: 58)
+                SpeakerAvatar(speaker: speaker, size: 58)
                 VStack(alignment: .leading) {
                     Text(speaker.name)
                         .font(.headline.weight(.bold))

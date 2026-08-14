@@ -62,6 +62,10 @@ data class SpeakerDto(
     val bio: String,
     @JsonNames("photo_url")
     val photoUrl: String,
+    @JsonNames("photo_base64")
+    val photoBase64: String = "",
+    @JsonNames("photo_mime_type")
+    val photoMimeType: String = "",
     @JsonNames("social_links")
     val socialLinks: Map<String, String> = emptyMap(),
 ) {
@@ -72,6 +76,8 @@ data class SpeakerDto(
         company = company,
         bio = bio,
         photoUrl = photoUrl,
+        photoBase64 = photoBase64,
+        photoMimeType = photoMimeType,
         socialLinks = socialLinks,
     )
 }

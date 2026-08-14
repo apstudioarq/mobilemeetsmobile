@@ -166,8 +166,12 @@ function parseSqlValue(value) {
 }
 
 function toSpeaker(fields) {
-  const [id, name, role, company, bio, photoUrl, socialLinks] = fields;
-  return {id, name, role, company, bio, photoUrl, socialLinks};
+  if (fields.length <= 7) {
+    const [id, name, role, company, bio, photoUrl, socialLinks] = fields;
+    return {id, name, role, company, bio, photoUrl, photoBase64: "", photoMimeType: "", socialLinks};
+  }
+  const [id, name, role, company, bio, photoUrl, photoBase64 = "", photoMimeType = "", socialLinks = {}] = fields;
+  return {id, name, role, company, bio, photoUrl, photoBase64, photoMimeType, socialLinks};
 }
 
 function toSession(fields) {

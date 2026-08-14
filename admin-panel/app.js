@@ -288,7 +288,31 @@ function normalizeConference(conference, key) {
 function normalizeRoom(room) {
   return {
     ...room,
-    presentations: toArray(room.presentations),
+    presentations: toArray(room.presentations).map(normalizePresentation),
+  };
+}
+
+function normalizePresentation(presentation) {
+  const speakers = toArray(presentation.speakers || presentation.presenterProfiles || presentation.presenter_profiles);
+  return {
+    ...presentation,
+    presenters: toArray(presentation.presenters).map(String),
+    speakers: speakers.length
+      ? speakers.map(normalizeSpeakerProfile)
+      : toArray(presentation.presenters).map((name) => normalizeSpeakerProfile({ name })),
+  };
+}
+
+function normalizeSpeakerProfile(speaker) {
+  return {
+    name: String(speaker.name || "").trim(),
+    role: String(speaker.role || "Presenter").trim() || "Presenter",
+    company: String(speaker.company || "").trim(),
+    bio: String(speaker.bio || "").trim(),
+    photoUrl: String(speaker.photoUrl || speaker.photo_url || "").trim(),
+    photoBase64: String(speaker.photoBase64 || speaker.photo_base64 || "").trim(),
+    photoMimeType: String(speaker.photoMimeType || speaker.photo_mime_type || "").trim(),
+    socialLinks: speaker.socialLinks || speaker.social_links || {},
   };
 }
 
@@ -479,11 +503,11 @@ function addPresentation(roomNode, presentation = createGeneratedPresentation(),
   node.querySelector(".presentation-title").value = presentation.title || "";
   node.querySelector(".presentation-description").value = presentation.description || "";
   node.querySelector(".presentation-duration").value = presentation.durationMinutes ?? 45;
-  node.querySelector(".presentation-presenters").value = (presentation.presenters || []).join(", ");
   node.querySelector(".presentation-start-date").value = epochToInputValue(presentation.startDate);
   node.querySelector(".presentation-tags").value = (presentation.tags || []).join(", ");
   node.querySelector(".presentation-technology").value = presentation.technology || "Android";
   node.querySelector(".presentation-type").value = presentation.type || "Session";
+  node.querySelector(".add-speaker-btn").addEventListener("click", () => addSpeakerRow(node));
   node.querySelector(".remove-presentation-btn").addEventListener("click", () => {
     node.remove();
     updateRoomHeading(roomNode);
@@ -492,11 +516,97 @@ function addPresentation(roomNode, presentation = createGeneratedPresentation(),
   });
   bindCollapseButton(node, ".toggle-presentation-btn", ".presentation-body");
 
+  const speakers = normalizePresentation(presentation).speakers;
+  if (speakers.length) {
+    speakers.forEach((speaker) => addSpeakerRow(node, speaker));
+  } else {
+    addSpeakerRow(node);
+  }
+
   container.appendChild(node);
   updatePresentationHeading(node);
   updateRoomHeading(roomNode);
   renderExistingPresentationOptions(roomNode);
   updateConferenceSummaryFromForm();
+}
+
+function addSpeakerRow(presentationNode, speaker = {}) {
+  const list = presentationNode.querySelector(".speaker-list");
+  const row = document.createElement("div");
+  row.className = "speaker-row";
+  row.dataset.photoBase64 = speaker.photoBase64 || "";
+  row.dataset.photoMimeType = speaker.photoMimeType || "";
+  row.innerHTML = `
+    <div class="speaker-preview" aria-hidden="true">${speaker.photoBase64 ? "" : "IMG"}</div>
+    <label>
+      Name
+      <input class="speaker-name" placeholder="Jane Doe" value="${escapeAttribute(speaker.name || "")}" />
+    </label>
+    <label>
+      Image
+      <input class="speaker-image-input" type="file" accept="image/*" />
+    </label>
+    <div class="row-actions speaker-actions">
+      <button type="button" class="ghost clear-speaker-image-btn">Clear Image</button>
+      <button type="button" class="danger remove-speaker-btn">Remove</button>
+    </div>
+  `;
+
+  renderSpeakerPreview(row);
+  row.querySelector(".speaker-image-input").addEventListener("change", () => readSpeakerImage(row));
+  row.querySelector(".clear-speaker-image-btn").addEventListener("click", () => {
+    row.dataset.photoBase64 = "";
+    row.dataset.photoMimeType = "";
+    row.querySelector(".speaker-image-input").value = "";
+    renderSpeakerPreview(row);
+    updateConferenceSummaryFromForm();
+  });
+  row.querySelector(".remove-speaker-btn").addEventListener("click", () => {
+    row.remove();
+    if (!list.querySelector(".speaker-row")) addSpeakerRow(presentationNode);
+    updateConferenceSummaryFromForm();
+  });
+  row.querySelector(".speaker-name").addEventListener("input", updateConferenceSummaryFromForm);
+  list.appendChild(row);
+}
+
+function readSpeakerImage(row) {
+  const input = row.querySelector(".speaker-image-input");
+  const [file] = input.files || [];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showToast("Select an image file.", true);
+    input.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    const result = String(reader.result || "");
+    const match = result.match(/^data:([^;]+);base64,(.*)$/);
+    if (!match) {
+      showToast("Unable to encode this image.", true);
+      return;
+    }
+    row.dataset.photoMimeType = match[1];
+    row.dataset.photoBase64 = match[2];
+    renderSpeakerPreview(row);
+    updateConferenceSummaryFromForm();
+    showToast("Image encoded as base64.");
+  });
+  reader.addEventListener("error", () => showToast("Unable to read the selected image.", true));
+  reader.readAsDataURL(file);
+}
+
+function renderSpeakerPreview(row) {
+  const preview = row.querySelector(".speaker-preview");
+  const photoBase64 = row.dataset.photoBase64 || "";
+  const photoMimeType = row.dataset.photoMimeType || "image/*";
+  if (photoBase64) {
+    preview.innerHTML = `<img src="data:${photoMimeType};base64,${photoBase64}" alt="" />`;
+    return;
+  }
+  preview.textContent = "IMG";
 }
 
 function addSelectedExistingRoom() {
@@ -822,18 +932,31 @@ function readRoom(roomNode) {
 }
 
 function readPresentation(node) {
+  const speakers = readSpeakerProfiles(node);
   const presentation = {
     id: value(node.querySelector(".presentation-id")),
     title: value(node.querySelector(".presentation-title")),
     description: value(node.querySelector(".presentation-description")),
     durationMinutes: Number(value(node.querySelector(".presentation-duration"))) || 0,
-    presenters: csvToArray(value(node.querySelector(".presentation-presenters"))),
+    presenters: speakers.map((speaker) => speaker.name),
+    speakers,
     startDate: inputValueToEpoch(value(node.querySelector(".presentation-start-date"))),
     tags: csvToArray(value(node.querySelector(".presentation-tags"))),
     technology: value(node.querySelector(".presentation-technology")),
     type: value(node.querySelector(".presentation-type")),
   };
   return presentation.id && presentation.title ? presentation : null;
+}
+
+function readSpeakerProfiles(node) {
+  return [...node.querySelectorAll(".speaker-row")]
+    .map((row) => normalizeSpeakerProfile({
+      name: value(row.querySelector(".speaker-name")),
+      role: "Presenter",
+      photoBase64: row.dataset.photoBase64 || "",
+      photoMimeType: row.dataset.photoMimeType || "",
+    }))
+    .filter((speaker) => speaker.name);
 }
 
 function setLockedInput(input, locked) {
@@ -1250,4 +1373,8 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function escapeAttribute(text) {
+  return escapeHtml(text).replace(/`/g, "&#096;");
 }

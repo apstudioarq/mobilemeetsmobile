@@ -28,6 +28,8 @@ CREATE TABLE SpeakerEntity (
     company TEXT NOT NULL,
     bio TEXT NOT NULL,
     photoUrl TEXT NOT NULL,
+    photoBase64 TEXT NOT NULL DEFAULT "",
+    photoMimeType TEXT NOT NULL DEFAULT "",
     socialLinks TEXT NOT NULL DEFAULT "{}"
 );
 
@@ -95,8 +97,8 @@ getSpeakersByIds:
 SELECT * FROM SpeakerEntity WHERE id IN ?;
 
 insertSpeaker:
-INSERT OR REPLACE INTO SpeakerEntity(id, name, role, company, bio, photoUrl, socialLinks)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO SpeakerEntity(id, name, role, company, bio, photoUrl, photoBase64, photoMimeType, socialLinks)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteAllSpeakers:
 DELETE FROM SpeakerEntity;

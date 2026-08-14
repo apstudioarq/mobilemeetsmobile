@@ -43,10 +43,28 @@ data class FirebasePresentationDto(
     val description: String = "",
     val durationMinutes: Int = 0,
     val presenters: List<String> = emptyList(),
+    @JsonNames("presenterProfiles", "presenter_profiles")
+    val speakers: List<FirebaseSpeakerDto> = emptyList(),
     val startDate: Long = 0,
     val tags: List<String> = emptyList(),
     val technology: String = "",
     val type: String = "",
+)
+
+@Serializable
+data class FirebaseSpeakerDto(
+    val name: String = "",
+    val role: String = "",
+    val company: String = "",
+    val bio: String = "",
+    @JsonNames("photo_url")
+    val photoUrl: String = "",
+    @JsonNames("photo_base64")
+    val photoBase64: String = "",
+    @JsonNames("photo_mime_type")
+    val photoMimeType: String = "",
+    @JsonNames("social_links")
+    val socialLinks: Map<String, String> = emptyMap(),
 )
 
 @Serializable
@@ -111,20 +129,25 @@ fun Map<String, FirebaseConferenceDto>.toSpeakerDtos(
     return selectedConferences(selectedConferenceId)
         .flatMap { conference ->
             conference.rooms.flatMap { room ->
-                room.presentations.flatMap { it.cleanPresenters() }
+                room.presentations.flatMap { it.cleanSpeakers() }
             }
         }
-        .distinctBy { speakerIdFor(it) }
-        .sortedBy { it }
-        .map { presenter ->
+        .groupBy { speakerIdFor(it.name) }
+        .map { (speakerId, speakers) ->
+            speakerId to speakers.maxByOrNull { it.completenessScore() }!!
+        }
+        .sortedBy { (_, speaker) -> speaker.name }
+        .map { (speakerId, speaker) ->
             SpeakerDto(
-                id = speakerIdFor(presenter),
-                name = presenter,
-                role = "Presenter",
-                company = "",
-                bio = "",
-                photoUrl = "",
-                socialLinks = emptyMap(),
+                id = speakerId,
+                name = speaker.name,
+                role = speaker.role.ifBlank { "Presenter" },
+                company = speaker.company,
+                bio = speaker.bio,
+                photoUrl = speaker.photoUrl,
+                photoBase64 = speaker.photoBase64,
+                photoMimeType = speaker.photoMimeType,
+                socialLinks = speaker.socialLinks,
             )
         }
 }
@@ -166,7 +189,7 @@ private fun FirebasePresentationDto.toSessionDto(
     val duration = durationMinutes.coerceAtLeast(0)
     val start = startDate.takeIf { it > 0 } ?: conference.startDate
     val end = start + duration.toLong() * 60
-    val presenterIds = cleanPresenters().map(::speakerIdFor)
+    val presenterIds = cleanSpeakers().map { speakerIdFor(it.name) }
     val cleanTags = tags.mapNotNull { it.trim().takeIf(String::isNotBlank) }
 
     return SessionDto(
@@ -192,6 +215,27 @@ private fun FirebasePresentationDto.toSessionDto(
 
 private fun FirebasePresentationDto.cleanPresenters(): List<String> {
     return presenters.mapNotNull { it.trim().takeIf(String::isNotBlank) }
+}
+
+private fun FirebasePresentationDto.cleanSpeakers(): List<FirebaseSpeakerDto> {
+    return speakers
+        .mapNotNull { speaker ->
+            val name = speaker.name.trim().takeIf(String::isNotBlank)
+            name?.let { speaker.copy(name = it) }
+        }
+        .ifEmpty {
+            cleanPresenters().map { presenter -> FirebaseSpeakerDto(name = presenter, role = "Presenter") }
+        }
+}
+
+private fun FirebaseSpeakerDto.completenessScore(): Int {
+    return listOf(
+        photoBase64,
+        photoUrl,
+        role,
+        company,
+        bio,
+    ).count { it.isNotBlank() }
 }
 
 private fun String.toTrack(): Track {

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import shared
 import Combine
 
@@ -421,7 +422,7 @@ struct SpeakerRow: View {
 
     var body: some View {
         HStack(spacing: 18) {
-            Avatar(name: speaker.name, size: 58)
+            SpeakerAvatar(speaker: speaker, size: 58)
             VStack(alignment: .leading, spacing: 3) {
                 Text(speaker.name)
                     .font(.headline.weight(.bold))
@@ -568,6 +569,47 @@ struct Avatar: View {
                     .font(.headline.weight(.black))
                     .foregroundStyle(Color.white)
             )
+    }
+}
+
+struct SpeakerAvatar: View {
+    let speaker: Speaker
+    let size: CGFloat
+
+    var body: some View {
+        if let image = imageFromBase64(speaker.photoBase64) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        } else if let url = URL(string: speaker.photoUrl), !speaker.photoUrl.isEmpty {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                default:
+                    Avatar(name: speaker.name, size: size)
+                }
+            }
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        } else {
+            Avatar(name: speaker.name, size: size)
+        }
+    }
+
+    private func imageFromBase64(_ base64: String) -> UIImage? {
+        let raw = base64
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: ",")
+            .last ?? ""
+        guard !raw.isEmpty, let data = Data(base64Encoded: raw, options: .ignoreUnknownCharacters) else {
+            return nil
+        }
+        return UIImage(data: data)
     }
 }
 

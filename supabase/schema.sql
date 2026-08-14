@@ -10,6 +10,8 @@ create table if not exists public.speakers (
   company text not null,
   bio text not null,
   photo_url text not null,
+  photo_base64 text not null default '',
+  photo_mime_type text not null default '',
   social_links jsonb not null default '{}'::jsonb
 );
 

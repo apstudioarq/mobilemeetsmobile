@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,10 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.mobilemeetsmobile.android.ui.theme.GoogleRed
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
 import com.mobilemeetsmobile.android.ui.theme.TrackAiMl
@@ -228,7 +231,12 @@ fun SpeakerRowCard(speaker: Speaker, modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SpeakerAvatar(initials = initials(speaker.name), color = avatarColor(speaker.name), size = 58)
+            SpeakerAvatar(
+                initials = initials(speaker.name),
+                color = avatarColor(speaker.name),
+                size = 58,
+                imageModel = speaker.photoImageSource.takeIf(String::isNotBlank),
+            )
             Column {
                 Text(
                     text = speaker.name,
@@ -412,6 +420,7 @@ fun SpeakerAvatar(
     initials: String,
     color: Color,
     size: Int = 48,
+    imageModel: Any? = null,
 ) {
     Box(
         modifier = Modifier
@@ -424,13 +433,22 @@ fun SpeakerAvatar(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = initials,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            fontSize = (size / 3).sp,
-        )
+        if (imageModel != null) {
+            AsyncImage(
+                model = imageModel,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Text(
+                text = initials,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                fontSize = (size / 3).sp,
+            )
+        }
     }
 }
 
