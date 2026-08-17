@@ -28,6 +28,10 @@ data class Session(
 enum class SessionType(val displayName: String) {
     KEYNOTE("Keynote"),
     SESSION("Session"),
+    SHORT_TALK("Short talk"),
+    INTERACTIVE_WORKSHOP("Interactive Workshop"),
+    LIGHTNING_TALK("Lightning talk"),
+    DEEP_DIVE_TALK("Deep dive talk"),
     WORKSHOP("Workshop"),
     CODELAB("Codelab"),
     OFFICE_HOURS("Office Hours");

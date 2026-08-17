@@ -18,8 +18,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
@@ -44,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mobilemeetsmobile.android.ui.components.SpeakerAvatar
@@ -90,14 +92,9 @@ fun SessionDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = VibrantMuted)
+                Icon(Icons.Filled.Close, contentDescription = "Close", tint = VibrantText)
             }
-            Text(
-                text = "Back to Schedule",
-                style = MaterialTheme.typography.labelLarge,
-                color = VibrantMuted,
-                fontWeight = FontWeight.Bold,
-            )
+            Spacer(modifier = Modifier.weight(1f))
         }
         Divider(color = VibrantBorder)
 
@@ -154,36 +151,50 @@ fun SessionDetailScreen(
                 )
 
                 if (state.speakers.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("Speaker", style = MaterialTheme.typography.headlineMedium, color = VibrantText)
                         state.speakers.forEach { speaker ->
-                            Column(
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
                                     .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onSpeakerProfileClick(speaker.id) }
                                     .background(VibrantSurface)
-                                    .padding(24.dp),
-                                verticalArrangement = Arrangement.spacedBy(20.dp),
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    SpeakerAvatar(initials(speaker.name), avatarColor(speaker.name), 58)
-                                    Column {
-                                        Text(speaker.name, style = MaterialTheme.typography.titleMedium, color = VibrantText)
-                                        Text("${speaker.role}, ${speaker.company}", style = MaterialTheme.typography.labelMedium, color = VibrantMuted)
-                                    }
-                                }
-                                Text(
-                                    text = speaker.bio,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = VibrantMuted,
+                                SpeakerAvatar(
+                                    initials = initials(speaker.name),
+                                    color = avatarColor(speaker.name),
+                                    size = 52,
+                                    imageModel = speaker.photoImageSource.takeIf(String::isNotBlank),
                                 )
-                                Text(
-                                    text = "View full profile ->",
-                                    modifier = Modifier.clickable { onSpeakerProfileClick(speaker.id) },
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = IngOrange,
-                                    fontWeight = FontWeight.Bold,
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                                ) {
+                                    Text(
+                                        text = speaker.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = VibrantText,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        text = speaker.role,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = VibrantMuted,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Filled.ChevronRight,
+                                    contentDescription = "View speaker profile",
+                                    tint = IngOrange,
+                                    modifier = Modifier.size(24.dp),
                                 )
                             }
                         }

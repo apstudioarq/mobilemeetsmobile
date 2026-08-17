@@ -9,8 +9,10 @@ import com.mobilemeetsmobile.data.remote.dto.SessionsResponse
 import com.mobilemeetsmobile.data.remote.dto.SpeakerDto
 import com.mobilemeetsmobile.data.remote.dto.SpeakersResponse
 import com.mobilemeetsmobile.data.remote.dto.FirebaseConferenceDto
+import com.mobilemeetsmobile.data.remote.dto.FirebaseHomeContentDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingSubmissionDto
+import com.mobilemeetsmobile.data.remote.dto.hasConfiguredContent
 import com.mobilemeetsmobile.data.remote.dto.toHomeContent
 import com.mobilemeetsmobile.data.remote.dto.toSessionDtos
 import com.mobilemeetsmobile.data.remote.dto.toSpeakerDtos
@@ -134,7 +136,8 @@ class MobileMeetsMobileApi(
 
     suspend fun getHomeContent(): HomeContent {
         if (BackendConfig.isFirebaseRealtimeDatabase) {
-            return getFirebaseConferences().toHomeContent(BackendConfig.selectedConferenceId)
+            return getFirebaseHomeContent()
+                ?: getFirebaseConferences().toHomeContent(BackendConfig.selectedConferenceId)
         }
 
         return HomeContent()
@@ -212,6 +215,19 @@ class MobileMeetsMobileApi(
             .mapValues { (key, conference) ->
                 conference.copy(id = conference.id.ifBlank { key })
             }
+    }
+
+    private suspend fun getFirebaseHomeContent(): HomeContent? {
+        val payload = runCatching { firebaseGet("test/home") }.getOrNull()
+            ?.trim()
+            ?.takeIf { it.isNotBlank() && it != "null" }
+            ?: return null
+
+        return runCatching {
+            json.decodeFromString<FirebaseHomeContentDto>(payload)
+                .takeIf { it.hasConfiguredContent() }
+                ?.toHomeContent()
+        }.getOrNull()
     }
 
     private fun decodeSessionList(payload: String): List<SessionDto> {

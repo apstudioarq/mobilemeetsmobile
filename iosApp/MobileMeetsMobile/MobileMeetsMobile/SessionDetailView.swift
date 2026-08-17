@@ -33,13 +33,12 @@ struct SessionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 6) {
+            HStack {
                 Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                    Text("Back to Schedule")
+                    Image(systemName: "xmark")
                 }
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color.vibrantMuted)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.vibrantText)
                 Spacer()
             }
             .padding(.horizontal, 18)
@@ -342,29 +341,29 @@ struct SpeakerProfileCard: View {
     let onProfileTap: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 16) {
-                Avatar(name: speaker.name, size: 58)
-                VStack(alignment: .leading) {
+        Button(action: onProfileTap) {
+            HStack(spacing: 12) {
+                SpeakerAvatar(speaker: speaker, size: 52)
+                VStack(alignment: .leading, spacing: 3) {
                     Text(speaker.name)
                         .font(.headline.weight(.bold))
                         .foregroundStyle(Color.vibrantText)
-                    Text("\(speaker.role), \(speaker.company)")
+                    Text(speaker.role)
                         .font(.caption)
                         .foregroundStyle(Color.vibrantMuted)
+                        .lineLimit(1)
                 }
-            }
-            Text(speaker.bio)
-                .foregroundStyle(Color.vibrantMuted)
-            Button(action: onProfileTap) {
-                Text("View full profile ->")
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Color.ingOrange)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color.vibrantSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
         }
-        .padding(24)
-        .background(Color.vibrantSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
+        .buttonStyle(.plain)
     }
 }

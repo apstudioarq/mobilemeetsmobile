@@ -21,6 +21,75 @@ import kotlin.test.assertEquals
 
 class MobileMeetsMobileApiTest {
     @Test
+    fun loadsHomeContentFromDedicatedFirebaseNode() = runBlocking {
+        BackendConfig.configureFirebaseRealtimeDatabase(
+            databaseUrl = "https://example.firebaseio.com",
+            apiKey = "test-api-key",
+        )
+        val requestedPaths = mutableListOf<String>()
+        val engine = MockEngine { request ->
+            assertEquals("id-token", request.url.parameters["auth"])
+            requestedPaths += request.url.encodedPath
+            when (request.url.encodedPath) {
+                "/test/home.json" -> respond(
+                    content = """
+                        {
+                          "title": "Custom Home",
+                          "description": "Loaded from admin",
+                          "image": "base64-image",
+                          "imageMimeType": "image/png"
+                        }
+                    """.trimIndent(),
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+
+                else -> error("Unexpected request: ${request.url}")
+            }
+        }
+        val api = createApi(engine)
+
+        val content = api.getHomeContent()
+
+        assertEquals(listOf("/test/home.json"), requestedPaths)
+        assertEquals("Custom Home", content.title)
+        assertEquals("Loaded from admin", content.description)
+        assertEquals("base64-image", content.imageBase64)
+        assertEquals("image/png", content.imageMimeType)
+    }
+
+    @Test
+    fun fallsBackToConferenceHomeContentWhenDedicatedNodeIsEmpty() = runBlocking {
+        BackendConfig.configureFirebaseRealtimeDatabase(
+            databaseUrl = "https://example.firebaseio.com",
+            apiKey = "test-api-key",
+        )
+        val engine = MockEngine { request ->
+            assertEquals("id-token", request.url.parameters["auth"])
+            when (request.url.encodedPath) {
+                "/test/home.json" -> respond(
+                    content = "null",
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+
+                "/test/conferences.json" -> respond(
+                    content = conferencePayload,
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+
+                else -> error("Unexpected request: ${request.url}")
+            }
+        }
+        val api = createApi(engine)
+
+        val content = api.getHomeContent()
+
+        assertEquals("Mobile Meets Mobile '26", content.title)
+    }
+
+    @Test
     fun submitsAuthenticatedSessionFeedbackUsingFirebasePush() = runBlocking {
         BackendConfig.configureFirebaseRealtimeDatabase(
             databaseUrl = "https://example.firebaseio.com",
@@ -51,17 +120,7 @@ class MobileMeetsMobileApiTest {
                 else -> error("Unexpected request: ${request.url}")
             }
         }
-        val client = HttpClient(engine) {
-            install(ContentNegotiation) {
-                json(Json { encodeDefaults = true })
-            }
-        }
-        val api = MobileMeetsMobileApi(
-            client = client,
-            firebaseIdTokenProvider = object : FirebaseIdTokenProvider {
-                override suspend fun getIdToken(forceRefresh: Boolean): String = "id-token"
-            },
-        )
+        val api = createApi(engine)
 
         api.submitFeedback(
             sessionId = "session-1",
@@ -83,6 +142,20 @@ class MobileMeetsMobileApiTest {
 
     private companion object {
         val jsonHeaders = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+        fun createApi(engine: MockEngine): MobileMeetsMobileApi {
+            val client = HttpClient(engine) {
+                install(ContentNegotiation) {
+                    json(Json { encodeDefaults = true })
+                }
+            }
+            return MobileMeetsMobileApi(
+                client = client,
+                firebaseIdTokenProvider = object : FirebaseIdTokenProvider {
+                    override suspend fun getIdToken(forceRefresh: Boolean): String = "id-token"
+                },
+            )
+        }
+
         val conferencePayload = """
             {
               "conference-1": {

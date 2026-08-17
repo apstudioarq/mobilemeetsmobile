@@ -2,7 +2,8 @@
 
 package com.mobilemeetsmobile.data.remote.dto
 
-import com.mobilemeetsmobile.data.model.DEFAULT_WELCOME_MESSAGE
+import com.mobilemeetsmobile.data.model.DEFAULT_HOME_DESCRIPTION
+import com.mobilemeetsmobile.data.model.DEFAULT_HOME_TITLE
 import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.model.Level
 import com.mobilemeetsmobile.data.model.SessionType
@@ -37,16 +38,47 @@ data class FirebaseRoomDto(
 )
 
 @Serializable
+data class FirebaseHomeContentDto(
+    val title: String = "",
+    @JsonNames("description", "welcome_message", "welcomeMessage")
+    val description: String = "",
+    @JsonNames("image", "image_base64", "imageBase64", "image_data", "imageData")
+    val imageBase64: String = "",
+    @JsonNames("image_mime_type", "imageMimeType")
+    val imageMimeType: String = "",
+    @JsonNames("image_url", "imageUrl", "hero_image_url", "welcome_image_url")
+    val imageUrl: String = "",
+)
+
+@Serializable
 data class FirebasePresentationDto(
     val id: String = "",
     val title: String = "",
     val description: String = "",
     val durationMinutes: Int = 0,
     val presenters: List<String> = emptyList(),
+    @JsonNames("presenterProfiles", "presenter_profiles")
+    val speakers: List<FirebaseSpeakerDto> = emptyList(),
     val startDate: Long = 0,
     val tags: List<String> = emptyList(),
     val technology: String = "",
     val type: String = "",
+)
+
+@Serializable
+data class FirebaseSpeakerDto(
+    val name: String = "",
+    val role: String = "",
+    val company: String = "",
+    val bio: String = "",
+    @JsonNames("photo_url")
+    val photoUrl: String = "",
+    @JsonNames("photo_base64")
+    val photoBase64: String = "",
+    @JsonNames("photo_mime_type")
+    val photoMimeType: String = "",
+    @JsonNames("social_links")
+    val socialLinks: Map<String, String> = emptyMap(),
 )
 
 @Serializable
@@ -111,20 +143,25 @@ fun Map<String, FirebaseConferenceDto>.toSpeakerDtos(
     return selectedConferences(selectedConferenceId)
         .flatMap { conference ->
             conference.rooms.flatMap { room ->
-                room.presentations.flatMap { it.cleanPresenters() }
+                room.presentations.flatMap { it.cleanSpeakers() }
             }
         }
-        .distinctBy { speakerIdFor(it) }
-        .sortedBy { it }
-        .map { presenter ->
+        .groupBy { speakerIdFor(it.name) }
+        .map { (speakerId, speakers) ->
+            speakerId to speakers.maxByOrNull { it.completenessScore() }!!
+        }
+        .sortedBy { (_, speaker) -> speaker.name }
+        .map { (speakerId, speaker) ->
             SpeakerDto(
-                id = speakerIdFor(presenter),
-                name = presenter,
-                role = "Presenter",
-                company = "",
-                bio = "",
-                photoUrl = "",
-                socialLinks = emptyMap(),
+                id = speakerId,
+                name = speaker.name,
+                role = speaker.role.ifBlank { "Presenter" },
+                company = speaker.company,
+                bio = speaker.bio,
+                photoUrl = speaker.photoUrl,
+                photoBase64 = speaker.photoBase64,
+                photoMimeType = speaker.photoMimeType,
+                socialLinks = speaker.socialLinks,
             )
         }
 }
@@ -134,16 +171,36 @@ fun Map<String, FirebaseConferenceDto>.toHomeContent(
 ): HomeContent {
     val conference = selectedConferences(selectedConferenceId).firstOrNull()
     return HomeContent(
-        welcomeMessage = conference
+        title = conference
+            ?.title
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?: DEFAULT_HOME_TITLE,
+        description = conference
             ?.welcomeMessage
             ?.trim()
             ?.takeIf(String::isNotBlank)
-            ?: DEFAULT_WELCOME_MESSAGE,
-        heroImageUrl = conference
+            ?: DEFAULT_HOME_DESCRIPTION,
+        imageUrl = conference
             ?.heroImageUrl
             ?.trim()
             .orEmpty(),
     )
+}
+
+fun FirebaseHomeContentDto.toHomeContent(): HomeContent {
+    return HomeContent(
+        title = title.trim().takeIf(String::isNotBlank) ?: DEFAULT_HOME_TITLE,
+        description = description.trim().takeIf(String::isNotBlank) ?: DEFAULT_HOME_DESCRIPTION,
+        imageBase64 = imageBase64.trim(),
+        imageMimeType = imageMimeType.trim(),
+        imageUrl = imageUrl.trim(),
+    )
+}
+
+fun FirebaseHomeContentDto.hasConfiguredContent(): Boolean {
+    return listOf(title, description, imageBase64, imageUrl)
+        .any { it.trim().isNotBlank() }
 }
 
 private fun Map<String, FirebaseConferenceDto>.selectedConferences(
@@ -166,7 +223,7 @@ private fun FirebasePresentationDto.toSessionDto(
     val duration = durationMinutes.coerceAtLeast(0)
     val start = startDate.takeIf { it > 0 } ?: conference.startDate
     val end = start + duration.toLong() * 60
-    val presenterIds = cleanPresenters().map(::speakerIdFor)
+    val presenterIds = cleanSpeakers().map { speakerIdFor(it.name) }
     val cleanTags = tags.mapNotNull { it.trim().takeIf(String::isNotBlank) }
 
     return SessionDto(
@@ -194,6 +251,27 @@ private fun FirebasePresentationDto.cleanPresenters(): List<String> {
     return presenters.mapNotNull { it.trim().takeIf(String::isNotBlank) }
 }
 
+private fun FirebasePresentationDto.cleanSpeakers(): List<FirebaseSpeakerDto> {
+    return speakers
+        .mapNotNull { speaker ->
+            val name = speaker.name.trim().takeIf(String::isNotBlank)
+            name?.let { speaker.copy(name = it) }
+        }
+        .ifEmpty {
+            cleanPresenters().map { presenter -> FirebaseSpeakerDto(name = presenter, role = "Presenter") }
+        }
+}
+
+private fun FirebaseSpeakerDto.completenessScore(): Int {
+    return listOf(
+        photoBase64,
+        photoUrl,
+        role,
+        company,
+        bio,
+    ).count { it.isNotBlank() }
+}
+
 private fun String.toTrack(): Track {
     val normalized = trim().lowercase()
     return when {
@@ -213,6 +291,10 @@ private fun String.toSessionType(): SessionType {
     val normalized = trim().lowercase()
     return when {
         normalized.contains("keynote") -> SessionType.KEYNOTE
+        normalized.contains("short") -> SessionType.SHORT_TALK
+        normalized.contains("interactive") && normalized.contains("workshop") -> SessionType.INTERACTIVE_WORKSHOP
+        normalized.contains("lightning") -> SessionType.LIGHTNING_TALK
+        normalized.contains("deep") && normalized.contains("dive") -> SessionType.DEEP_DIVE_TALK
         normalized.contains("workshop") -> SessionType.WORKSHOP
         normalized.contains("codelab") -> SessionType.CODELAB
         normalized.contains("office") -> SessionType.OFFICE_HOURS

@@ -1,10 +1,10 @@
 -- Seed data for Supabase (PostgreSQL)
 -- Safe to run multiple times thanks to ON CONFLICT DO UPDATE.
 -- Assumes tables:
---   public.speakers(id, name, role, company, bio, photo_url, social_links)
+--   public.speakers(id, name, role, company, bio, photo_url, photo_base64, photo_mime_type, social_links)
 --   public.sessions(id, title, description, start_time, end_time, duration, room, day, track, type, level, speaker_ids, capacity, registered, tags, livestream_url, slides_url, updated_at)
 
-insert into public.speakers (id, name, role, company, bio, photo_url, social_links)
+insert into public.speakers (id, name, role, company, bio, photo_url, photo_base64, photo_mime_type, social_links)
 values
   (
     'spk-sara-chen',
@@ -13,6 +13,8 @@ values
     'Google',
     'Works on multimodal models and production ML systems.',
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
+    '',
+    '',
     '{"x":"https://x.com/sarachen","linkedin":"https://linkedin.com/in/sarachen"}'::jsonb
   ),
   (
@@ -22,6 +24,8 @@ values
     'Google',
     'Focuses on modern Android architecture and performance.',
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+    '',
+    '',
     '{"x":"https://x.com/miguelortiz","github":"https://github.com/miguelortiz"}'::jsonb
   ),
   (
@@ -31,6 +35,8 @@ values
     'Firebase',
     'Leads developer platform features and realtime tooling.',
     'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f',
+    '',
+    '',
     '{"linkedin":"https://linkedin.com/in/priyanair"}'::jsonb
   ),
   (
@@ -40,6 +46,8 @@ values
     'Google Cloud',
     'Designs scalable cloud-native backends for global products.',
     'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d',
+    '',
+    '',
     '{"x":"https://x.com/lucabianchi"}'::jsonb
   ),
   (
@@ -49,6 +57,8 @@ values
     'Google',
     'Design systems specialist focused on accessibility and motion.',
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
+    '',
+    '',
     '{"dribbble":"https://dribbble.com/emmajohnson"}'::jsonb
   ),
   (
@@ -58,6 +68,8 @@ values
     'Google Chrome',
     'Works on performance budgets and modern web APIs.',
     'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7',
+    '',
+    '',
     '{"x":"https://x.com/noahpark","github":"https://github.com/noahpark"}'::jsonb
   ),
   (
@@ -67,6 +79,8 @@ values
     'Flutter',
     'Builds cross-platform app experiences and tooling examples.',
     'https://images.unsplash.com/photo-1544005313-94ddf0286df2',
+    '',
+    '',
     '{"x":"https://x.com/anasilva"}'::jsonb
   ),
   (
@@ -76,6 +90,8 @@ values
     'Google',
     'Specializes in app security, auth hardening, and key management.',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+    '',
+    '',
     '{"linkedin":"https://linkedin.com/in/davidkim"}'::jsonb
   ),
   (
@@ -112,6 +128,8 @@ values
     'DeepMind',
     'Bridges applied research into production-ready AI capabilities.',
     'https://images.unsplash.com/photo-1463453091185-61582044d556',
+    '',
+    '',
     '{"x":"https://x.com/carlosrivera"}'::jsonb
   )
 on conflict (id) do update set
@@ -120,6 +138,8 @@ on conflict (id) do update set
   company = excluded.company,
   bio = excluded.bio,
   photo_url = excluded.photo_url,
+  photo_base64 = excluded.photo_base64,
+  photo_mime_type = excluded.photo_mime_type,
   social_links = excluded.social_links;
 
 insert into public.sessions (

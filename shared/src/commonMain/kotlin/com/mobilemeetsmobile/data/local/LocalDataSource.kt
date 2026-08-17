@@ -130,6 +130,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
                     company = dto.company,
                     bio = dto.bio,
                     photoUrl = dto.photoUrl,
+                    photoBase64 = dto.photoBase64,
+                    photoMimeType = dto.photoMimeType,
                     socialLinks = json.encodeToString(dto.socialLinks),
                 )
             }
@@ -147,6 +149,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
                     company = dto.company,
                     bio = dto.bio,
                     photoUrl = dto.photoUrl,
+                    photoBase64 = dto.photoBase64,
+                    photoMimeType = dto.photoMimeType,
                     socialLinks = json.encodeToString(dto.socialLinks),
                 )
             }
@@ -169,10 +173,13 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
     // ── Home content ────────────────────────────────────────
 
     fun getHomeContent(): Flow<HomeContent> {
-        return sessionQueries.getHomeContent { welcomeMessage, heroImageUrl ->
+        return sessionQueries.getHomeContent { title, description, imageBase64, imageMimeType, imageUrl ->
             HomeContent(
-                welcomeMessage = welcomeMessage,
-                heroImageUrl = heroImageUrl,
+                title = title,
+                description = description,
+                imageBase64 = imageBase64,
+                imageMimeType = imageMimeType,
+                imageUrl = imageUrl,
             )
         }
             .asFlow()
@@ -183,8 +190,11 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
     fun saveHomeContent(content: HomeContent) {
         val now = kotlinx.datetime.Clock.System.now().epochSeconds
         sessionQueries.saveHomeContent(
-            welcomeMessage = content.welcomeMessage,
-            heroImageUrl = content.heroImageUrl,
+            title = content.title,
+            description = content.description,
+            imageBase64 = content.imageBase64,
+            imageMimeType = content.imageMimeType,
+            imageUrl = content.imageUrl,
             updatedAt = now,
         )
     }
@@ -294,6 +304,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
         company: String,
         bio: String,
         photoUrl: String,
+        photoBase64: String,
+        photoMimeType: String,
         socialLinks: String,
     ): Speaker {
         val links: Map<String, String> = try {
@@ -307,6 +319,8 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
             company = company,
             bio = bio,
             photoUrl = photoUrl,
+            photoBase64 = photoBase64,
+            photoMimeType = photoMimeType,
             socialLinks = links,
         )
     }

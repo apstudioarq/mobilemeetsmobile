@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import shared
 import Combine
 
@@ -62,7 +63,12 @@ struct HomeView: View {
                         }
                         SectionHeader(title: "Keynote Speakers")
                         ForEach(Array(speakers.state.speakers.prefix(3)), id: \.id) { speaker in
-                            SpeakerRow(speaker: speaker)
+                            NavigationLink {
+                                SpeakerProfileView(speakerId: speaker.id)
+                            } label: {
+                                SpeakerRow(speaker: speaker)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(20)
@@ -79,19 +85,12 @@ struct HomeView: View {
     private var hero: some View {
         HStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Global Summit 2024")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Color.vibrantMuted)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(Color.vibrantWarm, in: Capsule())
-
-                Text("Mobile Meets Mobile")
+                Text(schedule.state.homeContent.title)
                     .font(.system(size: 30, weight: .black))
                     .lineLimit(2)
                     .foregroundStyle(Color.vibrantText)
 
-                Text(schedule.state.homeContent.welcomeMessage)
+                Text(schedule.state.homeContent.description_)
                     .font(.subheadline)
                     .lineSpacing(3)
                     .lineLimit(4)
@@ -99,7 +98,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            HeroImage(imageUrl: schedule.state.homeContent.heroImageUrl)
+            HeroImage(content: schedule.state.homeContent)
         }
         .padding(20)
         .background(Color.vibrantSurface)
@@ -109,12 +108,16 @@ struct HomeView: View {
 }
 
 private struct HeroImage: View {
-    let imageUrl: String
+    let content: HomeContent
 
     var body: some View {
         ZStack {
             Color(hex: 0x30302F)
-            if let url = URL(string: imageUrl), !imageUrl.isEmpty {
+            if let uiImage = decodedImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            } else if let url = URL(string: content.imageUrl), !content.imageUrl.isEmpty {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
@@ -131,6 +134,17 @@ private struct HeroImage: View {
         }
         .frame(width: 108, height: 108)
         .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var decodedImage: UIImage? {
+        let cleanBase64 = content.imageBase64
+            .components(separatedBy: "base64,")
+            .last?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !cleanBase64.isEmpty, let data = Data(base64Encoded: cleanBase64) else {
+            return nil
+        }
+        return UIImage(data: data)
     }
 
     private var fallback: some View {
@@ -159,14 +173,16 @@ struct ScheduleView: View {
             VStack(spacing: 0) {
                 EventTopBar(section: "Schedule")
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if let error = wrapper.state.error, wrapper.state.sessions.isEmpty {
                             FirebaseLoadError(message: error) {
                                 wrapper.viewModel.loadDay(day: wrapper.state.selectedDay)
                             }
                         }
 
-                        dayTabs
+                        if wrapper.state.days.count > 1 {
+                            dayTabs
+                        }
 
                         CategoryFilter(
                             tracks: scheduleCategoryTracks,
@@ -175,7 +191,6 @@ struct ScheduleView: View {
                                 wrapper.viewModel.selectTrack(track: track)
                             }
                         )
-                        .padding(.bottom, 10)
 
                         if !wrapper.state.isLoading && wrapper.state.sessions.isEmpty && wrapper.state.error == nil {
                             Text("No sessions match this category.")
@@ -187,7 +202,7 @@ struct ScheduleView: View {
                             Text(displayClock(time))
                                 .font(.headline.weight(.bold))
                                 .foregroundStyle(Color.vibrantMuted)
-                                .padding(.top, 28)
+                                .padding(.top, 6)
 
                             ForEach(sessions, id: \.id) { session in
                                 VibrantSessionCard(session: session) {
@@ -421,19 +436,23 @@ struct SpeakerRow: View {
 
     var body: some View {
         HStack(spacing: 18) {
-            Avatar(name: speaker.name, size: 58)
+            SpeakerAvatar(speaker: speaker, size: 58)
             VStack(alignment: .leading, spacing: 3) {
                 Text(speaker.name)
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Color.vibrantText)
-                Text("\(speaker.role), \(speaker.company)")
+                Text(speaker.role)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.vibrantBrown)
+                    .foregroundStyle(Color.vibrantMuted)
+                    .lineLimit(1)
             }
             Spacer()
+            Image(systemName: "chevron.right")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.ingOrange)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 20)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .background(Color.vibrantSurface)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.vibrantBorder))
@@ -553,7 +572,7 @@ struct Avatar: View {
     let size: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 10)
+        Circle()
             .fill(
                 RadialGradient(
                     colors: [avatarColor(name), Color(hex: 0x111111)],
@@ -568,6 +587,47 @@ struct Avatar: View {
                     .font(.headline.weight(.black))
                     .foregroundStyle(Color.white)
             )
+    }
+}
+
+struct SpeakerAvatar: View {
+    let speaker: Speaker
+    let size: CGFloat
+
+    var body: some View {
+        if let image = imageFromBase64(speaker.photoBase64) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+        } else if let url = URL(string: speaker.photoUrl), !speaker.photoUrl.isEmpty {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                default:
+                    Avatar(name: speaker.name, size: size)
+                }
+            }
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+        } else {
+            Avatar(name: speaker.name, size: size)
+        }
+    }
+
+    private func imageFromBase64(_ base64: String) -> UIImage? {
+        let raw = base64
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: ",")
+            .last ?? ""
+        guard !raw.isEmpty, let data = Data(base64Encoded: raw, options: .ignoreUnknownCharacters) else {
+            return nil
+        }
+        return UIImage(data: data)
     }
 }
 
@@ -586,7 +646,7 @@ func displayTimeRange(_ session: Session) -> String {
 }
 
 func initials(_ name: String) -> String {
-    name.split(separator: " ").compactMap { $0.first }.map(String.init).joined()
+    String(name.split(separator: " ").compactMap { $0.first }.prefix(2)).uppercased()
 }
 
 func avatarColor(_ seed: String) -> Color {

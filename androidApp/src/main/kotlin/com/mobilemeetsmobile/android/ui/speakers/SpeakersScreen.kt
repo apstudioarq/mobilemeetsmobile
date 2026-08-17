@@ -101,7 +101,12 @@ fun SpeakerCard(
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            SpeakerAvatar(initials = initials, color = color, size = 64)
+            SpeakerAvatar(
+                initials = initials,
+                color = color,
+                size = 64,
+                imageModel = speaker.photoImageSource.takeIf(String::isNotBlank),
+            )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = speaker.name,

@@ -1,6 +1,9 @@
 package com.mobilemeetsmobile.android.ui.components
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
@@ -25,19 +30,24 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.mobilemeetsmobile.android.ui.theme.GoogleRed
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
 import com.mobilemeetsmobile.android.ui.theme.TrackAiMl
@@ -214,34 +224,65 @@ fun LiveSessionCard(
 }
 
 @Composable
-fun SpeakerRowCard(speaker: Speaker, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier
+fun SpeakerRowCard(
+    speaker: Speaker,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
+    val cardModifier = if (onClick != null) {
+        modifier
             .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp)),
+            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+    } else {
+        modifier
+            .fillMaxWidth()
+            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
+    }
+
+    Card(
+        modifier = cardModifier,
         shape = RoundedCornerShape(6.dp),
         colors = CardDefaults.cardColors(containerColor = VibrantSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(18.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SpeakerAvatar(initials = initials(speaker.name), color = avatarColor(speaker.name), size = 58)
-            Column {
+            SpeakerAvatar(
+                initials = initials(speaker.name),
+                color = avatarColor(speaker.name),
+                size = 52,
+                imageModel = speaker.photoImageSource.takeIf(String::isNotBlank),
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
                 Text(
                     text = speaker.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = VibrantText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "${speaker.role}, ${speaker.company}",
+                    text = speaker.role,
                     style = MaterialTheme.typography.labelMedium,
-                    color = VibrantBrown,
+                    color = VibrantMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = "View speaker profile",
+                tint = IngOrange,
+                modifier = Modifier.size(24.dp),
+            )
         }
     }
 }
@@ -330,7 +371,7 @@ fun DayTab(
 fun TimeSlotHeader(time: String) {
     Text(
         text = displayClock(time),
-        modifier = Modifier.padding(top = 28.dp, bottom = 12.dp),
+        modifier = Modifier.padding(top = 6.dp, bottom = 8.dp),
         style = MaterialTheme.typography.titleMedium,
         color = VibrantMuted,
         fontWeight = FontWeight.Bold,
@@ -412,11 +453,12 @@ fun SpeakerAvatar(
     initials: String,
     color: Color,
     size: Int = 48,
+    imageModel: Any? = null,
 ) {
     Box(
         modifier = Modifier
             .size(size.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(CircleShape)
             .background(
                 Brush.radialGradient(
                     listOf(color.copy(alpha = 0.95f), Color(0xFF151515)),
@@ -424,14 +466,50 @@ fun SpeakerAvatar(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = initials,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            fontSize = (size / 3).sp,
-        )
+        val imageSource = imageModel as? String
+        val base64Bitmap = remember(imageModel) {
+            imageSource?.decodeBase64Bitmap()
+        }
+        if (base64Bitmap != null) {
+            Image(
+                bitmap = base64Bitmap.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else if (imageModel != null && imageSource?.looksLikeBase64Image() != true) {
+            AsyncImage(
+                model = imageModel,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Text(
+                text = initials,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                fontSize = (size / 3).sp,
+            )
+        }
     }
+}
+
+private fun String.decodeBase64Bitmap() = runCatching {
+    val cleanBase64 = trim()
+        .substringAfter("base64,", missingDelimiterValue = this)
+        .trim()
+    if (cleanBase64.isBlank() || cleanBase64.startsWith("http", ignoreCase = true)) return@runCatching null
+
+    val bytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+}.getOrNull()
+
+private fun String.looksLikeBase64Image(): Boolean {
+    val clean = trim()
+    return clean.startsWith("data:", ignoreCase = true) ||
+        clean.length > 120 && !clean.startsWith("http", ignoreCase = true)
 }
 
 @Composable

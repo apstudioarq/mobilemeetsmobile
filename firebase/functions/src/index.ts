@@ -36,6 +36,8 @@ type SpeakerDocument = {
   company: string;
   bio: string;
   photoUrl: string;
+  photoBase64?: string;
+  photoMimeType?: string;
   socialLinks: Record<string, string>;
 };
 
@@ -221,6 +223,8 @@ function normalizeSpeaker(speaker: SpeakerDocument, documentId: string): Speaker
     company: speaker.company || "",
     bio: speaker.bio || "",
     photoUrl: speaker.photoUrl || "",
+    photoBase64: speaker.photoBase64 || "",
+    photoMimeType: speaker.photoMimeType || "",
     socialLinks: speaker.socialLinks || {},
   };
 }
