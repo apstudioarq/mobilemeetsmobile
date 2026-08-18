@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.onStart
 class SessionRepository(
     private val api: MobileMeetsMobileApi,
     private val local: LocalDataSource,
+    private val connectionState: ConnectionStateRepository,
 ) {
     fun getAllSessions(): Flow<List<Session>> {
         return local.getAllSessions().onStart {
@@ -25,9 +26,12 @@ class SessionRepository(
                 } else {
                     local.insertSessions(remoteSessions)
                 }
+                connectionState.reportOnline()
             } catch (e: Exception) {
                 println("Network error fetching all sessions: ${e.message}")
-                if (BackendConfig.isFirebaseRealtimeDatabase && !local.hasCachedSessions()) {
+                val hasCachedSessions = local.hasCachedSessions()
+                connectionState.reportOffline(hasCachedSessions)
+                if (BackendConfig.isFirebaseRealtimeDatabase && !hasCachedSessions) {
                     throw e
                 }
             }
@@ -65,10 +69,13 @@ class SessionRepository(
                     val remoteSessions = api.getSessions(day, track?.name)
                     local.insertSessions(remoteSessions)
                 }
+                connectionState.reportOnline()
             } catch (e: Exception) {
                 // Network failed, rely on cache
                 println("Network error: ${e.message}")
-                if (BackendConfig.isFirebaseRealtimeDatabase && !local.hasCachedSessions()) {
+                val hasCachedSessions = local.hasCachedSessions()
+                connectionState.reportOffline(hasCachedSessions)
+                if (BackendConfig.isFirebaseRealtimeDatabase && !hasCachedSessions) {
                     throw e
                 }
             }

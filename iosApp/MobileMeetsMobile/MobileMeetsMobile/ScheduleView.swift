@@ -51,7 +51,10 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(section: "Home")
+                EventTopBar(
+                    section: "Home",
+                    showsOfflineMode: schedule.state.isOffline && !schedule.state.requiresConnection
+                )
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         hero
@@ -80,6 +83,13 @@ struct HomeView: View {
                 SessionDetailView(sessionId: sessionId)
             }
         }
+        .internetConnectionRequiredAlert(
+            isPresented: Binding(
+                get: { schedule.state.requiresConnection },
+                set: { _ in }
+            ),
+            retry: { schedule.viewModel.retryConnection() }
+        )
     }
 
     private var hero: some View {
@@ -184,7 +194,10 @@ struct ScheduleView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(section: "Schedule")
+                EventTopBar(
+                    section: "Schedule",
+                    showsOfflineMode: wrapper.state.isOffline && !wrapper.state.requiresConnection
+                )
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         if let error = wrapper.state.error, wrapper.state.sessions.isEmpty {
@@ -235,6 +248,13 @@ struct ScheduleView: View {
                 SessionDetailView(sessionId: sessionId)
             }
         }
+        .internetConnectionRequiredAlert(
+            isPresented: Binding(
+                get: { wrapper.state.requiresConnection },
+                set: { _ in }
+            ),
+            retry: { wrapper.viewModel.retryConnection() }
+        )
     }
 
     private var dayTabs: some View {
@@ -305,7 +325,10 @@ struct FavoritesView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                EventTopBar(section: "Favorites")
+                EventTopBar(
+                    section: "Favorites",
+                    showsOfflineMode: wrapper.state.isOffline && !wrapper.state.requiresConnection
+                )
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         Text("Saved Sessions")
@@ -350,6 +373,13 @@ struct FavoritesView: View {
                 SessionDetailView(sessionId: sessionId)
             }
         }
+        .internetConnectionRequiredAlert(
+            isPresented: Binding(
+                get: { wrapper.state.requiresConnection },
+                set: { _ in }
+            ),
+            retry: { wrapper.viewModel.retryConnection() }
+        )
     }
 }
 

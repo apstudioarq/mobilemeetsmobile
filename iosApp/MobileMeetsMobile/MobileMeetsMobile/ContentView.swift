@@ -56,6 +56,7 @@ struct SplashView: View {
 
 struct EventTopBar: View {
     let section: String
+    var showsOfflineMode = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -79,6 +80,18 @@ struct EventTopBar: View {
             .padding(.horizontal, 18)
             .frame(height: 56)
 
+            if showsOfflineMode {
+                HStack(spacing: 7) {
+                    Image(systemName: "wifi.slash")
+                    Text("Offline mode · Showing saved data")
+                }
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.ingOrange)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(Color.ingOrange.opacity(0.14))
+            }
+
             Rectangle()
                 .fill(Color.vibrantBorder.opacity(0.65))
                 .frame(height: 1)
@@ -93,6 +106,19 @@ struct EventTopBar: View {
             .flatMap(\.windows)
             .first { $0.isKeyWindow }?
             .safeAreaInsets.top ?? 0
+    }
+}
+
+extension View {
+    func internetConnectionRequiredAlert(
+        isPresented: Binding<Bool>,
+        retry: @escaping () -> Void
+    ) -> some View {
+        alert("Internet connection required", isPresented: isPresented) {
+            Button("Try again", action: retry)
+        } message: {
+            Text("No saved event data is available on this device. Connect to the internet and try again.")
+        }
     }
 }
 

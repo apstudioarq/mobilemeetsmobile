@@ -30,12 +30,14 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -55,6 +57,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.mobilemeetsmobile.android.R
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -107,6 +110,7 @@ private fun NavHostController.navigateToBottomTab(screen: Screen) {
 fun AppNavigation() {
     val navController = rememberNavController()
     val scheduleViewModel: ScheduleViewModel = koinInject()
+    val speakersViewModel: SpeakersViewModel = koinInject()
     val scheduleState by scheduleViewModel.uiState.collectAsState()
     var isScheduleSearchExpanded by remember { mutableStateOf(false) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -118,19 +122,24 @@ fun AppNavigation() {
         containerColor = VibrantBackground,
         topBar = {
             if (showBars) {
-                MobileMeetsMobileTopBar(
-                    sectionTitle = when (currentRoute) {
-                        Screen.Home.route -> Screen.Home.label
-                        Screen.Schedule.route -> Screen.Schedule.label
-                        Screen.Favorites.route -> Screen.Favorites.label
-                        else -> ""
-                    },
-                    searchQuery = scheduleState.searchQuery,
-                    onSearchQueryChanged = scheduleViewModel::onSearchQueryChanged,
-                    showSearchAction = isScheduleRoute,
-                    isSearchExpanded = isScheduleRoute && isScheduleSearchExpanded,
-                    onSearchActionClick = { isScheduleSearchExpanded = !isScheduleSearchExpanded },
-                )
+                Column {
+                    MobileMeetsMobileTopBar(
+                        sectionTitle = when (currentRoute) {
+                            Screen.Home.route -> Screen.Home.label
+                            Screen.Schedule.route -> Screen.Schedule.label
+                            Screen.Favorites.route -> Screen.Favorites.label
+                            else -> ""
+                        },
+                        searchQuery = scheduleState.searchQuery,
+                        onSearchQueryChanged = scheduleViewModel::onSearchQueryChanged,
+                        showSearchAction = isScheduleRoute,
+                        isSearchExpanded = isScheduleRoute && isScheduleSearchExpanded,
+                        onSearchActionClick = { isScheduleSearchExpanded = !isScheduleSearchExpanded },
+                    )
+                    if (scheduleState.isOffline && !scheduleState.requiresConnection) {
+                        OfflineModeBanner()
+                    }
+                }
             }
         },
         bottomBar = {
@@ -145,8 +154,6 @@ fun AppNavigation() {
             modifier = Modifier.padding(paddingValues),
         ) {
             composable(Screen.Home.route) {
-                val scheduleViewModel: ScheduleViewModel = koinInject()
-                val speakersViewModel: SpeakersViewModel = koinInject()
                 HomeScreen(
                     scheduleViewModel = scheduleViewModel,
                     speakersViewModel = speakersViewModel,
@@ -162,9 +169,8 @@ fun AppNavigation() {
                 )
             }
             composable(Screen.Favorites.route) {
-                val viewModel: ScheduleViewModel = koinInject()
                 FavoritesScreen(
-                    viewModel = viewModel,
+                    viewModel = scheduleViewModel,
                     onSessionClick = { navController.navigate("session/$it") },
                 )
             }
@@ -186,8 +192,6 @@ fun AppNavigation() {
                 arguments = listOf(navArgument("speakerId") { type = NavType.StringType }),
             ) { backStackEntry ->
                 val speakerId = backStackEntry.arguments?.getString("speakerId") ?: return@composable
-                val speakersViewModel: SpeakersViewModel = koinInject()
-                val scheduleViewModel: ScheduleViewModel = koinInject()
                 SpeakerProfileScreen(
                     speakerId = speakerId,
                     speakersViewModel = speakersViewModel,
@@ -197,6 +201,53 @@ fun AppNavigation() {
                 )
             }
         }
+    }
+
+    if (scheduleState.requiresConnection) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = {
+                Text("Internet connection required")
+            },
+            text = {
+                Text(
+                    "No saved event data is available on this device. " +
+                        "Connect to the internet and try again.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scheduleViewModel.retryConnection()
+                        speakersViewModel.loadSpeakers()
+                    },
+                ) {
+                    Text("Try again", color = IngOrange)
+                }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun OfflineModeBanner() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(IngOrange.copy(alpha = 0.14f))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "Offline mode · Showing saved data",
+            color = IngOrange,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

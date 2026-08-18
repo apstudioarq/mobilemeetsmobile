@@ -4,6 +4,7 @@ import com.mobilemeetsmobile.data.model.ConferenceDay
 import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Track
+import com.mobilemeetsmobile.data.repository.ConnectionStateRepository
 import com.mobilemeetsmobile.domain.usecase.GetAllSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.GetBookmarksUseCase
 import com.mobilemeetsmobile.domain.usecase.GetHomeContentUseCase
@@ -38,6 +39,8 @@ data class ScheduleUiState(
     val showBookmarksOnly: Boolean = false,
     val days: List<ConferenceDay> = listOf(ConferenceDay(1, "Day 1", "TBD")),
     val homeContent: HomeContent = HomeContent(),
+    val isOffline: Boolean = false,
+    val requiresConnection: Boolean = false,
 )
 
 class ScheduleViewModel(
@@ -47,9 +50,13 @@ class ScheduleViewModel(
     private val getBookmarks: GetBookmarksUseCase,
     private val getHomeContent: GetHomeContentUseCase,
     private val getSpeakers: GetSpeakersUseCase,
+    private val connectionState: ConnectionStateRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var loadDayJob: Job? = null
+    private var availableDaysJob: Job? = null
+    private var homeContentJob: Job? = null
+    private var speakersJob: Job? = null
     private var speakerNamesById: Map<String, String> = emptyMap()
 
     private val _uiState = MutableStateFlow(ScheduleUiState())
@@ -61,6 +68,7 @@ class ScheduleViewModel(
         observeBookmarks()
         observeHomeContent()
         observeSpeakers()
+        observeConnectionState()
     }
 
     fun loadDay(day: Int) {
@@ -140,6 +148,14 @@ class ScheduleViewModel(
         loadDay(_uiState.value.selectedDay)
     }
 
+    fun retryConnection() {
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        loadDay(_uiState.value.selectedDay)
+        observeAvailableDays()
+        observeHomeContent()
+        observeSpeakers()
+    }
+
     private fun observeBookmarks() {
         scope.launch {
             getBookmarks().collect { ids ->
@@ -156,26 +172,39 @@ class ScheduleViewModel(
     }
 
     private fun observeHomeContent() {
-        scope.launch {
-            getHomeContent().collect { content ->
-                _uiState.update { it.copy(homeContent = content) }
+        homeContentJob?.cancel()
+        homeContentJob = scope.launch {
+            try {
+                getHomeContent().collect { content ->
+                    _uiState.update { it.copy(homeContent = content) }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                println("Unable to load home content: ${e.message}")
             }
         }
     }
 
     private fun observeSpeakers() {
-        scope.launch {
-            getSpeakers().collect { speakers ->
-                speakerNamesById = speakers.associate { speaker -> speaker.id to speaker.name }
-                if (_uiState.value.searchQuery.isNotBlank()) {
-                    refilterCurrentDayFromAllSessions()
+        speakersJob?.cancel()
+        speakersJob = scope.launch {
+            try {
+                getSpeakers().collect { speakers ->
+                    speakerNamesById = speakers.associate { speaker -> speaker.id to speaker.name }
+                    if (_uiState.value.searchQuery.isNotBlank()) {
+                        refilterCurrentDayFromAllSessions()
+                    }
                 }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                println("Unable to load speakers: ${e.message}")
             }
         }
     }
 
     private fun observeAvailableDays() {
-        scope.launch {
+        availableDaysJob?.cancel()
+        availableDaysJob = scope.launch {
             try {
                 getAllSessions().collect { sessions ->
                     val allSessions = applyBookmarkState(sessions)
@@ -211,6 +240,19 @@ class ScheduleViewModel(
                     } else {
                         current
                     }
+                }
+            }
+        }
+    }
+
+    private fun observeConnectionState() {
+        scope.launch {
+            connectionState.state.collect { state ->
+                _uiState.update {
+                    it.copy(
+                        isOffline = state.isOffline,
+                        requiresConnection = state.requiresConnection,
+                    )
                 }
             }
         }
@@ -314,5 +356,8 @@ class ScheduleViewModel(
 
     fun onCleared() {
         loadDayJob?.cancel()
+        availableDaysJob?.cancel()
+        homeContentJob?.cancel()
+        speakersJob?.cancel()
     }
 }
