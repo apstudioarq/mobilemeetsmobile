@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
@@ -42,7 +43,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,7 +69,7 @@ import com.mobilemeetsmobile.presentation.detail.SessionDetailViewModel
 fun SessionDetailScreen(
     viewModel: SessionDetailViewModel,
     sessionId: String,
-    onBackClick: () -> Unit,
+    onCloseClick: () -> Unit,
     onSpeakerProfileClick: (String) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -91,10 +91,9 @@ fun SessionDetailScreen(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.Filled.Close, contentDescription = "Close", tint = VibrantText)
+            IconButton(onClick = onCloseClick) {
+                Icon(Icons.Filled.Close, contentDescription = "Close", tint = IngOrange)
             }
-            Spacer(modifier = Modifier.weight(1f))
         }
         Divider(color = VibrantBorder)
 
@@ -107,8 +106,8 @@ fun SessionDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(28.dp),
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(22.dp),
             ) {
                 HeroImage()
 
@@ -119,7 +118,7 @@ fun SessionDetailScreen(
                     }
                     Text(
                         text = session.title,
-                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 42.sp),
+                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, lineHeight = 38.sp),
                         color = VibrantText,
                     )
                     MetaLine(
@@ -222,31 +221,45 @@ private fun HeroImage() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF061015)),
-        contentAlignment = Alignment.Center,
+            .height(164.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(IngOrange),
     ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "MOBILE MEETS MOBILE",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.4.sp,
+                color = Color.White.copy(alpha = 0.82f),
+            )
+            Text(
+                text = "Ideas in motion.",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White,
+            )
+        }
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(16.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(Color.Transparent, IngOrange, Color(0xFF18DDF2), Color.Transparent),
-                    )
-                ),
-        )
-        Box(
-            modifier = Modifier
-                .size(126.dp)
-                .clip(RoundedCornerShape(63.dp))
-                .background(
-                    Brush.radialGradient(
-                        listOf(Color(0xFFA9FCFF), Color(0xFF1FB9E0).copy(alpha = 0.35f), Color.Transparent),
-                    )
-                ),
-        )
+                .align(Alignment.CenterEnd)
+                .padding(end = 22.dp)
+                .size(72.dp)
+                .clip(RoundedCornerShape(36.dp))
+                .background(VibrantBrown),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Mic,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(34.dp),
+            )
+        }
     }
 }
 
@@ -269,14 +282,7 @@ private fun ReserveCard(isBookmarked: Boolean, onBookmark: () -> Unit) {
             .fillMaxWidth()
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        VibrantSurface,
-                        if (isBookmarked) IngOrange.copy(alpha = 0.06f) else VibrantSurface,
-                    ),
-                ),
-            )
+            .background(VibrantSurface)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
@@ -413,7 +419,7 @@ private fun FeedbackCard(
                 Text(
                     text = error,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFB3261E),
+                    color = MaterialTheme.colorScheme.error,
                 )
             } else if (isSubmitted) {
                 Text(
@@ -427,7 +433,7 @@ private fun FeedbackCard(
                 onClick = onSubmit,
                 enabled = rating in 1..5 && !isSubmitting && !isSubmitted,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(5.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = VibrantBrown, contentColor = Color.White),
             ) {
                 if (isSubmitting) {

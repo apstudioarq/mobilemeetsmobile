@@ -23,10 +23,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -48,8 +47,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.mobilemeetsmobile.android.ui.theme.GoogleRed
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
+import com.mobilemeetsmobile.android.ui.theme.IngPurple
 import com.mobilemeetsmobile.android.ui.theme.TrackAiMl
 import com.mobilemeetsmobile.android.ui.theme.TrackAndroid
 import com.mobilemeetsmobile.android.ui.theme.TrackCloud
@@ -80,20 +79,26 @@ fun SessionCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = VibrantSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(IngOrange),
+            )
+            Column(
+                modifier = Modifier.padding(start = 18.dp, top = 16.dp, end = 12.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -118,9 +123,9 @@ fun SessionCard(
 
             Text(
                 text = session.description,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = VibrantMuted,
-                maxLines = 3,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
 
@@ -128,34 +133,36 @@ fun SessionCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MiniSpeakerAvatar(session.speakerIds.firstOrNull().orEmpty())
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = displayTimeRange(session),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = VibrantBrown,
-                    )
-                    Text(
-                        text = session.room.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VibrantMuted,
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Filled.Schedule,
+                    contentDescription = null,
+                    tint = IngOrange,
+                    modifier = Modifier.size(19.dp),
+                )
+                Text(
+                    text = displayTimeRange(session),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = VibrantText,
+                )
+                Text("•", color = VibrantSoftMuted)
+                Text(
+                    text = session.room,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = VibrantMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = "View session details",
+                    tint = VibrantBrown,
+                    modifier = Modifier.size(22.dp),
+                )
             }
-
-            Button(
-                onClick = onClick,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(3.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = IngOrange,
-                    contentColor = Color.White,
-                ),
-            ) {
-                Text("View Session Details", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -171,16 +178,25 @@ fun LiveSessionCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = VibrantSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(22.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .width(5.dp)
+                    .fillMaxHeight()
+                    .height(176.dp)
+                    .background(IngOrange),
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -219,6 +235,7 @@ fun LiveSessionCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            }
         }
     }
 }
@@ -232,19 +249,16 @@ fun SpeakerRowCard(
     val cardModifier = if (onClick != null) {
         modifier
             .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
     } else {
-        modifier
-            .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
+        modifier.fillMaxWidth()
     }
 
     Card(
         modifier = cardModifier,
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = VibrantSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -280,7 +294,7 @@ fun SpeakerRowCard(
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = "View speaker profile",
-                tint = IngOrange,
+                tint = VibrantBrown,
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -292,8 +306,8 @@ fun TypeBadge(type: SessionType) {
     val color = if (type == SessionType.KEYNOTE) IngOrange else VibrantBrown
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(VibrantSurfaceWarm)
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.10f))
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
         Text(
@@ -309,7 +323,7 @@ fun TypeBadge(type: SessionType) {
 fun TrackBadge(track: Track) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(4.dp))
             .background(track.accentColor().copy(alpha = 0.12f))
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
@@ -348,19 +362,19 @@ fun DayTab(
     Column(
         modifier = Modifier
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = 18.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = date,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
-            color = if (isSelected) IngOrange else VibrantMuted,
+            color = if (isSelected) VibrantText else VibrantMuted,
         )
         Spacer(Modifier.height(12.dp))
         Box(
             modifier = Modifier
-                .height(2.dp)
+                .height(3.dp)
                 .width(96.dp)
                 .background(if (isSelected) IngOrange else VibrantBorder),
         )
@@ -385,7 +399,7 @@ fun StarToggle(
     modifier: Modifier = Modifier,
 ) {
     val color by animateColorAsState(
-        targetValue = if (isSelected) VibrantBrown else VibrantMuted,
+        targetValue = if (isSelected) IngOrange else VibrantMuted,
         label = "star",
     )
     androidx.compose.material3.IconButton(
@@ -404,8 +418,8 @@ fun StarToggle(
 fun LiveBadge() {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFFFD8D8))
+            .clip(RoundedCornerShape(4.dp))
+            .background(IngOrange.copy(alpha = 0.10f))
             .padding(horizontal = 10.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -414,13 +428,13 @@ fun LiveBadge() {
             modifier = Modifier
                 .size(6.dp)
                 .clip(CircleShape)
-                .background(GoogleRed),
+                .background(IngOrange),
         )
         Text(
             text = "LIVE",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = GoogleRed,
+            color = IngOrange,
         )
     }
 }
@@ -527,11 +541,12 @@ private fun MiniSpeakerAvatar(seed: String) {
     )
 }
 
+@Composable
 fun Track.accentColor(): Color = when (this) {
     Track.AI_ML -> TrackAiMl
     Track.ANDROID -> TrackAndroid
-    Track.IOS -> Color(0xFF111111)
-    Track.GENERIC -> Color(0xFF5F6368)
+    Track.IOS -> MaterialTheme.colorScheme.onSurface
+    Track.GENERIC -> MaterialTheme.colorScheme.onSurfaceVariant
     Track.WEB -> TrackWeb
     Track.CLOUD -> TrackCloud
     Track.FIREBASE -> TrackFirebase
@@ -539,6 +554,7 @@ fun Track.accentColor(): Color = when (this) {
     Track.DESIGN -> TrackDesign
 }
 
+@Composable
 fun Track.bgColor(): Color = accentColor().copy(alpha = 0.12f)
 
 fun displayClock(iso: String): String {
@@ -585,7 +601,7 @@ fun initials(name: String): String {
 }
 
 fun avatarColor(seed: String): Color {
-    val colors = listOf(IngOrange, TrackDesign, TrackAndroid, TrackAiMl, VibrantBrown)
+    val colors = listOf(IngOrange, TrackDesign, TrackAndroid, TrackAiMl, IngPurple)
     val index = seed.hashCode().mod(colors.size).let { if (it < 0) -it else it }
     return colors[index]
 }

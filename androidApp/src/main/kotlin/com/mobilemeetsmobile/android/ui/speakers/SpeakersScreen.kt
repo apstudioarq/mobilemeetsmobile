@@ -30,13 +30,13 @@ fun SpeakersScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(VibrantBackground)
             .padding(horizontal = 16.dp),
     ) {
         Text(
             text = "Speakers",
             style = MaterialTheme.typography.headlineMedium,
-            color = Color.White,
+            color = VibrantText,
             modifier = Modifier.padding(vertical = 16.dp),
         )
 
@@ -48,7 +48,7 @@ fun SpeakersScreen(
             ) {
                 Text(
                     text = state.error ?: "Unable to load speakers.",
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = VibrantMuted,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(12.dp))
@@ -63,8 +63,8 @@ fun SpeakersScreen(
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 160.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 80.dp),
             ) {
                 items(
@@ -94,8 +94,9 @@ fun SpeakerCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkSurfaceVariant),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = VibrantSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -112,14 +113,14 @@ fun SpeakerCard(
                 text = speaker.name,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White,
+                color = VibrantText,
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = speaker.role,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.5f),
+                color = VibrantMuted,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
             )

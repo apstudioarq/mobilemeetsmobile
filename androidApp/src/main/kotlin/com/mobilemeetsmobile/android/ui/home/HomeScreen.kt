@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,11 +43,13 @@ import coil.compose.AsyncImage
 import com.mobilemeetsmobile.android.R
 import com.mobilemeetsmobile.android.ui.components.LiveSessionCard
 import com.mobilemeetsmobile.android.ui.components.SpeakerRowCard
+import com.mobilemeetsmobile.android.ui.theme.IngOrange
 import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
 import com.mobilemeetsmobile.android.ui.theme.VibrantBorder
 import com.mobilemeetsmobile.android.ui.theme.VibrantBrown
 import com.mobilemeetsmobile.android.ui.theme.VibrantMuted
 import com.mobilemeetsmobile.android.ui.theme.VibrantSurface
+import com.mobilemeetsmobile.android.ui.theme.VibrantSurfaceWarm
 import com.mobilemeetsmobile.android.ui.theme.VibrantText
 import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
@@ -69,8 +72,8 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(VibrantBackground),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(26.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         item {
             HeroCard(content = scheduleState.homeContent)
@@ -78,8 +81,8 @@ fun HomeScreen(
 
         item {
             SectionHeader(
-                title = "Live Now",
-                action = "View Schedule",
+                title = "Live now",
+                action = "View schedule",
                 onAction = onScheduleClick,
             )
         }
@@ -97,7 +100,7 @@ fun HomeScreen(
         }
 
         item {
-            SectionHeader(title = "Keynote Speakers")
+            SectionHeader(title = "Featured speakers")
         }
 
         items(speakers.take(3), key = { "speaker_${it.id}" }) { speaker ->
@@ -115,40 +118,57 @@ fun HomeScreen(
 
 @Composable
 private fun HeroCard(content: HomeContent) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, VibrantBorder, RoundedCornerShape(6.dp))
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(VibrantSurface)
-            .padding(20.dp),
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .border(1.dp, VibrantBorder.copy(alpha = 0.55f), RoundedCornerShape(8.dp)),
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(IngOrange)
+                .padding(horizontal = 20.dp, vertical = 18.dp),
         ) {
-            Text(
-                text = content.title,
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 30.sp, lineHeight = 36.sp),
-                color = VibrantText,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "MOBILE MEETS MOBILE",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.84f),
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.4.sp,
+                )
+                Text(
+                    text = content.title,
+                    style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, lineHeight = 36.sp),
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        HeroImage(imageBase64 = content.imageBase64, imageUrl = content.imageUrl)
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(44.dp)
+                    .background(VibrantBrown),
             )
             Text(
                 text = content.description,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyMedium,
                 color = VibrantMuted,
-                maxLines = 4,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-
-        HeroImage(
-            imageBase64 = content.imageBase64,
-            imageUrl = content.imageUrl,
-        )
     }
 }
 
@@ -162,9 +182,9 @@ private fun HeroImage(
     }
     Box(
         modifier = Modifier
-            .size(108.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF30302F)),
+            .fillMaxWidth()
+            .height(138.dp)
+            .background(VibrantSurfaceWarm),
         contentAlignment = Alignment.Center,
     ) {
         if (base64Bitmap != null) {
@@ -186,8 +206,8 @@ private fun HeroImage(
                 painter = painterResource(R.drawable.splash_logo),
                 contentDescription = "Mobile Meets Mobile",
                 modifier = Modifier
-                    .size(76.dp)
-                    .clip(RoundedCornerShape(18.dp)),
+                    .size(84.dp)
+                    .clip(RoundedCornerShape(20.dp)),
             )
         }
     }
@@ -209,7 +229,7 @@ private fun SectionHeader(
     action: String? = null,
     onAction: () -> Unit = {},
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -217,7 +237,7 @@ private fun SectionHeader(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 color = VibrantText,
             )
             if (action != null) {
@@ -232,6 +252,6 @@ private fun SectionHeader(
                 )
             }
         }
-        Divider(color = VibrantBorder)
+        Divider(color = VibrantBorder, thickness = 1.dp)
     }
 }

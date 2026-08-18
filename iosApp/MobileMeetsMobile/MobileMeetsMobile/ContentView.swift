@@ -14,19 +14,19 @@ struct ContentView: View {
                 TabView(selection: $selectedTab) {
                     HomeView(onScheduleTap: { selectedTab = 1 })
                         .tabItem {
-                            Label("HOME", systemImage: selectedTab == 0 ? "house.fill" : "house")
+                            Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house")
                         }
                         .tag(0)
 
                     ScheduleView()
                         .tabItem {
-                            Label("SCHEDULE", systemImage: selectedTab == 1 ? "calendar.badge.clock" : "calendar")
+                            Label("Schedule", systemImage: selectedTab == 1 ? "calendar.badge.clock" : "calendar")
                         }
                         .tag(1)
 
                     FavoritesView()
                         .tabItem {
-                            Label("FAVORITES", systemImage: selectedTab == 2 ? "heart.fill" : "heart")
+                            Label("Favorites", systemImage: selectedTab == 2 ? "heart.fill" : "heart")
                         }
                         .tag(2)
                 }
@@ -43,7 +43,7 @@ struct ContentView: View {
 struct SplashView: View {
     var body: some View {
         ZStack {
-            Color.black
+            Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
             Image("SplashLogo")
@@ -69,21 +69,18 @@ struct EventTopBar: View {
                     .frame(width: 30, height: 30)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                Text("Mobile Meets Mobile")
-                    .font(.system(size: 16, weight: .black))
+                Text(section)
+                    .font(.system(size: 20, weight: .semibold))
                     .lineLimit(1)
                     .foregroundStyle(Color.vibrantText)
 
                 Spacer(minLength: 10)
 
-                Text(section.uppercased())
+                Text("MMM")
                     .font(.caption.weight(.bold))
+                    .tracking(1.2)
                     .lineLimit(1)
                     .foregroundStyle(Color.ingOrange)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 5)
-                    .background(Color.vibrantWarm, in: Capsule())
-                    .overlay(Capsule().stroke(Color.vibrantBorder))
             }
             .padding(.horizontal, 18)
             .frame(height: 56)
@@ -92,7 +89,7 @@ struct EventTopBar: View {
                 .fill(Color.vibrantBorder.opacity(0.65))
                 .frame(height: 1)
         }
-        .background(Color.white)
+        .background(Color.vibrantSurface)
         .ignoresSafeArea(edges: .top)
     }
 
@@ -116,20 +113,41 @@ extension Color {
         )
     }
 
+    static func adaptive(light: UInt, dark: UInt) -> Color {
+        Color(
+            uiColor: UIColor { traits in
+                UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+            }
+        )
+    }
+
     static let ingOrange = Color(hex: 0xFF6200)
-    static let vibrantBackground = Color(hex: 0xFFF7F4)
-    static let vibrantSurface = Color.white
-    static let vibrantWarm = Color(hex: 0xFFE8DF)
-    static let vibrantBorder = Color(hex: 0xF0C8BC)
-    static let vibrantText = Color(hex: 0x2A1A16)
-    static let vibrantMuted = Color(hex: 0x745F57)
-    static let vibrantSoftMuted = Color(hex: 0x9A8B86)
-    static let vibrantBrown = Color(hex: 0x9B3A00)
+    static let ingPurple = Color.adaptive(light: 0x525199, dark: 0x8E8BDB)
+    static let ingMagenta = Color(hex: 0xC00067)
+    static let vibrantBackground = Color.adaptive(light: 0xF3F3F3, dark: 0x121214)
+    static let vibrantSurface = Color.adaptive(light: 0xFFFFFF, dark: 0x1D1D20)
+    static let vibrantWarm = Color.adaptive(light: 0xEDEDEF, dark: 0x29292D)
+    static let vibrantBorder = Color.adaptive(light: 0xDADADD, dark: 0x414146)
+    static let vibrantText = Color.adaptive(light: 0x202020, dark: 0xF4F4F5)
+    static let vibrantMuted = Color.adaptive(light: 0x66666A, dark: 0xB8B8BE)
+    static let vibrantSoftMuted = Color.adaptive(light: 0x8E8E93, dark: 0x96969E)
+    static let vibrantBrown = Color.ingPurple
     static let trackBlue = Color(hex: 0x4285F4)
     static let trackGreen = Color(hex: 0x34A853)
     static let trackYellow = Color(hex: 0xFBBC04)
     static let trackRed = Color(hex: 0xEA4335)
     static let trackPurple = Color(hex: 0xA142F4)
+}
+
+private extension UIColor {
+    convenience init(hex: UInt) {
+        self.init(
+            red: CGFloat((hex >> 16) & 0xff) / 255,
+            green: CGFloat((hex >> 8) & 0xff) / 255,
+            blue: CGFloat(hex & 0xff) / 255,
+            alpha: 1
+        )
+    }
 }
 
 extension String: @retroactive Identifiable {
