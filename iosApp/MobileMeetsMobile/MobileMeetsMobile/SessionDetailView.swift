@@ -192,9 +192,16 @@ struct SessionDetailView: View {
                     .font(.headline.weight(.bold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .foregroundStyle(Color.white)
-                    .background(isBookmarked ? Color.vibrantText : Color.ingOrange)
+                    .foregroundStyle(isBookmarked ? Color.ingOrange : Color.white)
+                    .background(isBookmarked ? Color.vibrantWarm : Color.ingOrange)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                isBookmarked ? Color.ingOrange.opacity(0.7) : Color.clear,
+                                lineWidth: 1
+                            )
+                    )
             }
             .buttonStyle(.plain)
         }
