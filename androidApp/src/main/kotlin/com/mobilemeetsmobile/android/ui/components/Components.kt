@@ -172,6 +172,7 @@ fun SessionCard(
 fun LiveSessionCard(
     session: Session,
     speakerNames: String,
+    statusLabel: String = "LIVE",
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -202,7 +203,7 @@ fun LiveSessionCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                LiveBadge()
+                LiveBadge(label = statusLabel)
                 Text(
                     text = session.room,
                     style = MaterialTheme.typography.labelSmall,
@@ -415,7 +416,7 @@ fun StarToggle(
 }
 
 @Composable
-fun LiveBadge() {
+fun LiveBadge(label: String = "LIVE") {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
@@ -431,7 +432,7 @@ fun LiveBadge() {
                 .background(IngOrange),
         )
         Text(
-            text = "LIVE",
+            text = label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = IngOrange,

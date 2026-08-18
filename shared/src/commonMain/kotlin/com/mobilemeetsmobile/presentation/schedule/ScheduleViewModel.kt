@@ -13,17 +13,20 @@ import com.mobilemeetsmobile.domain.usecase.GetMapContentUseCase
 import com.mobilemeetsmobile.domain.usecase.GetScheduleUseCase
 import com.mobilemeetsmobile.domain.usecase.GetSpeakersUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
+import com.mobilemeetsmobile.presentation.home.selectHomeSessions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -33,6 +36,8 @@ data class ScheduleUiState(
     val selectedTrack: Track? = null,
     val sessions: List<Session> = emptyList(),
     val allSessions: List<Session> = emptyList(),
+    val homeSessions: List<Session> = emptyList(),
+    val homeSessionsAreLive: Boolean = false,
     val timeSlots: Map<String, List<Session>> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -64,6 +69,7 @@ class ScheduleViewModel(
     private var homeContentJob: Job? = null
     private var mapContentJob: Job? = null
     private var speakersJob: Job? = null
+    private var homeClockJob: Job? = null
     private var speakerNamesById: Map<String, String> = emptyMap()
 
     private val _uiState = MutableStateFlow(ScheduleUiState())
@@ -76,6 +82,7 @@ class ScheduleViewModel(
         observeHomeContent()
         observeSpeakers()
         observeConnectionState()
+        observeHomeClock()
     }
 
     fun loadDay(day: Int) {
@@ -234,8 +241,22 @@ class ScheduleViewModel(
             try {
                 getAllSessions().collect { sessions ->
                     val allSessions = applyBookmarkState(sessions)
+                    val homeSelection = selectHomeSessions(
+                        sessions = allSessions,
+                        now = Clock.System.now(),
+                    )
                     val derivedDays = buildConferenceDays(allSessions)
-                    if (derivedDays.isEmpty()) return@collect
+                    if (derivedDays.isEmpty()) {
+                        _uiState.update {
+                            it.copy(
+                                allSessions = emptyList(),
+                                homeSessions = emptyList(),
+                                homeSessionsAreLive = false,
+                            )
+                        }
+                        observeHomeClock()
+                        return@collect
+                    }
 
                     val current = _uiState.value
                     val selectedDay = if (derivedDays.any { it.dayNumber == current.selectedDay }) {
@@ -249,10 +270,13 @@ class ScheduleViewModel(
                     _uiState.update {
                         it.copy(
                             allSessions = allSessions,
+                            homeSessions = homeSelection.sessions,
+                            homeSessionsAreLive = homeSelection.isLive,
                             days = derivedDays,
                             selectedDay = selectedDay,
                         )
                     }
+                    observeHomeClock()
 
                     if (shouldReload) {
                         loadDay(selectedDay)
@@ -282,6 +306,48 @@ class ScheduleViewModel(
                 }
             }
         }
+    }
+
+    private fun observeHomeClock() {
+        homeClockJob?.cancel()
+        homeClockJob = scope.launch {
+            while (true) {
+                val nextChangeAt = refreshHomeSessions()
+                val nowMillis = Clock.System.now().toEpochMilliseconds()
+                val untilNextChange = nextChangeAt
+                    ?.toEpochMilliseconds()
+                    ?.minus(nowMillis)
+                    ?.plus(HOME_CLOCK_BOUNDARY_GRACE_MILLIS)
+                delay(
+                    untilNextChange
+                        ?.coerceIn(HOME_CLOCK_MIN_DELAY_MILLIS, HOME_CLOCK_SAFETY_REFRESH_MILLIS)
+                        ?: HOME_CLOCK_SAFETY_REFRESH_MILLIS,
+                )
+            }
+        }
+    }
+
+    private fun refreshHomeSessions(): Instant? {
+        var nextChangeAt: Instant? = null
+        _uiState.update { state ->
+            val selection = selectHomeSessions(
+                sessions = state.allSessions,
+                now = Clock.System.now(),
+            )
+            nextChangeAt = selection.nextChangeAt
+            if (
+                state.homeSessions == selection.sessions &&
+                state.homeSessionsAreLive == selection.isLive
+            ) {
+                state
+            } else {
+                state.copy(
+                    homeSessions = selection.sessions,
+                    homeSessionsAreLive = selection.isLive,
+                )
+            }
+        }
+        return nextChangeAt
     }
 
     private fun buildConferenceDays(sessions: List<Session>): List<ConferenceDay> {
@@ -386,5 +452,12 @@ class ScheduleViewModel(
         homeContentJob?.cancel()
         mapContentJob?.cancel()
         speakersJob?.cancel()
+        homeClockJob?.cancel()
+    }
+
+    private companion object {
+        const val HOME_CLOCK_BOUNDARY_GRACE_MILLIS = 100L
+        const val HOME_CLOCK_MIN_DELAY_MILLIS = 100L
+        const val HOME_CLOCK_SAFETY_REFRESH_MILLIS = 60_000L
     }
 }

@@ -48,6 +48,27 @@ struct HomeView: View {
     @State private var selectedSessionId: String?
     var onScheduleTap: () -> Void = {}
 
+    private var homeSessions: [Session] {
+        Array(schedule.state.homeSessions)
+    }
+
+    private var featuredSpeakers: [Speaker] {
+        guard schedule.state.homeSessionsAreLive else { return [] }
+        let speakerIds = homeSessions.flatMap(\.speakerIds)
+        let speakersById = Dictionary(uniqueKeysWithValues: speakers.state.speakers.map { ($0.id, $0) })
+        var seen = Set<String>()
+        return speakerIds.compactMap { speakerId in
+            guard seen.insert(speakerId).inserted else { return nil }
+            return speakersById[speakerId]
+        }
+    }
+
+    private var sessionSectionTitle: String {
+        if schedule.state.homeSessionsAreLive { return "Live Now" }
+        if !homeSessions.isEmpty { return "Up Next" }
+        return "Coming Soon"
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -58,20 +79,33 @@ struct HomeView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         hero
-                        SectionHeader(title: "Live Now", action: "View Schedule", onAction: onScheduleTap)
-                        ForEach(Array(schedule.state.sessions.prefix(2)), id: \.id) { session in
-                            LiveCard(session: session, speakers: speakers.state.speakers) {
+                        SectionHeader(title: sessionSectionTitle, action: "View Schedule", onAction: onScheduleTap)
+                        ForEach(homeSessions, id: \.id) { session in
+                            LiveCard(
+                                session: session,
+                                speakers: speakers.state.speakers,
+                                isLive: schedule.state.homeSessionsAreLive
+                            ) {
                                 selectedSessionId = session.id
                             }
                         }
-                        SectionHeader(title: "Keynote Speakers")
-                        ForEach(Array(speakers.state.speakers.prefix(3)), id: \.id) { speaker in
-                            NavigationLink {
-                                SpeakerProfileView(speakerId: speaker.id)
-                            } label: {
-                                SpeakerRow(speaker: speaker)
+
+                        if homeSessions.isEmpty {
+                            Text("There are no live sessions right now. Check back soon.")
+                                .font(.body)
+                                .foregroundStyle(Color.vibrantMuted)
+                        }
+
+                        if !featuredSpeakers.isEmpty {
+                            SectionHeader(title: "Featured Speakers")
+                            ForEach(featuredSpeakers, id: \.id) { speaker in
+                                NavigationLink {
+                                    SpeakerProfileView(speakerId: speaker.id)
+                                } label: {
+                                    SpeakerRow(speaker: speaker)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(16)
@@ -446,6 +480,7 @@ struct VibrantSessionCard: View {
 struct LiveCard: View {
     let session: Session
     let speakers: [Speaker]
+    let isLive: Bool
     let action: () -> Void
 
     var body: some View {
@@ -456,7 +491,7 @@ struct LiveCard: View {
                     .frame(width: 5)
                 VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("● LIVE")
+                    Text(isLive ? "● LIVE" : "● UP NEXT · \(displayClock(session.startTime))")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color.ingOrange)
                         .padding(.horizontal, 10)
@@ -489,7 +524,8 @@ struct LiveCard: View {
     }
 
     private var speakerNames: String {
-        speakers.filter { session.speakerIds.contains($0.id) }.map(\.name).joined(separator: ", ")
+        let names = speakers.filter { session.speakerIds.contains($0.id) }.map(\.name).joined(separator: ", ")
+        return names.isEmpty ? "Mobile Meets Mobile" : names
     }
 }
 
