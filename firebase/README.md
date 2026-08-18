@@ -95,7 +95,7 @@ The home hero reads editable content from `test/home` in Firebase Realtime Datab
         "description": "Welcome to Mobile Meets Mobile. Explore the agenda and enjoy the event.",
         "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA...",
         "imageMimeType": "image/png",
-      "imageUrl": ""
+        "imageUrl": ""
     }
   }
 }
@@ -104,6 +104,24 @@ The home hero reads editable content from `test/home` in Firebase Realtime Datab
 The image can also be stored as `image` when it contains base64 data.
 The app also accepts the legacy conference fields as a fallback: `welcomeMessage`, `welcome_message`, `heroImageUrl`, `hero_image_url`, and `welcome_image_url`.
 Remote values are cached locally, so the latest loaded title, description, and image remain available offline.
+
+## Realtime Database Event Map
+
+The event map reads its image from `test/map`:
+
+```json
+{
+  "test": {
+    "map": {
+      "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA...",
+      "imageMimeType": "image/png",
+      "imageUrl": ""
+    }
+  }
+}
+```
+
+Admins can upload, replace, or delete this image from the Map tab in the admin panel.
 
 ## Local Emulator
 

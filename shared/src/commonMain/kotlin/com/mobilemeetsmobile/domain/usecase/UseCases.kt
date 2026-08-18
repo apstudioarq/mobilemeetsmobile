@@ -3,8 +3,10 @@ package com.mobilemeetsmobile.domain.usecase
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Speaker
 import com.mobilemeetsmobile.data.model.HomeContent
+import com.mobilemeetsmobile.data.model.MapContent
 import com.mobilemeetsmobile.data.model.Track
 import com.mobilemeetsmobile.data.repository.HomeContentRepository
+import com.mobilemeetsmobile.data.repository.MapContentRepository
 import com.mobilemeetsmobile.data.repository.SessionRepository
 import com.mobilemeetsmobile.data.repository.SpeakerRepository
 import com.mobilemeetsmobile.data.repository.RatingRepository
@@ -49,6 +51,12 @@ class GetBookmarksUseCase(private val repository: SessionRepository) {
 class GetHomeContentUseCase(private val repository: HomeContentRepository) {
     operator fun invoke(): Flow<HomeContent> {
         return repository.getHomeContent()
+    }
+}
+
+class GetMapContentUseCase(private val repository: MapContentRepository) {
+    operator fun invoke(): Flow<MapContent> {
+        return repository.getMapContent()
     }
 }
 

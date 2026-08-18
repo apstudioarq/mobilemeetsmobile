@@ -20,7 +20,9 @@ import {
 
 const CONFERENCES_PATH = "test/conferences";
 const HOME_CONTENT_PATH = "test/home";
+const MAP_CONTENT_PATH = "test/map";
 const RATINGS_PATH = "ratings";
+const MAX_MAP_IMAGE_BYTES = 5 * 1024 * 1024;
 const DEFAULT_HOME_TITLE = "Mobile Meets Mobile";
 const DEFAULT_HOME_DESCRIPTION =
   "Welcome to Mobile Meets Mobile. Explore the agenda, discover live sessions, and make the event your own.";
@@ -53,6 +55,11 @@ const els = {
   homeImageInput: document.querySelector("#homeImageInput"),
   homeImagePreview: document.querySelector("#homeImagePreview"),
   clearHomeImageBtn: document.querySelector("#clearHomeImageBtn"),
+  mapView: document.querySelector("#mapView"),
+  mapForm: document.querySelector("#mapForm"),
+  mapImageInput: document.querySelector("#mapImageInput"),
+  mapImagePreview: document.querySelector("#mapImagePreview"),
+  deleteMapImageBtn: document.querySelector("#deleteMapImageBtn"),
   conferencesView: document.querySelector("#conferencesView"),
   ratingsView: document.querySelector("#ratingsView"),
   newConferenceBtn: document.querySelector("#newConferenceBtn"),
@@ -86,6 +93,7 @@ let app = null;
 let auth = null;
 let db = null;
 let homeContent = createDefaultHomeContent();
+let mapContent = createEmptyMapContent();
 let conferences = {};
 let ratings = {};
 let editingConferenceKey = null;
@@ -125,6 +133,9 @@ function bindEvents() {
   els.homeForm.addEventListener("submit", saveHomeContent);
   els.homeImageInput.addEventListener("change", readHomeImage);
   els.clearHomeImageBtn.addEventListener("click", clearHomeImage);
+  els.mapForm.addEventListener("submit", saveMapContent);
+  els.mapImageInput.addEventListener("change", readMapImage);
+  els.deleteMapImageBtn.addEventListener("click", deleteMapImage);
   els.ratingsConferenceFilter.addEventListener("change", renderRatings);
 
   for (const tab of els.tabs) {
@@ -233,6 +244,7 @@ async function disconnect() {
   }
   conferences = {};
   homeContent = createDefaultHomeContent();
+  mapContent = createEmptyMapContent();
   ratings = {};
   editingConferenceKey = null;
   renderEmptyState();
@@ -249,6 +261,10 @@ async function loadAllData() {
     const homeSnapshot = await get(ref(db, HOME_CONTENT_PATH));
     homeContent = normalizeHomeContent(homeSnapshot.val(), firstConference()?.conference || null);
     renderHomeForm();
+
+    const mapSnapshot = await get(ref(db, MAP_CONTENT_PATH));
+    mapContent = normalizeMapContent(mapSnapshot.val());
+    renderMapForm();
 
     renderConferenceList();
     renderRatingsFilter();
@@ -312,6 +328,23 @@ function normalizeHomeContent(raw, fallbackConference = null) {
         fallbackConference?.heroImageUrl ||
         "",
     ).trim(),
+  };
+}
+
+function createEmptyMapContent() {
+  return {
+    imageBase64: "",
+    imageMimeType: "",
+    imageUrl: "",
+  };
+}
+
+function normalizeMapContent(raw) {
+  const source = raw && typeof raw === "object" ? raw : {};
+  return {
+    imageBase64: String(source.imageBase64 || source.image_base64 || source.image || "").trim(),
+    imageMimeType: String(source.imageMimeType || source.image_mime_type || "").trim(),
+    imageUrl: String(source.imageUrl || source.image_url || "").trim(),
   };
 }
 
@@ -390,6 +423,8 @@ function setConnectedUi(connected, email = "", uid = "") {
   els.homeDescription.disabled = !connected;
   els.homeImageInput.disabled = !connected;
   els.clearHomeImageBtn.disabled = !connected;
+  els.mapImageInput.disabled = !connected;
+  els.deleteMapImageBtn.disabled = !connected || !hasMapImage();
   els.ratingsConferenceFilter.disabled = !connected;
 
   setStatus(connected ? `Connected as ${email} · UID ${uid}` : "Not connected");
@@ -398,6 +433,8 @@ function setConnectedUi(connected, email = "", uid = "") {
 function renderEmptyState() {
   homeContent = createDefaultHomeContent();
   renderHomeForm();
+  mapContent = createEmptyMapContent();
+  renderMapForm();
   els.conferenceList.innerHTML = `<p class="empty">No conferences loaded.</p>`;
   els.ratingsSummary.innerHTML = "";
   els.ratingDistributionChart.innerHTML = "";
@@ -471,6 +508,66 @@ function clearHomeImage() {
   };
   els.homeImageInput.value = "";
   renderHomeImagePreview();
+}
+
+function renderMapForm() {
+  els.mapImageInput.value = "";
+  renderMapImagePreview();
+  els.deleteMapImageBtn.disabled = !db || !hasMapImage();
+}
+
+function renderMapImagePreview() {
+  if (mapContent.imageBase64) {
+    const mimeType = mapContent.imageMimeType || "image/*";
+    els.mapImagePreview.innerHTML = `<img src="data:${mimeType};base64,${mapContent.imageBase64}" alt="Event map preview" />`;
+    return;
+  }
+
+  if (mapContent.imageUrl) {
+    els.mapImagePreview.innerHTML = `<img src="${escapeAttribute(mapContent.imageUrl)}" alt="Event map preview" />`;
+    return;
+  }
+
+  els.mapImagePreview.textContent = "No map uploaded";
+}
+
+function readMapImage() {
+  const [file] = els.mapImageInput.files || [];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showToast("Select an image file.", true);
+    els.mapImageInput.value = "";
+    return;
+  }
+  if (file.size > MAX_MAP_IMAGE_BYTES) {
+    showToast("The map image must be 5 MB or smaller.", true);
+    els.mapImageInput.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    const result = String(reader.result || "");
+    const match = result.match(/^data:([^;]+);base64,(.*)$/);
+    if (!match) {
+      showToast("Unable to encode this image.", true);
+      return;
+    }
+    mapContent = {
+      imageMimeType: match[1],
+      imageBase64: match[2],
+      imageUrl: "",
+    };
+    renderMapImagePreview();
+    els.deleteMapImageBtn.disabled = false;
+    showToast("Map image ready to save.");
+  });
+  reader.addEventListener("error", () => showToast("Unable to read the selected image.", true));
+  reader.readAsDataURL(file);
+}
+
+function hasMapImage() {
+  return Boolean(mapContent.imageBase64 || mapContent.imageUrl);
 }
 
 function renderConferenceList() {
@@ -958,6 +1055,37 @@ async function saveHomeContent(event) {
   }
 }
 
+async function saveMapContent(event) {
+  event.preventDefault();
+  if (!db) return;
+  if (!hasMapImage()) {
+    showToast("Select a map image before saving.", true);
+    return;
+  }
+
+  try {
+    await set(ref(db, MAP_CONTENT_PATH), mapContent);
+    renderMapForm();
+    showToast("Map image saved.");
+  } catch (error) {
+    showToast(readableError(error), true);
+  }
+}
+
+async function deleteMapImage() {
+  if (!db || !hasMapImage()) return;
+  if (!window.confirm("Delete the map image from the app?")) return;
+
+  try {
+    await remove(ref(db, MAP_CONTENT_PATH));
+    mapContent = createEmptyMapContent();
+    renderMapForm();
+    showToast("Map image deleted.");
+  } catch (error) {
+    showToast(readableError(error), true);
+  }
+}
+
 function readHomeForm() {
   return {
     title: value(els.homeTitle) || DEFAULT_HOME_TITLE,
@@ -1425,6 +1553,7 @@ function selectTab(tabName) {
     tab.classList.toggle("active", tab.dataset.tab === tabName);
   }
   els.homeView.classList.toggle("active", tabName === "home");
+  els.mapView.classList.toggle("active", tabName === "map");
   els.conferencesView.classList.toggle("active", tabName === "conferences");
   els.ratingsView.classList.toggle("active", tabName === "ratings");
   if (tabName === "ratings") renderRatings();

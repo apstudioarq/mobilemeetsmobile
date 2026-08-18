@@ -21,6 +21,34 @@ import kotlin.test.assertEquals
 
 class MobileMeetsMobileApiTest {
     @Test
+    fun loadsMapContentFromDedicatedFirebaseNode() = runBlocking {
+        BackendConfig.configureFirebaseRealtimeDatabase(
+            databaseUrl = "https://example.firebaseio.com",
+            apiKey = "test-api-key",
+        )
+        val engine = MockEngine { request ->
+            assertEquals("id-token", request.url.parameters["auth"])
+            assertEquals("/test/map.json", request.url.encodedPath)
+            respond(
+                content = """
+                    {
+                      "imageBase64": "map-image-data",
+                      "imageMimeType": "image/png"
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = createApi(engine)
+
+        val content = api.getMapContent()
+
+        assertEquals("map-image-data", content.imageBase64)
+        assertEquals("image/png", content.imageMimeType)
+    }
+
+    @Test
     fun loadsHomeContentFromDedicatedFirebaseNode() = runBlocking {
         BackendConfig.configureFirebaseRealtimeDatabase(
             databaseUrl = "https://example.firebaseio.com",

@@ -3,6 +3,7 @@ package com.mobilemeetsmobile.data.remote
 import com.mobilemeetsmobile.data.model.BookmarkRequest
 import com.mobilemeetsmobile.data.model.BookmarkResponse
 import com.mobilemeetsmobile.data.model.HomeContent
+import com.mobilemeetsmobile.data.model.MapContent
 import com.mobilemeetsmobile.data.remote.auth.FirebaseIdTokenProvider
 import com.mobilemeetsmobile.data.remote.dto.SessionDto
 import com.mobilemeetsmobile.data.remote.dto.SessionsResponse
@@ -10,10 +11,12 @@ import com.mobilemeetsmobile.data.remote.dto.SpeakerDto
 import com.mobilemeetsmobile.data.remote.dto.SpeakersResponse
 import com.mobilemeetsmobile.data.remote.dto.FirebaseConferenceDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseHomeContentDto
+import com.mobilemeetsmobile.data.remote.dto.FirebaseMapContentDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingDto
 import com.mobilemeetsmobile.data.remote.dto.FirebaseRatingSubmissionDto
 import com.mobilemeetsmobile.data.remote.dto.hasConfiguredContent
 import com.mobilemeetsmobile.data.remote.dto.toHomeContent
+import com.mobilemeetsmobile.data.remote.dto.toMapContent
 import com.mobilemeetsmobile.data.remote.dto.toSessionDtos
 import com.mobilemeetsmobile.data.remote.dto.toSpeakerDtos
 import io.ktor.client.*
@@ -141,6 +144,17 @@ class MobileMeetsMobileApi(
         }
 
         return HomeContent()
+    }
+
+    suspend fun getMapContent(): MapContent {
+        if (!BackendConfig.isFirebaseRealtimeDatabase) return MapContent()
+
+        val payload = firebaseGet("test/map")
+            .trim()
+            .takeIf { it.isNotBlank() && it != "null" }
+            ?: return MapContent()
+
+        return json.decodeFromString<FirebaseMapContentDto>(payload).toMapContent()
     }
 
     // ── Bookmarks ───────────────────────────────────────────

@@ -13,6 +13,11 @@
         ".read": "auth != null",
         ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
       },
+      "map": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+        ".validate": "!newData.exists() || (newData.hasChildren(['imageBase64', 'imageMimeType']) && newData.child('imageBase64').isString() && newData.child('imageBase64').val().length > 0 && newData.child('imageMimeType').isString() && newData.child('imageMimeType').val().matches(/^image\\//))"
+      },
       "conferences": {
         ".read": "auth != null",
         ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"

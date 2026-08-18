@@ -24,11 +24,17 @@ struct ContentView: View {
                         }
                         .tag(1)
 
-                    FavoritesView()
+                    MapView()
                         .tabItem {
-                            Label("Favorites", systemImage: selectedTab == 2 ? "heart.fill" : "heart")
+                            Label("Map", systemImage: selectedTab == 2 ? "map.fill" : "map")
                         }
                         .tag(2)
+
+                    FavoritesView()
+                        .tabItem {
+                            Label("Favorites", systemImage: selectedTab == 3 ? "heart.fill" : "heart")
+                        }
+                        .tag(3)
                 }
                 .tint(.ingOrange)
             }
