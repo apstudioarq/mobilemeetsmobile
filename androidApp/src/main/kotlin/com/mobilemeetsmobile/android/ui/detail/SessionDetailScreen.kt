@@ -52,7 +52,7 @@ import com.mobilemeetsmobile.android.ui.components.SpeakerAvatar
 import com.mobilemeetsmobile.android.ui.components.TrackBadge
 import com.mobilemeetsmobile.android.ui.components.TypeBadge
 import com.mobilemeetsmobile.android.ui.components.avatarColor
-import com.mobilemeetsmobile.android.ui.components.displayShortDate
+import com.mobilemeetsmobile.android.ui.components.displayFullDate
 import com.mobilemeetsmobile.android.ui.components.displayTimeRange
 import com.mobilemeetsmobile.android.ui.components.initials
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
@@ -123,7 +123,7 @@ fun SessionDetailScreen(
                     )
                     MetaLine(
                         icon = Icons.Filled.CalendarToday,
-                        text = "${displayShortDate(session.startTime)}, 2024 • ${displayTimeRange(session)}",
+                        text = "${displayFullDate(session.startTime)} • ${displayTimeRange(session)}",
                     )
                     MetaLine(icon = Icons.Filled.LocationOn, text = session.room)
                 }
@@ -343,11 +343,16 @@ private fun ReserveCard(isBookmarked: Boolean, onBookmark: () -> Unit) {
             onClick = onBookmark,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
+                .height(52.dp)
+                .border(
+                    width = 1.dp,
+                    color = if (isBookmarked) IngOrange.copy(alpha = 0.7f) else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp),
+                ),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isBookmarked) VibrantText else IngOrange,
-                contentColor = Color.White,
+                containerColor = if (isBookmarked) VibrantSurfaceWarm else IngOrange,
+                contentColor = if (isBookmarked) IngOrange else Color.White,
             ),
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(18.dp))
