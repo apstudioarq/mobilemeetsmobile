@@ -24,10 +24,12 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
@@ -69,6 +71,7 @@ import androidx.navigation.navArgument
 import com.mobilemeetsmobile.android.ui.detail.SessionDetailScreen
 import com.mobilemeetsmobile.android.ui.favorites.FavoritesScreen
 import com.mobilemeetsmobile.android.ui.home.HomeScreen
+import com.mobilemeetsmobile.android.ui.map.MapScreen
 import com.mobilemeetsmobile.android.ui.schedule.ScheduleScreen
 import com.mobilemeetsmobile.android.ui.speakerprofile.SpeakerProfileScreen
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
@@ -91,12 +94,13 @@ sealed class Screen(
 ) {
     data object Home : Screen("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
     data object Schedule : Screen("schedule", "Schedule", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
+    data object Map : Screen("map", "Map", Icons.Filled.Map, Icons.Outlined.Map)
     data object Favorites : Screen("favorites", "Favorites", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder)
     data object SessionDetail : Screen("session/{sessionId}", "Detail", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
     data object SpeakerProfile : Screen("speaker/{speakerId}", "Speaker", Icons.Filled.Home, Icons.Outlined.Home)
 }
 
-val bottomNavItems = listOf(Screen.Home, Screen.Schedule, Screen.Favorites)
+val bottomNavItems = listOf(Screen.Home, Screen.Schedule, Screen.Map, Screen.Favorites)
 
 private fun NavHostController.navigateToBottomTab(screen: Screen) {
     navigate(screen.route) {
@@ -127,6 +131,7 @@ fun AppNavigation() {
                         sectionTitle = when (currentRoute) {
                             Screen.Home.route -> Screen.Home.label
                             Screen.Schedule.route -> Screen.Schedule.label
+                            Screen.Map.route -> Screen.Map.label
                             Screen.Favorites.route -> Screen.Favorites.label
                             else -> ""
                         },
@@ -167,6 +172,9 @@ fun AppNavigation() {
                     viewModel = scheduleViewModel,
                     onSessionClick = { navController.navigate("session/$it") },
                 )
+            }
+            composable(Screen.Map.route) {
+                MapScreen(viewModel = scheduleViewModel)
             }
             composable(Screen.Favorites.route) {
                 FavoritesScreen(

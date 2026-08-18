@@ -65,13 +65,14 @@ When served by Firebase Hosting, the Firebase client config is loaded automatica
 The panel edits:
 
 - `/test/home`
+- `/test/map`
 - `/test/conferences/{conferenceId}`
 
 The ratings tab reads:
 
 - `/ratings/{ratingId}`
 
-The mobile app reads `/test/home` for the Home hero and `/test/conferences` for sessions and speakers.
+The mobile app reads `/test/home` for the Home hero, `/test/map` for the event map, and `/test/conferences` for sessions and speakers. The Map tab accepts image files up to 5 MB and stores the image as base64 in Realtime Database.
 
 ## Conference Shape
 

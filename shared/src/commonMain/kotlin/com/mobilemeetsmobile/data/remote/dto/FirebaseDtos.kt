@@ -5,6 +5,7 @@ package com.mobilemeetsmobile.data.remote.dto
 import com.mobilemeetsmobile.data.model.DEFAULT_HOME_DESCRIPTION
 import com.mobilemeetsmobile.data.model.DEFAULT_HOME_TITLE
 import com.mobilemeetsmobile.data.model.HomeContent
+import com.mobilemeetsmobile.data.model.MapContent
 import com.mobilemeetsmobile.data.model.Level
 import com.mobilemeetsmobile.data.model.SessionType
 import com.mobilemeetsmobile.data.model.Track
@@ -47,6 +48,16 @@ data class FirebaseHomeContentDto(
     @JsonNames("image_mime_type", "imageMimeType")
     val imageMimeType: String = "",
     @JsonNames("image_url", "imageUrl", "hero_image_url", "welcome_image_url")
+    val imageUrl: String = "",
+)
+
+@Serializable
+data class FirebaseMapContentDto(
+    @JsonNames("image", "image_base64", "imageBase64", "image_data", "imageData")
+    val imageBase64: String = "",
+    @JsonNames("image_mime_type", "imageMimeType")
+    val imageMimeType: String = "",
+    @JsonNames("image_url", "imageUrl")
     val imageUrl: String = "",
 )
 
@@ -201,6 +212,14 @@ fun FirebaseHomeContentDto.toHomeContent(): HomeContent {
 fun FirebaseHomeContentDto.hasConfiguredContent(): Boolean {
     return listOf(title, description, imageBase64, imageUrl)
         .any { it.trim().isNotBlank() }
+}
+
+fun FirebaseMapContentDto.toMapContent(): MapContent {
+    return MapContent(
+        imageBase64 = imageBase64.trim(),
+        imageMimeType = imageMimeType.trim(),
+        imageUrl = imageUrl.trim(),
+    )
 }
 
 private fun Map<String, FirebaseConferenceDto>.selectedConferences(

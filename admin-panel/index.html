@@ -37,6 +37,7 @@
 
         <nav class="tabs" aria-label="Admin sections">
           <button id="homeTab" type="button" class="tab active" data-tab="home">Home</button>
+          <button id="mapTab" type="button" class="tab" data-tab="map">Map</button>
           <button id="conferencesTab" type="button" class="tab" data-tab="conferences">Conferences</button>
           <button id="ratingsTab" type="button" class="tab" data-tab="ratings">Ratings</button>
         </nav>
@@ -80,6 +81,30 @@
 
               <div class="actions sticky-actions">
                 <button type="submit">Save Home</button>
+              </div>
+            </form>
+          </section>
+        </section>
+
+        <section id="mapView" class="view">
+          <section class="panel map-panel">
+            <div class="section-title-row">
+              <div>
+                <h2>Map</h2>
+                <p class="section-copy">Upload the event map shown in the app navigation.</p>
+              </div>
+            </div>
+
+            <form id="mapForm" class="map-form">
+              <label>
+                Map image
+                <input id="mapImageInput" type="file" accept="image/*" />
+              </label>
+              <div id="mapImagePreview" class="map-image-preview" aria-live="polite">No map uploaded</div>
+              <p class="image-help">Upload an image up to 5 MB. Saving a new image replaces the current map.</p>
+              <div class="actions sticky-actions">
+                <button type="submit">Save Map</button>
+                <button id="deleteMapImageBtn" type="button" class="danger">Delete Image</button>
               </div>
             </form>
           </section>
