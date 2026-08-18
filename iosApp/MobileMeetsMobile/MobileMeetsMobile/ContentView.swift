@@ -75,12 +75,6 @@ struct EventTopBar: View {
                     .foregroundStyle(Color.vibrantText)
 
                 Spacer(minLength: 10)
-
-                Text("MMM")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.2)
-                    .lineLimit(1)
-                    .foregroundStyle(Color.ingOrange)
             }
             .padding(.horizontal, 18)
             .frame(height: 56)

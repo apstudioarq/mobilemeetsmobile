@@ -66,7 +66,7 @@ struct SessionDetailView: View {
                             Text(session.title)
                                 .font(.system(size: 34, weight: .semibold))
                                 .foregroundStyle(Color.vibrantText)
-                            MetaLine(systemImage: "calendar", text: "October 24, 2024 • \(displayTimeRange(session))")
+                            MetaLine(systemImage: "calendar", text: "\(displayFullDate(session.startTime)) • \(displayTimeRange(session))")
                             MetaLine(systemImage: "mappin", text: session.room)
                         }
 

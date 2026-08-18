@@ -52,7 +52,7 @@ import com.mobilemeetsmobile.android.ui.components.SpeakerAvatar
 import com.mobilemeetsmobile.android.ui.components.TrackBadge
 import com.mobilemeetsmobile.android.ui.components.TypeBadge
 import com.mobilemeetsmobile.android.ui.components.avatarColor
-import com.mobilemeetsmobile.android.ui.components.displayShortDate
+import com.mobilemeetsmobile.android.ui.components.displayFullDate
 import com.mobilemeetsmobile.android.ui.components.displayTimeRange
 import com.mobilemeetsmobile.android.ui.components.initials
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
@@ -123,7 +123,7 @@ fun SessionDetailScreen(
                     )
                     MetaLine(
                         icon = Icons.Filled.CalendarToday,
-                        text = "${displayShortDate(session.startTime)}, 2024 • ${displayTimeRange(session)}",
+                        text = "${displayFullDate(session.startTime)} • ${displayTimeRange(session)}",
                     )
                     MetaLine(icon = Icons.Filled.LocationOn, text = session.room)
                 }

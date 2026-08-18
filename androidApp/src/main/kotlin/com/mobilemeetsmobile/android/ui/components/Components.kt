@@ -596,6 +596,13 @@ fun displayShortDate(iso: String): String {
     return if (day == null) date else "$monthName $day"
 }
 
+fun displayFullDate(iso: String): String {
+    val date = iso.take(10)
+    val year = date.substringBefore("-").toIntOrNull()
+    val shortDate = displayShortDate(iso)
+    return if (year == null || shortDate == date) date else "$shortDate, $year"
+}
+
 fun initials(name: String): String {
     return name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.joinToString("").take(2)
 }

@@ -248,30 +248,18 @@ fun MobileMeetsMobileTopBar(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (showSearchAction) {
-                    IconButton(
-                        onClick = onSearchActionClick,
-                        modifier = Modifier.size(34.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = "Toggle search",
-                            tint = IngOrange,
-                            modifier = Modifier.size(19.dp),
-                        )
-                    }
+            if (showSearchAction) {
+                IconButton(
+                    onClick = onSearchActionClick,
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = "Toggle search",
+                        tint = IngOrange,
+                        modifier = Modifier.size(24.dp),
+                    )
                 }
-                Text(
-                    text = "MMM",
-                    color = IngOrange,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp,
-                )
             }
         }
         if (isSearchExpanded) {

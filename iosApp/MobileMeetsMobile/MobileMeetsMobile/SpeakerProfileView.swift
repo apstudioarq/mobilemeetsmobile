@@ -152,3 +152,13 @@ func displayShortDate(_ iso: String) -> String {
     ][month] ?? ""
     return "\(monthName) \(day)"
 }
+
+func displayFullDate(_ iso: String) -> String {
+    let date = String(iso.prefix(10))
+    let pieces = date.split(separator: "-")
+    let shortDate = displayShortDate(iso)
+    guard pieces.count == 3, Int(pieces[0]) != nil, shortDate != date else {
+        return date
+    }
+    return "\(shortDate), \(pieces[0])"
+}
