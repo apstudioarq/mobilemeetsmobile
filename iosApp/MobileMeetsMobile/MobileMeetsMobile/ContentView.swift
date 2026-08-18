@@ -5,6 +5,19 @@ import shared
 struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showSplash = true
+    @StateObject private var notificationSchedule = ScheduleViewModelWrapper()
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
+    @AppStorage(SessionNotificationSettings.reminderMinutesKey)
+    private var reminderMinutes = SessionNotificationSettings.defaultReminderMinutes
+
+    private var notificationScheduleSignature: String {
+        let savedSessions = notificationSchedule.state.allSessions
+            .filter(\.isBookmarked)
+            .map { "\($0.id)|\($0.startTime)|\($0.endTime)" }
+            .sorted()
+            .joined(separator: ";")
+        return "\(reminderMinutes):\(savedSessions)"
+    }
 
     var body: some View {
         Group {
@@ -35,6 +48,12 @@ struct ContentView: View {
                             Label("Favorites", systemImage: selectedTab == 3 ? "heart.fill" : "heart")
                         }
                         .tag(3)
+
+                    SettingsView()
+                        .tabItem {
+                            Label("Settings", systemImage: selectedTab == 4 ? "gearshape.fill" : "gearshape")
+                        }
+                        .tag(4)
                 }
                 .tint(.ingOrange)
             }
@@ -42,6 +61,15 @@ struct ContentView: View {
         .task {
             try? await Task.sleep(nanoseconds: 900_000_000)
             showSplash = false
+        }
+        .onChange(of: notificationScheduleSignature, initial: true) { _, _ in
+            SessionNotificationScheduler.shared.reschedule(
+                sessions: Array(notificationSchedule.state.allSessions),
+                reminderMinutes: reminderMinutes
+            )
+        }
+        .fullScreenCover(item: $notificationRouter.pendingSessionId) { sessionId in
+            SessionDetailView(sessionId: sessionId)
         }
     }
 }
