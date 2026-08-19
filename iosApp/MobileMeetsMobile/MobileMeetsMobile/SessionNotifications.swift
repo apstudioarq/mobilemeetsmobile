@@ -148,14 +148,33 @@ final class SessionNotificationScheduler {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let fallbackFormatter = ISO8601DateFormatter()
         fallbackFormatter.formatOptions = [.withInternetDateTime]
+        let localFormatter = DateFormatter()
+        localFormatter.locale = Locale(identifier: "en_US_POSIX")
+        localFormatter.calendar = Calendar(identifier: .gregorian)
+        localFormatter.timeZone = .current
+        localFormatter.isLenient = false
         func date(from value: String) -> Date? {
-            formatter.date(from: value) ?? fallbackFormatter.date(from: value)
+            if let instant = formatter.date(from: value) ?? fallbackFormatter.date(from: value) {
+                return instant
+            }
+            for format in ["yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm"] {
+                localFormatter.dateFormat = format
+                if let localDate = localFormatter.date(from: value) {
+                    return localDate
+                }
+            }
+            return nil
         }
 
         let offset = TimeInterval(reminderMinutes * 60)
         var result: [Candidate] = []
 
         if let startDate = date(from: session.startTime) {
+            let now = Date()
+            let configuredDate = startDate.addingTimeInterval(-offset)
+            let deliveryDate = configuredDate <= now && now < startDate
+                ? now.addingTimeInterval(1)
+                : configuredDate
             let content = baseContent(for: session)
             content.title = "Starts in \(reminderMinutes) min · \(session.title)"
             content.subtitle = session.room
@@ -163,7 +182,7 @@ final class SessionNotificationScheduler {
             result.append(
                 Candidate(
                     identifier: identifier(sessionId: session.id, kind: "before"),
-                    date: startDate.addingTimeInterval(-offset),
+                    date: deliveryDate,
                     content: content
                 )
             )
