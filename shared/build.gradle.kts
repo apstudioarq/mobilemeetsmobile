@@ -1,4 +1,7 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+
 import org.gradle.api.tasks.Sync
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
@@ -11,11 +14,13 @@ plugins {
 val sharedXcframework = XCFramework("shared")
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
