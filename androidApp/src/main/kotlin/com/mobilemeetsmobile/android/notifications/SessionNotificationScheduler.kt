@@ -9,6 +9,9 @@ import android.content.Intent
 import android.os.Build
 import com.mobilemeetsmobile.data.model.Session
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class SessionNotificationScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
@@ -30,22 +33,24 @@ class SessionNotificationScheduler(private val context: Context) {
     }
 
     fun reschedule(sessions: List<Session>, bookmarkedIds: Set<String>, reminderMinutes: Int) {
-        cancelScheduledAlarms()
-        val minutes = reminderMinutes.coerceIn(
-            NotificationPreferences.MIN_REMINDER_MINUTES,
-            NotificationPreferences.MAX_REMINDER_MINUTES,
-        )
-        val now = System.currentTimeMillis()
-        val newTokens = mutableSetOf<String>()
+        synchronized(SCHEDULING_LOCK) {
+            cancelScheduledAlarms()
+            val minutes = reminderMinutes.coerceIn(
+                NotificationPreferences.MIN_REMINDER_MINUTES,
+                NotificationPreferences.MAX_REMINDER_MINUTES,
+            )
+            val now = System.currentTimeMillis()
+            val newTokens = mutableSetOf<String>()
 
-        sessions
-            .filter { it.id in bookmarkedIds }
-            .forEach { session ->
-                scheduleIfFuture(session, ReminderType.BEFORE, minutes, now)?.let(newTokens::add)
-                scheduleIfFuture(session, ReminderType.AFTER, minutes, now)?.let(newTokens::add)
-            }
+            sessions
+                .filter { it.id in bookmarkedIds }
+                .forEach { session ->
+                    scheduleIfFuture(session, ReminderType.BEFORE, minutes, now)?.let(newTokens::add)
+                    scheduleIfFuture(session, ReminderType.AFTER, minutes, now)?.let(newTokens::add)
+                }
 
-        scheduleStore.edit().putStringSet(KEY_SCHEDULED_TOKENS, newTokens).apply()
+            scheduleStore.edit().putStringSet(KEY_SCHEDULED_TOKENS, newTokens).commit()
+        }
     }
 
     private fun scheduleIfFuture(
@@ -54,13 +59,15 @@ class SessionNotificationScheduler(private val context: Context) {
         reminderMinutes: Int,
         now: Long,
     ): String? {
-        val sessionTime = try {
-            Instant.parse(if (type == ReminderType.BEFORE) session.startTime else session.endTime).toEpochMilli()
-        } catch (_: Exception) {
-            return null
-        }
+        val rawSessionTime = if (type == ReminderType.BEFORE) session.startTime else session.endTime
+        val sessionTime = parseSessionTime(rawSessionTime) ?: return null
         val offset = reminderMinutes * 60_000L
-        val triggerAt = if (type == ReminderType.BEFORE) sessionTime - offset else sessionTime + offset
+        var triggerAt = if (type == ReminderType.BEFORE) sessionTime - offset else sessionTime + offset
+        // TIME_SET may be received a few milliseconds after the configured reminder instant.
+        // Keep a pre-session reminder alive while the session itself has not started yet.
+        if (type == ReminderType.BEFORE && triggerAt <= now && now < sessionTime) {
+            triggerAt = now + IMMEDIATE_DELIVERY_DELAY_MILLIS
+        }
         if (triggerAt <= now) return null
 
         val token = token(session.id, type)
@@ -125,6 +132,18 @@ class SessionNotificationScheduler(private val context: Context) {
 
     private fun token(sessionId: String, type: ReminderType) = "${type.name}$TOKEN_SEPARATOR$sessionId"
 
+    internal fun parseSessionTime(value: String): Long? {
+        return runCatching { Instant.parse(value).toEpochMilli() }
+            .getOrElse {
+                runCatching {
+                    LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli()
+                }.getOrNull()
+            }
+    }
+
     enum class ReminderType { BEFORE, AFTER }
 
     companion object {
@@ -139,5 +158,7 @@ class SessionNotificationScheduler(private val context: Context) {
         private const val KEY_SCHEDULED_TOKENS = "scheduled_tokens"
         private const val REMINDER_ACTION = "com.mobilemeetsmobile.android.SESSION_REMINDER"
         private const val TOKEN_SEPARATOR = "|"
+        private const val IMMEDIATE_DELIVERY_DELAY_MILLIS = 750L
+        private val SCHEDULING_LOCK = Any()
     }
 }
