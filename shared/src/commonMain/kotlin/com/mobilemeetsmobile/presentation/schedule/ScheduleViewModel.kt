@@ -6,6 +6,7 @@ import com.mobilemeetsmobile.data.model.MapContent
 import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Track
 import com.mobilemeetsmobile.data.repository.ConnectionStateRepository
+import com.mobilemeetsmobile.data.remote.redactedMessage
 import com.mobilemeetsmobile.domain.usecase.GetAllSessionsUseCase
 import com.mobilemeetsmobile.domain.usecase.GetBookmarksUseCase
 import com.mobilemeetsmobile.domain.usecase.GetHomeContentUseCase
@@ -13,20 +14,20 @@ import com.mobilemeetsmobile.domain.usecase.GetMapContentUseCase
 import com.mobilemeetsmobile.domain.usecase.GetScheduleUseCase
 import com.mobilemeetsmobile.domain.usecase.GetSpeakersUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
-import com.mobilemeetsmobile.presentation.home.selectHomeSessions
+import com.mobilemeetsmobile.presentation.StateObservation
+import com.mobilemeetsmobile.presentation.observeIn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -36,8 +37,6 @@ data class ScheduleUiState(
     val selectedTrack: Track? = null,
     val sessions: List<Session> = emptyList(),
     val allSessions: List<Session> = emptyList(),
-    val homeSessions: List<Session> = emptyList(),
-    val homeSessionsAreLive: Boolean = false,
     val timeSlots: Map<String, List<Session>> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -85,6 +84,10 @@ class ScheduleViewModel(
         observeHomeClock()
     }
 
+    fun observeState(onStateChanged: (ScheduleUiState) -> Unit): StateObservation {
+        return uiState.observeIn(scope, onStateChanged)
+    }
+
     fun loadDay(day: Int) {
         _uiState.update { it.copy(selectedDay = day, isLoading = true, error = null) }
         loadDayJob?.cancel()
@@ -102,7 +105,7 @@ class ScheduleViewModel(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.redactedMessage("Unable to load sessions.")) }
             }
         }
     }
@@ -194,7 +197,7 @@ class ScheduleViewModel(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                println("Unable to load home content: ${e.message}")
+                println("Unable to load home content: ${e.redactedMessage("Unknown error")}")
             }
         }
     }
@@ -212,7 +215,7 @@ class ScheduleViewModel(
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 _uiState.update {
-                    it.copy(isMapLoading = false, mapError = e.message ?: "Unable to load the map.")
+                    it.copy(isMapLoading = false, mapError = e.redactedMessage("Unable to load the map."))
                 }
             }
         }
@@ -230,7 +233,7 @@ class ScheduleViewModel(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                println("Unable to load speakers: ${e.message}")
+                println("Unable to load speakers: ${e.redactedMessage("Unknown error")}")
             }
         }
     }
@@ -286,7 +289,10 @@ class ScheduleViewModel(
                 if (e is CancellationException) throw e
                 _uiState.update { current ->
                     if (current.sessions.isEmpty()) {
-                        current.copy(isLoading = false, error = e.message)
+                        current.copy(
+                            isLoading = false,
+                            error = e.redactedMessage("Unable to load sessions."),
+                        )
                     } else {
                         current
                     }
@@ -447,11 +453,7 @@ class ScheduleViewModel(
     }
 
     fun onCleared() {
-        loadDayJob?.cancel()
-        availableDaysJob?.cancel()
-        homeContentJob?.cancel()
-        mapContentJob?.cancel()
-        speakersJob?.cancel()
+        scope.cancel()
         homeClockJob?.cancel()
     }
 

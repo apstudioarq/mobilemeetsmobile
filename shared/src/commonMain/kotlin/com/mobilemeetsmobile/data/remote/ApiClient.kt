@@ -220,7 +220,8 @@ class MobileMeetsMobileApi(
     }
 
     private suspend fun getFirebaseSessions(): List<SessionDto> {
-        return getFirebaseConferences().toSessionDtos(BackendConfig.selectedConferenceId)
+        return getFirebaseConferences()
+            .toSessionDtos(BackendConfig.selectedConferenceId)
     }
 
     private suspend fun getFirebaseConferences(): Map<String, FirebaseConferenceDto> {

@@ -2,9 +2,13 @@ package com.mobilemeetsmobile.presentation.speakers
 
 import com.mobilemeetsmobile.data.model.Speaker
 import com.mobilemeetsmobile.domain.usecase.GetSpeakersUseCase
+import com.mobilemeetsmobile.data.remote.redactedMessage
+import com.mobilemeetsmobile.presentation.StateObservation
+import com.mobilemeetsmobile.presentation.observeIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +33,10 @@ class SpeakersViewModel(
         loadSpeakers()
     }
 
+    fun observeState(onStateChanged: (SpeakersUiState) -> Unit): StateObservation {
+        return uiState.observeIn(scope, onStateChanged)
+    }
+
     fun loadSpeakers() {
         _uiState.update { it.copy(isLoading = true, error = null) }
         scope.launch {
@@ -40,9 +48,16 @@ class SpeakersViewModel(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isLoading = false, error = e.message)
+                    it.copy(
+                        isLoading = false,
+                        error = e.redactedMessage("Unable to load speakers."),
+                    )
                 }
             }
         }
+    }
+
+    fun onCleared() {
+        scope.cancel()
     }
 }

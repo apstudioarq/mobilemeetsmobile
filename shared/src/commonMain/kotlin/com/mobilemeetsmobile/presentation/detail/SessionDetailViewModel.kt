@@ -6,9 +6,13 @@ import com.mobilemeetsmobile.domain.usecase.GetSessionDetailUseCase
 import com.mobilemeetsmobile.domain.usecase.GetSpeakersUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
 import com.mobilemeetsmobile.domain.usecase.SubmitFeedbackUseCase
+import com.mobilemeetsmobile.data.remote.redactedMessage
+import com.mobilemeetsmobile.presentation.StateObservation
+import com.mobilemeetsmobile.presentation.observeIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +44,10 @@ class SessionDetailViewModel(
     private val _uiState = MutableStateFlow(SessionDetailUiState())
     val uiState: StateFlow<SessionDetailUiState> = _uiState.asStateFlow()
 
+    fun observeState(onStateChanged: (SessionDetailUiState) -> Unit): StateObservation {
+        return uiState.observeIn(scope, onStateChanged)
+    }
+
     fun loadSession(sessionId: String) {
         _uiState.update {
             it.copy(
@@ -67,7 +75,10 @@ class SessionDetailViewModel(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isLoading = false, error = e.message)
+                    it.copy(
+                        isLoading = false,
+                        error = e.redactedMessage("Unable to load the session."),
+                    )
                 }
             }
         }
@@ -133,11 +144,15 @@ class SessionDetailViewModel(
                 _uiState.update {
                     it.copy(
                         isSubmittingFeedback = false,
-                        feedbackError = error.message ?: "Unable to submit feedback.",
+                        feedbackError = error.redactedMessage("Unable to submit feedback."),
                     )
                 }
             }
         }
+    }
+
+    fun onCleared() {
+        scope.cancel()
     }
 
     private val SessionDetailUiState.canEditFeedback: Boolean

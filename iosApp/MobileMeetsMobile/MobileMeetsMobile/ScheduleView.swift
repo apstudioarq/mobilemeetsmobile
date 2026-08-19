@@ -6,21 +6,18 @@ import Combine
 final class ScheduleViewModelWrapper: ObservableObject {
     let viewModel: ScheduleViewModel
     @Published var state: ScheduleUiState
-    private var cancellable: AnyCancellable?
+    private var observation: StateObservation?
 
     init() {
         viewModel = KoinInit.shared.getScheduleViewModel()
         state = viewModel.uiState.value as! ScheduleUiState
-        cancellable = Timer.publish(every: 0.1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self, let next = self.viewModel.uiState.value as? ScheduleUiState else { return }
-                self.state = next
-            }
+        observation = viewModel.observeState { [weak self] next in
+            self?.state = next
+        }
     }
 
     deinit {
-        cancellable?.cancel()
+        observation?.cancel()
         viewModel.onCleared()
     }
 }
@@ -28,23 +25,25 @@ final class ScheduleViewModelWrapper: ObservableObject {
 final class SpeakersViewModelWrapper: ObservableObject {
     let viewModel: SpeakersViewModel
     @Published var state: SpeakersUiState
-    private var cancellable: AnyCancellable?
+    private var observation: StateObservation?
 
     init() {
         viewModel = KoinInit.shared.getSpeakersViewModel()
         state = viewModel.uiState.value as! SpeakersUiState
-        cancellable = Timer.publish(every: 0.1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self, let next = self.viewModel.uiState.value as? SpeakersUiState else { return }
-                self.state = next
-            }
+        observation = viewModel.observeState { [weak self] next in
+            self?.state = next
+        }
+    }
+
+    deinit {
+        observation?.cancel()
+        viewModel.onCleared()
     }
 }
 
 struct HomeView: View {
-    @StateObject private var schedule = ScheduleViewModelWrapper()
-    @StateObject private var speakers = SpeakersViewModelWrapper()
+    @ObservedObject var schedule: ScheduleViewModelWrapper
+    @ObservedObject var speakers: SpeakersViewModelWrapper
     @State private var selectedSessionId: String?
     var onScheduleTap: () -> Void = {}
 
@@ -444,7 +443,7 @@ struct VibrantSessionCard: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.vibrantText)
                     .multilineTextAlignment(.leading)
-                Text(session.description)
+                Text(session.description_)
                     .font(.body)
                     .lineLimit(2)
                     .foregroundStyle(Color.vibrantMuted)
@@ -506,7 +505,7 @@ struct LiveCard: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.vibrantText)
                     .multilineTextAlignment(.leading)
-                Text(session.description)
+                Text(session.description_)
                     .font(.body)
                     .lineLimit(2)
                     .foregroundStyle(Color.vibrantMuted)

@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showSplash = true
     @StateObject private var notificationSchedule = ScheduleViewModelWrapper()
+    @StateObject private var homeSpeakers = SpeakersViewModelWrapper()
     @ObservedObject private var notificationRouter = NotificationRouter.shared
     @AppStorage(SessionNotificationSettings.reminderMinutesKey)
     private var reminderMinutes = SessionNotificationSettings.defaultReminderMinutes
@@ -25,7 +26,11 @@ struct ContentView: View {
                 SplashView()
             } else {
                 TabView(selection: $selectedTab) {
-                    HomeView(onScheduleTap: { selectedTab = 1 })
+                    HomeView(
+                        schedule: notificationSchedule,
+                        speakers: homeSpeakers,
+                        onScheduleTap: { selectedTab = 1 }
+                    )
                         .tabItem {
                             Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house")
                         }
@@ -94,9 +99,6 @@ struct EventTopBar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Color.clear
-                .frame(height: topSafeAreaInset)
-
             HStack(spacing: 10) {
                 Image("SplashLogo")
                     .resizable()
@@ -130,16 +132,7 @@ struct EventTopBar: View {
                 .fill(Color.vibrantBorder.opacity(0.65))
                 .frame(height: 1)
         }
-        .background(Color.vibrantSurface)
-        .ignoresSafeArea(edges: .top)
-    }
-
-    private var topSafeAreaInset: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first { $0.isKeyWindow }?
-            .safeAreaInsets.top ?? 0
+        .background(Color.vibrantSurface.ignoresSafeArea(edges: .top))
     }
 }
 
