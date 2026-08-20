@@ -22,6 +22,7 @@ const CONFERENCES_PATH = "test/conferences";
 const HOME_CONTENT_PATH = "test/home";
 const MAP_CONTENT_PATH = "test/map";
 const RATINGS_PATH = "ratings";
+const APPLICATION_LOCK_PATH = "test/config/appLocked";
 const MAX_MAP_IMAGE_BYTES = 5 * 1024 * 1024;
 const DEFAULT_HOME_TITLE = "Mobile Meets Mobile";
 const DEFAULT_HOME_DESCRIPTION =
@@ -48,6 +49,9 @@ const els = {
   refreshBtn: document.querySelector("#refreshBtn"),
   signOutBtn: document.querySelector("#signOutBtn"),
   tabs: [...document.querySelectorAll(".tab")],
+  applicationView: document.querySelector("#applicationView"),
+  applicationLockForm: document.querySelector("#applicationLockForm"),
+  appLocked: document.querySelector("#appLocked"),
   homeView: document.querySelector("#homeView"),
   homeForm: document.querySelector("#homeForm"),
   homeTitle: document.querySelector("#homeTitle"),
@@ -96,6 +100,7 @@ let homeContent = createDefaultHomeContent();
 let mapContent = createEmptyMapContent();
 let conferences = {};
 let ratings = {};
+let appLocked = false;
 let editingConferenceKey = null;
 
 boot();
@@ -137,6 +142,7 @@ function bindEvents() {
   els.mapImageInput.addEventListener("change", readMapImage);
   els.deleteMapImageBtn.addEventListener("click", deleteMapImage);
   els.ratingsConferenceFilter.addEventListener("change", renderRatings);
+  els.applicationLockForm.addEventListener("submit", saveApplicationLock);
 
   for (const tab of els.tabs) {
     tab.addEventListener("click", () => selectTab(tab.dataset.tab));
@@ -255,6 +261,10 @@ async function loadAllData() {
   if (!db) return;
 
   try {
+    const applicationLockSnapshot = await get(ref(db, APPLICATION_LOCK_PATH));
+    appLocked = applicationLockSnapshot.val() === true;
+    renderApplicationLockForm();
+
     const conferenceSnapshot = await get(ref(db, CONFERENCES_PATH));
     conferences = normalizeConferences(conferenceSnapshot.val());
 
@@ -426,11 +436,14 @@ function setConnectedUi(connected, email = "", uid = "") {
   els.mapImageInput.disabled = !connected;
   els.deleteMapImageBtn.disabled = !connected || !hasMapImage();
   els.ratingsConferenceFilter.disabled = !connected;
+  els.appLocked.disabled = !connected;
 
   setStatus(connected ? `Connected as ${email} · UID ${uid}` : "Not connected");
 }
 
 function renderEmptyState() {
+  appLocked = false;
+  renderApplicationLockForm();
   homeContent = createDefaultHomeContent();
   renderHomeForm();
   mapContent = createEmptyMapContent();
@@ -444,6 +457,36 @@ function renderEmptyState() {
   els.conferenceSummary.innerHTML = "";
   renderExistingRoomOptions();
   openConferenceForm(null, null);
+}
+
+function renderApplicationLockForm() {
+  els.appLocked.checked = appLocked;
+}
+
+async function saveApplicationLock(event) {
+  event.preventDefault();
+  if (!db) return;
+
+  const nextValue = els.appLocked.checked;
+  if (nextValue && !appLocked) {
+    const confirmed = window.confirm(
+      "Lock the application now? Users will no longer be able to access any event content.",
+    );
+    if (!confirmed) {
+      renderApplicationLockForm();
+      return;
+    }
+  }
+
+  try {
+    await set(ref(db, APPLICATION_LOCK_PATH), nextValue);
+    appLocked = nextValue;
+    renderApplicationLockForm();
+    showToast(nextValue ? "Application locked." : "Application unlocked.");
+  } catch (error) {
+    renderApplicationLockForm();
+    showToast(readableError(error), true);
+  }
 }
 
 function renderHomeForm() {
@@ -1553,6 +1596,7 @@ function selectTab(tabName) {
     tab.classList.toggle("active", tab.dataset.tab === tabName);
   }
   els.homeView.classList.toggle("active", tabName === "home");
+  els.applicationView.classList.toggle("active", tabName === "application");
   els.mapView.classList.toggle("active", tabName === "map");
   els.conferencesView.classList.toggle("active", tabName === "conferences");
   els.ratingsView.classList.toggle("active", tabName === "ratings");

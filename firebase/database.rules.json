@@ -9,6 +9,16 @@
     },
 
     "test": {
+      "config": {
+        ".read": true,
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+        "appLocked": {
+          ".validate": "newData.isBoolean()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
       "home": {
         ".read": "auth != null",
         ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"

@@ -26,6 +26,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.datetime.Clock
 
 class MobileMeetsMobileApi(
@@ -158,6 +160,14 @@ class MobileMeetsMobileApi(
     }
 
     // ── Bookmarks ───────────────────────────────────────────
+
+    suspend fun getApplicationLocked(): Boolean {
+        if (!BackendConfig.isFirebaseRealtimeDatabase) return false
+
+        val payload = client.get(firebaseJsonUrl("test/config/appLocked")).bodyAsText().trim()
+        if (payload.isBlank() || payload == "null") return false
+        return json.parseToJsonElement(payload).jsonPrimitive.booleanOrNull ?: false
+    }
 
     suspend fun getBookmarks(userId: String): List<String> {
         return client.get("$baseUrl/users/$userId/bookmarks").body()

@@ -53,6 +53,13 @@ class SessionNotificationScheduler(private val context: Context) {
         }
     }
 
+    fun cancelAll() {
+        synchronized(SCHEDULING_LOCK) {
+            cancelScheduledAlarms()
+            context.getSystemService(NotificationManager::class.java).cancelAll()
+        }
+    }
+
     private fun scheduleIfFuture(
         session: Session,
         type: ReminderType,

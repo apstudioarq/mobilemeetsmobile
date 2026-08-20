@@ -1,10 +1,79 @@
 import SwiftUI
 import UIKit
 import shared
+import Combine
+
+@MainActor
+final class ApplicationStatusViewModelWrapper: ObservableObject {
+    let viewModel: ApplicationStatusViewModel
+    @Published var state: ApplicationStatusUiState
+    private var observation: StateObservation?
+
+    init() {
+        viewModel = KoinInit.shared.getApplicationStatusViewModel()
+        state = viewModel.uiState.value as! ApplicationStatusUiState
+        observation = viewModel.observeState { [weak self] next in
+            self?.state = next
+        }
+    }
+
+    func refresh() {
+        viewModel.refresh()
+    }
+
+    deinit {
+        observation?.cancel()
+        viewModel.onCleared()
+    }
+}
 
 struct ContentView: View {
-    @State private var selectedTab = 0
     @State private var showSplash = true
+    @StateObject private var applicationStatus = ApplicationStatusViewModelWrapper()
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Group {
+            if showSplash || applicationStatus.state.isChecking {
+                SplashView()
+            } else if applicationStatus.state.isLocked {
+                ApplicationLockedView(message: applicationStatus.state.message)
+            } else {
+                MainContentView()
+            }
+        }
+        .task {
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            showSplash = false
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 30_000_000_000)
+                if !Task.isCancelled {
+                    applicationStatus.refresh()
+                }
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                applicationStatus.refresh()
+            }
+        }
+        .onChange(of: applicationStatus.state.isLocked, initial: true) { _, isLocked in
+            if isLocked {
+                SessionNotificationScheduler.shared.cancelAll()
+                notificationRouter.pendingSessionId = nil
+            }
+        }
+        .onChange(of: notificationRouter.pendingSessionId) { _, _ in
+            if applicationStatus.state.isLocked {
+                notificationRouter.pendingSessionId = nil
+            }
+        }
+    }
+}
+
+private struct MainContentView: View {
+    @State private var selectedTab = 0
     @StateObject private var notificationSchedule = ScheduleViewModelWrapper()
     @StateObject private var homeSpeakers = SpeakersViewModelWrapper()
     @ObservedObject private var notificationRouter = NotificationRouter.shared
@@ -21,52 +90,42 @@ struct ContentView: View {
     }
 
     var body: some View {
-        Group {
-            if showSplash {
-                SplashView()
-            } else {
-                TabView(selection: $selectedTab) {
-                    HomeView(
-                        schedule: notificationSchedule,
-                        speakers: homeSpeakers,
-                        onScheduleTap: { selectedTab = 1 }
-                    )
-                        .tabItem {
-                            Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house")
-                        }
-                        .tag(0)
-
-                    ScheduleView()
-                        .tabItem {
-                            Label("Schedule", systemImage: selectedTab == 1 ? "calendar.badge.clock" : "calendar")
-                        }
-                        .tag(1)
-
-                    MapView()
-                        .tabItem {
-                            Label("Map", systemImage: selectedTab == 2 ? "map.fill" : "map")
-                        }
-                        .tag(2)
-
-                    FavoritesView()
-                        .tabItem {
-                            Label("Favorites", systemImage: selectedTab == 3 ? "heart.fill" : "heart")
-                        }
-                        .tag(3)
-
-                    SettingsView()
-                        .tabItem {
-                            Label("Settings", systemImage: selectedTab == 4 ? "gearshape.fill" : "gearshape")
-                        }
-                        .tag(4)
+        TabView(selection: $selectedTab) {
+            HomeView(
+                schedule: notificationSchedule,
+                speakers: homeSpeakers,
+                onScheduleTap: { selectedTab = 1 }
+            )
+                .tabItem {
+                    Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house")
                 }
-                .tint(.ingOrange)
-            }
+                .tag(0)
+
+            ScheduleView()
+                .tabItem {
+                    Label("Schedule", systemImage: selectedTab == 1 ? "calendar.badge.clock" : "calendar")
+                }
+                .tag(1)
+
+            MapView()
+                .tabItem {
+                    Label("Map", systemImage: selectedTab == 2 ? "map.fill" : "map")
+                }
+                .tag(2)
+
+            FavoritesView()
+                .tabItem {
+                    Label("Favorites", systemImage: selectedTab == 3 ? "heart.fill" : "heart")
+                }
+                .tag(3)
+
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: selectedTab == 4 ? "gearshape.fill" : "gearshape")
+                }
+                .tag(4)
         }
-        .task {
-            try? await Task.sleep(nanoseconds: 900_000_000)
-            showSplash = false
-        }
+        .tint(.ingOrange)
         .onChange(of: notificationScheduleSignature, initial: true) { _, _ in
             SessionNotificationScheduler.shared.reschedule(
                 sessions: Array(notificationSchedule.state.allSessions),
@@ -76,6 +135,21 @@ struct ContentView: View {
         .fullScreenCover(item: $notificationRouter.pendingSessionId) { sessionId in
             SessionDetailView(sessionId: sessionId)
         }
+    }
+}
+
+private struct ApplicationLockedView: View {
+    let message: String
+
+    var body: some View {
+        Text(message)
+            .font(.body)
+            .multilineTextAlignment(.center)
+            .foregroundStyle(Color.primary)
+            .frame(maxWidth: 520)
+            .padding(32)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(uiColor: .systemBackground).ignoresSafeArea())
     }
 }
 

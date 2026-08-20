@@ -12,10 +12,12 @@ import com.mobilemeetsmobile.data.repository.ConnectionStateRepository
 import com.mobilemeetsmobile.data.repository.SessionRepository
 import com.mobilemeetsmobile.data.repository.SpeakerRepository
 import com.mobilemeetsmobile.data.repository.RatingRepository
+import com.mobilemeetsmobile.data.repository.ApplicationStatusRepository
 import com.mobilemeetsmobile.domain.usecase.*
 import com.mobilemeetsmobile.presentation.detail.SessionDetailViewModel
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
 import com.mobilemeetsmobile.presentation.speakers.SpeakersViewModel
+import com.mobilemeetsmobile.presentation.application.ApplicationStatusViewModel
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -38,6 +40,7 @@ val sharedModule = module {
     single { SessionRepository(get(), get(), get()) }
     single { SpeakerRepository(get(), get()) }
     single { RatingRepository(get()) }
+    single { ApplicationStatusRepository(get(), get()) }
 
     // Use Cases
     factory { GetScheduleUseCase(get()) }
@@ -55,6 +58,7 @@ val sharedModule = module {
     factory { ScheduleViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { SessionDetailViewModel(get(), get(), get(), get()) }
     factory { SpeakersViewModel(get()) }
+    factory { ApplicationStatusViewModel(get()) }
 }
 
 // Platform-specific modules will provide DatabaseDriverFactory

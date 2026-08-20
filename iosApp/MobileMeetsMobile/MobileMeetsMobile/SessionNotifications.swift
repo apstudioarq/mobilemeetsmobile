@@ -103,6 +103,11 @@ final class SessionNotificationScheduler {
         }
     }
 
+    func cancelAll() {
+        center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
+    }
+
     private func removePendingSessionNotifications() {
         center.getPendingNotificationRequests { [weak self] requests in
             guard let self else { return }
