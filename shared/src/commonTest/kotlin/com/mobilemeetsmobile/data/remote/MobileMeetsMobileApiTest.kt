@@ -21,6 +21,44 @@ import kotlin.test.assertEquals
 
 class MobileMeetsMobileApiTest {
     @Test
+    fun loadsPublicApplicationLockFlag() = runBlocking {
+        BackendConfig.configureFirebaseRealtimeDatabase(
+            databaseUrl = "https://example.firebaseio.com",
+            apiKey = "test-api-key",
+        )
+        val engine = MockEngine { request ->
+            assertEquals("/test/config/appLocked.json", request.url.encodedPath)
+            assertEquals(null, request.url.parameters["auth"])
+            respond(
+                content = "true",
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = createApi(engine)
+
+        assertEquals(true, api.getApplicationLocked())
+    }
+
+    @Test
+    fun missingApplicationLockFlagDefaultsToUnlocked() = runBlocking {
+        BackendConfig.configureFirebaseRealtimeDatabase(
+            databaseUrl = "https://example.firebaseio.com",
+            apiKey = "test-api-key",
+        )
+        val engine = MockEngine {
+            respond(
+                content = "null",
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = createApi(engine)
+
+        assertEquals(false, api.getApplicationLocked())
+    }
+
+    @Test
     fun loadsMapContentFromDedicatedFirebaseNode() = runBlocking {
         BackendConfig.configureFirebaseRealtimeDatabase(
             databaseUrl = "https://example.firebaseio.com",

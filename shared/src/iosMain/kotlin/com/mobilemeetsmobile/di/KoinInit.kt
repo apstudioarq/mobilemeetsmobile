@@ -3,6 +3,7 @@ package com.mobilemeetsmobile.di
 import com.mobilemeetsmobile.presentation.detail.SessionDetailViewModel
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
 import com.mobilemeetsmobile.presentation.speakers.SpeakersViewModel
+import com.mobilemeetsmobile.presentation.application.ApplicationStatusViewModel
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -27,6 +28,8 @@ object KoinInit {
     fun getSpeakersViewModel(): SpeakersViewModel = start().koin.get()
 
     fun getSessionDetailViewModel(): SessionDetailViewModel = start().koin.get()
+
+    fun getApplicationStatusViewModel(): ApplicationStatusViewModel = start().koin.get()
 
 fun modules(): List<Module> = listOf(sharedModule, platformModule())
 }

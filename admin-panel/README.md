@@ -60,6 +60,16 @@ firebase deploy --only hosting,database
 
 When served by Firebase Hosting, the Firebase client config is loaded automatically from `/__/firebase/init.json`, so the login form only shows Google Sign-In.
 
+## Global application lock
+
+The **App Lock** tab manages the boolean value at `test/config/appLocked` in Firebase Realtime Database. When it is `true`, Android and iOS hide all event content and only display the event-ended message. A missing value is treated as `false`.
+
+Deploy the Realtime Database rules together with the panel so the apps can read this non-sensitive flag before loading event data:
+
+```bash
+firebase deploy --only hosting,database
+```
+
 ## Data Paths
 
 The panel edits:
