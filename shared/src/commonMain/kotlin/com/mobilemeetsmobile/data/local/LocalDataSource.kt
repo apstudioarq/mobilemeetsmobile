@@ -203,6 +203,21 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
 
     // ── Bookmarks ───────────────────────────────────────────
 
+    // Last successfully fetched global application lock state.
+    fun getApplicationLocked(): Boolean? {
+        return sessionQueries.getApplicationLocked()
+            .executeAsOneOrNull()
+            ?.let { it != 0L }
+    }
+
+    fun saveApplicationLocked(isLocked: Boolean) {
+        val now = kotlinx.datetime.Clock.System.now().epochSeconds
+        sessionQueries.saveApplicationLocked(
+            appLocked = if (isLocked) 1L else 0L,
+            updatedAt = now,
+        )
+    }
+
     fun getAllBookmarkIds(): Flow<List<String>> {
         return sessionQueries.getAllBookmarks()
             .asFlow()

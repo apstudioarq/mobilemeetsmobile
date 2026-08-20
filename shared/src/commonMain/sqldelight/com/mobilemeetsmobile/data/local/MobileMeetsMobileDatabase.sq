@@ -58,6 +58,13 @@ CREATE TABLE HomeContentEntity (
     updatedAt INTEGER NOT NULL DEFAULT 0
 );
 
+-- Last successfully fetched global application lock state
+CREATE TABLE ApplicationConfigEntity (
+    singletonId INTEGER NOT NULL PRIMARY KEY CHECK (singletonId = 1),
+    appLocked INTEGER NOT NULL DEFAULT 0,
+    updatedAt INTEGER NOT NULL DEFAULT 0
+);
+
 -- Queries
 
 -- Sessions
@@ -146,3 +153,13 @@ saveHomeContent:
 INSERT OR REPLACE INTO HomeContentEntity(
     singletonId, title, description, imageBase64, imageMimeType, imageUrl, updatedAt
 ) VALUES (1, ?, ?, ?, ?, ?, ?);
+
+-- Application configuration
+getApplicationLocked:
+SELECT appLocked
+FROM ApplicationConfigEntity
+WHERE singletonId = 1;
+
+saveApplicationLocked:
+INSERT OR REPLACE INTO ApplicationConfigEntity(singletonId, appLocked, updatedAt)
+VALUES (1, ?, ?);

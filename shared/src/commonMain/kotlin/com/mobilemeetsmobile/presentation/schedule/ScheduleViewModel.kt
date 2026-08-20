@@ -15,6 +15,7 @@ import com.mobilemeetsmobile.domain.usecase.GetScheduleUseCase
 import com.mobilemeetsmobile.domain.usecase.GetSpeakersUseCase
 import com.mobilemeetsmobile.domain.usecase.ToggleBookmarkUseCase
 import com.mobilemeetsmobile.presentation.StateObservation
+import com.mobilemeetsmobile.presentation.home.selectHomeSessions
 import com.mobilemeetsmobile.presentation.observeIn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -22,12 +23,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -37,6 +40,8 @@ data class ScheduleUiState(
     val selectedTrack: Track? = null,
     val sessions: List<Session> = emptyList(),
     val allSessions: List<Session> = emptyList(),
+    val homeSessions: List<Session> = emptyList(),
+    val homeSessionsAreLive: Boolean = false,
     val timeSlots: Map<String, List<Session>> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,

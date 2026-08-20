@@ -36,11 +36,37 @@
         </header>
 
         <nav class="tabs" aria-label="Admin sections">
+          <button id="applicationTab" type="button" class="tab" data-tab="application">App Lock</button>
           <button id="homeTab" type="button" class="tab active" data-tab="home">Home</button>
           <button id="mapTab" type="button" class="tab" data-tab="map">Map</button>
           <button id="conferencesTab" type="button" class="tab" data-tab="conferences">Conferences</button>
           <button id="ratingsTab" type="button" class="tab" data-tab="ratings">Ratings</button>
         </nav>
+
+        <section id="applicationView" class="view">
+          <section class="panel application-panel">
+            <div class="section-title-row">
+              <div>
+                <h2>Application lock</h2>
+                <p class="section-copy">Block all app content when the event is no longer active.</p>
+              </div>
+            </div>
+
+            <form id="applicationLockForm" class="application-lock-form">
+              <label class="toggle-field">
+                <input id="appLocked" type="checkbox" />
+                <span>
+                  <strong>Lock the application</strong>
+                  <small>Users will only see the event-ended message. Agenda, speakers, favorites, settings, and deep links will be inaccessible.</small>
+                </span>
+              </label>
+              <p class="lock-warning">Use this only when the event has ended. Unlocking restores normal access the next time the app checks its configuration.</p>
+              <div class="actions">
+                <button type="submit">Save App Lock</button>
+              </div>
+            </form>
+          </section>
+        </section>
 
         <section id="homeView" class="view active">
           <section class="panel home-panel">
