@@ -4,6 +4,8 @@ import shared
 
 @main
 struct MobileMeetsMobileApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     init() {
         let info = Bundle.main.infoDictionary
         let firebaseInfo: [String: Any]

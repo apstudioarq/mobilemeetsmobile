@@ -5,18 +5,20 @@ import Combine
 final class SessionDetailViewModelWrapper: ObservableObject {
     let viewModel: SessionDetailViewModel
     @Published var state: SessionDetailUiState
-    private var cancellable: AnyCancellable?
+    private var observation: StateObservation?
 
     init(sessionId: String) {
         viewModel = KoinInit.shared.getSessionDetailViewModel()
         state = viewModel.uiState.value as! SessionDetailUiState
+        observation = viewModel.observeState { [weak self] next in
+            self?.state = next
+        }
         viewModel.loadSession(sessionId: sessionId)
-        cancellable = Timer.publish(every: 0.1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self, let next = self.viewModel.uiState.value as? SessionDetailUiState else { return }
-                self.state = next
-            }
+    }
+
+    deinit {
+        observation?.cancel()
+        viewModel.onCleared()
     }
 }
 
@@ -78,11 +80,7 @@ struct SessionDetailView: View {
                             Text("About this session")
                                 .font(.title.weight(.black))
                                 .foregroundStyle(Color.vibrantText)
-                            Text(session.description)
-                                .font(.body)
-                                .lineSpacing(5)
-                                .foregroundStyle(Color.vibrantMuted)
-                            Text("Attendees will learn practical frameworks for implementing rigid grid philosophies, balancing density with whitespace, and replacing heavy shadows with subtle tonal elevation strategies.")
+                            Text(session.description_)
                                 .font(.body)
                                 .lineSpacing(5)
                                 .foregroundStyle(Color.vibrantMuted)

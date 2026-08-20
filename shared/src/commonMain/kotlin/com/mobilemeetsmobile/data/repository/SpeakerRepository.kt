@@ -4,6 +4,7 @@ import com.mobilemeetsmobile.data.local.LocalDataSource
 import com.mobilemeetsmobile.data.model.Speaker
 import com.mobilemeetsmobile.data.remote.BackendConfig
 import com.mobilemeetsmobile.data.remote.MobileMeetsMobileApi
+import com.mobilemeetsmobile.data.remote.redactedMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
@@ -25,7 +26,7 @@ class SpeakerRepository(
                     local.insertSpeakers(remote)
                 }
             } catch (e: Exception) {
-                println("Network error fetching speakers: ${e.message}")
+                println("Network error fetching speakers: ${e.redactedMessage("Unknown error")}")
                 if (BackendConfig.isFirebaseRealtimeDatabase && !local.hasCachedSpeakers()) {
                     throw e
                 }

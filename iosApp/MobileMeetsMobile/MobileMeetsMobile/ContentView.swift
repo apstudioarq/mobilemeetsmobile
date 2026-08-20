@@ -5,6 +5,20 @@ import shared
 struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showSplash = true
+    @StateObject private var notificationSchedule = ScheduleViewModelWrapper()
+    @StateObject private var homeSpeakers = SpeakersViewModelWrapper()
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
+    @AppStorage(SessionNotificationSettings.reminderMinutesKey)
+    private var reminderMinutes = SessionNotificationSettings.defaultReminderMinutes
+
+    private var notificationScheduleSignature: String {
+        let savedSessions = notificationSchedule.state.allSessions
+            .filter(\.isBookmarked)
+            .map { "\($0.id)|\($0.startTime)|\($0.endTime)" }
+            .sorted()
+            .joined(separator: ";")
+        return "\(reminderMinutes):\(savedSessions)"
+    }
 
     var body: some View {
         Group {
@@ -12,7 +26,11 @@ struct ContentView: View {
                 SplashView()
             } else {
                 TabView(selection: $selectedTab) {
-                    HomeView(onScheduleTap: { selectedTab = 1 })
+                    HomeView(
+                        schedule: notificationSchedule,
+                        speakers: homeSpeakers,
+                        onScheduleTap: { selectedTab = 1 }
+                    )
                         .tabItem {
                             Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house")
                         }
@@ -35,6 +53,12 @@ struct ContentView: View {
                             Label("Favorites", systemImage: selectedTab == 3 ? "heart.fill" : "heart")
                         }
                         .tag(3)
+
+                    SettingsView()
+                        .tabItem {
+                            Label("Settings", systemImage: selectedTab == 4 ? "gearshape.fill" : "gearshape")
+                        }
+                        .tag(4)
                 }
                 .tint(.ingOrange)
             }
@@ -42,6 +66,15 @@ struct ContentView: View {
         .task {
             try? await Task.sleep(nanoseconds: 900_000_000)
             showSplash = false
+        }
+        .onChange(of: notificationScheduleSignature, initial: true) { _, _ in
+            SessionNotificationScheduler.shared.reschedule(
+                sessions: Array(notificationSchedule.state.allSessions),
+                reminderMinutes: reminderMinutes
+            )
+        }
+        .fullScreenCover(item: $notificationRouter.pendingSessionId) { sessionId in
+            SessionDetailView(sessionId: sessionId)
         }
     }
 }
@@ -66,9 +99,6 @@ struct EventTopBar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Color.clear
-                .frame(height: topSafeAreaInset)
-
             HStack(spacing: 10) {
                 Image("SplashLogo")
                     .resizable()
@@ -102,16 +132,7 @@ struct EventTopBar: View {
                 .fill(Color.vibrantBorder.opacity(0.65))
                 .frame(height: 1)
         }
-        .background(Color.vibrantSurface)
-        .ignoresSafeArea(edges: .top)
-    }
-
-    private var topSafeAreaInset: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first { $0.isKeyWindow }?
-            .safeAreaInsets.top ?? 0
+        .background(Color.vibrantSurface.ignoresSafeArea(edges: .top))
     }
 }
 

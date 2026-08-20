@@ -43,6 +43,7 @@ import coil.compose.AsyncImage
 import com.mobilemeetsmobile.android.R
 import com.mobilemeetsmobile.android.ui.components.LiveSessionCard
 import com.mobilemeetsmobile.android.ui.components.SpeakerRowCard
+import com.mobilemeetsmobile.android.ui.components.displayClock
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
 import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
 import com.mobilemeetsmobile.android.ui.theme.VibrantBorder
@@ -65,8 +66,22 @@ fun HomeScreen(
 ) {
     val scheduleState by scheduleViewModel.uiState.collectAsState()
     val speakersState by speakersViewModel.uiState.collectAsState()
-    val sessions = scheduleState.sessions
+    val sessions = scheduleState.homeSessions
     val speakers = speakersState.speakers
+    val speakersById = speakers.associateBy { it.id }
+    val featuredSpeakers = if (scheduleState.homeSessionsAreLive) {
+        sessions
+            .flatMap { it.speakerIds }
+            .distinct()
+            .mapNotNull(speakersById::get)
+    } else {
+        emptyList()
+    }
+    val sessionSectionTitle = when {
+        scheduleState.homeSessionsAreLive -> "Live now"
+        sessions.isNotEmpty() -> "Up next"
+        else -> "Coming soon"
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -81,13 +96,13 @@ fun HomeScreen(
 
         item {
             SectionHeader(
-                title = "Live now",
+                title = sessionSectionTitle,
                 action = "View schedule",
                 onAction = onScheduleClick,
             )
         }
 
-        items(sessions.take(2), key = { "live_${it.id}" }) { session ->
+        items(sessions, key = { "home_session_${it.id}" }) { session ->
             val names = speakers
                 .filter { it.id in session.speakerIds }
                 .joinToString { it.name }
@@ -95,19 +110,36 @@ fun HomeScreen(
             LiveSessionCard(
                 session = session,
                 speakerNames = names,
+                statusLabel = if (scheduleState.homeSessionsAreLive) {
+                    "LIVE"
+                } else {
+                    "UP NEXT · ${displayClock(session.startTime)}"
+                },
                 onClick = { onSessionClick(session.id) },
             )
         }
 
-        item {
-            SectionHeader(title = "Featured speakers")
+        if (sessions.isEmpty()) {
+            item {
+                Text(
+                    text = "There are no live sessions right now. Check back soon.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = VibrantMuted,
+                )
+            }
         }
 
-        items(speakers.take(3), key = { "speaker_${it.id}" }) { speaker ->
-            SpeakerRowCard(
-                speaker = speaker,
-                onClick = { onSpeakerClick(speaker.id) },
-            )
+        if (featuredSpeakers.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Featured speakers")
+            }
+
+            items(featuredSpeakers, key = { "speaker_${it.id}" }) { speaker ->
+                SpeakerRowCard(
+                    speaker = speaker,
+                    onClick = { onSpeakerClick(speaker.id) },
+                )
+            }
         }
 
         item {

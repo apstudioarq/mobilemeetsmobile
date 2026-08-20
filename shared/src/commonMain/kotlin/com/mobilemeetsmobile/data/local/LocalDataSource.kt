@@ -42,7 +42,9 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
     }
 
     fun getSessionById(id: String): Session? {
-        return sessionQueries.getSessionById(id, ::mapSession).executeAsOneOrNull()
+        return sessionQueries.getSessionById(id, ::mapSession)
+            .executeAsOneOrNull()
+            ?.let { session -> session.copy(isBookmarked = isBookmarked(id)) }
     }
 
     fun hasCachedSessions(): Boolean {
@@ -293,7 +295,9 @@ class LocalDataSource(driverFactory: DatabaseDriverFactory) : FirebaseAuthSessio
             tags = tagsList,
             livestreamUrl = livestreamUrl,
             slidesUrl = slidesUrl,
-            isBookmarked = isBookmarked(id),
+            // Never issue a nested query while SQLDelight is mapping an active cursor.
+            // Bookmark state is applied after the cursor closes or by the presentation layer.
+            isBookmarked = false,
         )
     }
 

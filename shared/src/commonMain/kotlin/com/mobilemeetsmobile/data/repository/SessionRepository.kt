@@ -5,6 +5,7 @@ import com.mobilemeetsmobile.data.model.Session
 import com.mobilemeetsmobile.data.model.Track
 import com.mobilemeetsmobile.data.remote.BackendConfig
 import com.mobilemeetsmobile.data.remote.MobileMeetsMobileApi
+import com.mobilemeetsmobile.data.remote.redactedMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
@@ -28,7 +29,7 @@ class SessionRepository(
                 }
                 connectionState.reportOnline()
             } catch (e: Exception) {
-                println("Network error fetching all sessions: ${e.message}")
+                println("Network error fetching all sessions: ${e.redactedMessage("Unknown error")}")
                 val hasCachedSessions = local.hasCachedSessions()
                 connectionState.reportOffline(hasCachedSessions)
                 if (BackendConfig.isFirebaseRealtimeDatabase && !hasCachedSessions) {
@@ -72,7 +73,7 @@ class SessionRepository(
                 connectionState.reportOnline()
             } catch (e: Exception) {
                 // Network failed, rely on cache
-                println("Network error: ${e.message}")
+                println("Network error: ${e.redactedMessage("Unknown error")}")
                 val hasCachedSessions = local.hasCachedSessions()
                 connectionState.reportOffline(hasCachedSessions)
                 if (BackendConfig.isFirebaseRealtimeDatabase && !hasCachedSessions) {

@@ -3,6 +3,7 @@ package com.mobilemeetsmobile.data.repository
 import com.mobilemeetsmobile.data.local.LocalDataSource
 import com.mobilemeetsmobile.data.model.HomeContent
 import com.mobilemeetsmobile.data.remote.MobileMeetsMobileApi
+import com.mobilemeetsmobile.data.remote.redactedMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart
 
@@ -15,7 +16,7 @@ class HomeContentRepository(
             try {
                 local.saveHomeContent(api.getHomeContent())
             } catch (e: Exception) {
-                println("Network error fetching home content: ${e.message}")
+                println("Network error fetching home content: ${e.redactedMessage("Unknown error")}")
             }
         }
     }

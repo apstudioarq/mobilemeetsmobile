@@ -26,10 +26,12 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
@@ -41,10 +43,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -73,6 +78,7 @@ import com.mobilemeetsmobile.android.ui.favorites.FavoritesScreen
 import com.mobilemeetsmobile.android.ui.home.HomeScreen
 import com.mobilemeetsmobile.android.ui.map.MapScreen
 import com.mobilemeetsmobile.android.ui.schedule.ScheduleScreen
+import com.mobilemeetsmobile.android.ui.settings.SettingsScreen
 import com.mobilemeetsmobile.android.ui.speakerprofile.SpeakerProfileScreen
 import com.mobilemeetsmobile.android.ui.theme.IngOrange
 import com.mobilemeetsmobile.android.ui.theme.VibrantBackground
@@ -84,6 +90,8 @@ import com.mobilemeetsmobile.android.ui.theme.VibrantText
 import com.mobilemeetsmobile.presentation.detail.SessionDetailViewModel
 import com.mobilemeetsmobile.presentation.schedule.ScheduleViewModel
 import com.mobilemeetsmobile.presentation.speakers.SpeakersViewModel
+import com.mobilemeetsmobile.android.notifications.NotificationPreferences
+import com.mobilemeetsmobile.android.notifications.SessionNotificationScheduler
 import org.koin.compose.koinInject
 
 sealed class Screen(
@@ -96,11 +104,12 @@ sealed class Screen(
     data object Schedule : Screen("schedule", "Schedule", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
     data object Map : Screen("map", "Map", Icons.Filled.Map, Icons.Outlined.Map)
     data object Favorites : Screen("favorites", "Favorites", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder)
+    data object Settings : Screen("settings", "Settings", Icons.Filled.Settings, Icons.Outlined.Settings)
     data object SessionDetail : Screen("session/{sessionId}", "Detail", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
     data object SpeakerProfile : Screen("speaker/{speakerId}", "Speaker", Icons.Filled.Home, Icons.Outlined.Home)
 }
 
-val bottomNavItems = listOf(Screen.Home, Screen.Schedule, Screen.Map, Screen.Favorites)
+val bottomNavItems = listOf(Screen.Home, Screen.Schedule, Screen.Map, Screen.Favorites, Screen.Settings)
 
 private fun NavHostController.navigateToBottomTab(screen: Screen) {
     navigate(screen.route) {
@@ -111,8 +120,19 @@ private fun NavHostController.navigateToBottomTab(screen: Screen) {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    sessionIdToOpen: String? = null,
+    onSessionIdConsumed: () -> Unit = {},
+    notificationsAllowed: Boolean = true,
+    exactAlarmsAllowed: Boolean = true,
+    onRequestNotificationPermission: () -> Unit = {},
+    onRequestExactAlarmPermission: () -> Unit = {},
+) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val notificationPreferences = remember { NotificationPreferences(context.applicationContext) }
+    val notificationScheduler = remember { SessionNotificationScheduler(context.applicationContext) }
+    var reminderMinutes by remember { mutableIntStateOf(notificationPreferences.reminderMinutes) }
     val scheduleViewModel: ScheduleViewModel = koinInject()
     val speakersViewModel: SpeakersViewModel = koinInject()
     val scheduleState by scheduleViewModel.uiState.collectAsState()
@@ -121,6 +141,28 @@ fun AppNavigation() {
     val currentRoute = navBackStackEntry?.destination?.route
     val showBars = currentRoute in bottomNavItems.map { it.route }
     val isScheduleRoute = currentRoute == Screen.Schedule.route
+
+    LaunchedEffect(
+        scheduleState.allSessions,
+        scheduleState.bookmarkedIds,
+        reminderMinutes,
+        exactAlarmsAllowed,
+    ) {
+        notificationScheduler.reschedule(
+            sessions = scheduleState.allSessions,
+            bookmarkedIds = scheduleState.bookmarkedIds,
+            reminderMinutes = reminderMinutes,
+        )
+        if (scheduleState.bookmarkedIds.isNotEmpty() && !notificationsAllowed) {
+            onRequestNotificationPermission()
+        }
+    }
+
+    LaunchedEffect(sessionIdToOpen) {
+        val sessionId = sessionIdToOpen ?: return@LaunchedEffect
+        navController.navigate("session/$sessionId") { launchSingleTop = true }
+        onSessionIdConsumed()
+    }
 
     Scaffold(
         containerColor = VibrantBackground,
@@ -133,6 +175,7 @@ fun AppNavigation() {
                             Screen.Schedule.route -> Screen.Schedule.label
                             Screen.Map.route -> Screen.Map.label
                             Screen.Favorites.route -> Screen.Favorites.label
+                            Screen.Settings.route -> Screen.Settings.label
                             else -> ""
                         },
                         searchQuery = scheduleState.searchQuery,
@@ -180,6 +223,19 @@ fun AppNavigation() {
                 FavoritesScreen(
                     viewModel = scheduleViewModel,
                     onSessionClick = { navController.navigate("session/$it") },
+                )
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen(
+                    reminderMinutes = reminderMinutes,
+                    notificationsAllowed = notificationsAllowed,
+                    exactAlarmsAllowed = exactAlarmsAllowed,
+                    onSaveReminderMinutes = { minutes ->
+                        notificationPreferences.reminderMinutes = minutes
+                        reminderMinutes = notificationPreferences.reminderMinutes
+                    },
+                    onRequestNotificationPermission = onRequestNotificationPermission,
+                    onRequestExactAlarmPermission = onRequestExactAlarmPermission,
                 )
             }
             composable(
