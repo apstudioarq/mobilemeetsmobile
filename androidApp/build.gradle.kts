@@ -65,12 +65,12 @@ val firebaseApiKey = readSecret("FIREBASE_API_KEY").ifBlank { firebaseAndroidCon
 
 android {
     namespace = "com.ing.event"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ing.event"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "SUPABASE_URL", supabaseUrl.toBuildConfigString())
