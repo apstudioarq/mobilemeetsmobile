@@ -1,6 +1,6 @@
 # Firebase Backend
 
-This folder contains the Firebase implementation for Mobile Meets Mobile.
+This folder contains the Firebase implementation for ING Event.
 
 ## What It Provides
 
@@ -91,8 +91,8 @@ The home hero reads editable content from `test/home` in Firebase Realtime Datab
 {
   "test": {
       "home": {
-        "title": "Mobile Meets Mobile",
-        "description": "Welcome to Mobile Meets Mobile. Explore the agenda and enjoy the event.",
+        "title": "ING Event",
+        "description": "Welcome to ING Event. Explore the agenda and enjoy the event.",
         "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA...",
         "imageMimeType": "image/png",
         "imageUrl": ""

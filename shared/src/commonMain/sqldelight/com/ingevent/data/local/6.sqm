@@ -1,0 +1,19 @@
+CREATE TABLE HomeContentEntity_new (
+    singletonId INTEGER NOT NULL PRIMARY KEY CHECK (singletonId = 1),
+    title TEXT NOT NULL DEFAULT "ING Event",
+    description TEXT NOT NULL DEFAULT "Welcome to ING Event. Explore the agenda, discover live sessions, and make the event your own.",
+    imageBase64 TEXT NOT NULL DEFAULT "",
+    imageMimeType TEXT NOT NULL DEFAULT "",
+    imageUrl TEXT NOT NULL DEFAULT "",
+    updatedAt INTEGER NOT NULL DEFAULT 0
+);
+
+INSERT INTO HomeContentEntity_new(
+    singletonId, title, description, imageBase64, imageMimeType, imageUrl, updatedAt
+)
+SELECT singletonId, title, description, imageBase64, imageMimeType, imageUrl, updatedAt
+FROM HomeContentEntity;
+
+DROP TABLE HomeContentEntity;
+
+ALTER TABLE HomeContentEntity_new RENAME TO HomeContentEntity;

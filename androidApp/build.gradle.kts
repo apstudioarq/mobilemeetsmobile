@@ -38,7 +38,7 @@ fun readFirebaseAndroidConfig(): FirebaseAndroidConfig {
         ?.firstOrNull { client ->
             val clientInfo = client["client_info"] as? Map<*, *>
             val androidInfo = clientInfo?.get("android_client_info") as? Map<*, *>
-            androidInfo?.get("package_name") == "com.mobilemeetsmobile.android"
+            androidInfo?.get("package_name") == "com.ing.event"
         }
     val apiKey = (matchingClient?.get("api_key") as? List<*>)
         ?.filterIsInstance<Map<*, *>>()
@@ -64,11 +64,11 @@ val firebaseConferenceId = readSecret("FIREBASE_CONFERENCE_ID")
 val firebaseApiKey = readSecret("FIREBASE_API_KEY").ifBlank { firebaseAndroidConfig.apiKey }
 
 android {
-    namespace = "com.mobilemeetsmobile.android"
+    namespace = "com.ing.event"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.mobilemeetsmobile.android"
+        applicationId = "com.ing.event"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

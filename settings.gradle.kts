@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MobileMeetsMobile"
+rootProject.name = "INGEvent"
 include(":androidApp")
 include(":shared")
