@@ -1,6 +1,6 @@
-# 📱 Mobile Meets Mobile Clone - Kotlin Multiplatform (KMM)
+# 📱 ING Event Clone - Kotlin Multiplatform (KMM)
 
-A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mobile**, sharing business logic between Android (Jetpack Compose) and iOS (SwiftUI).
+A full clone of the ING Event app built with **Kotlin Multiplatform Mobile**, sharing business logic between Android (Jetpack Compose) and iOS (SwiftUI).
 
 ## 🏗️ Architecture
 
@@ -85,8 +85,8 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
 4. Ensure SQLite linker flag is present in your app target:
    - `Build Settings` -> `Other Linker Flags` includes `-lsqlite3`
 5. Configure Firebase for iOS app startup:
-   - Place `GoogleService-Info.plist` in `iosApp/MobileMeetsMobile/MobileMeetsMobile`.
-   - Ensure its `BUNDLE_ID` matches the target bundle identifier (`com.mobilemeetsmobile.ios`).
+   - Place `GoogleService-Info.plist` in `iosApp/INGEvent/INGEvent`.
+   - Ensure its `BUNDLE_ID` matches the target bundle identifier (`com.ing.event`).
    - The app reads `DATABASE_URL` and `API_KEY` from this file automatically.
    - Optionally define `FIREBASE_CONFERENCE_ID` as a user-defined Xcode build setting.
    - Legacy Supabase fallback:
@@ -131,7 +131,7 @@ A full clone of the Mobile Meets Mobile app built with **Kotlin Multiplatform Mo
 ```
 **Advantage**: Native Android integration, automatic scaling.
 
-The app now reads conference data from Firebase Realtime Database by default using `FIREBASE_DATABASE_URL`. When no `FIREBASE_CONFERENCE_ID` is set, it picks the conference whose title contains `Mobile Meets Mobile`; set `FIREBASE_CONFERENCE_ID` to force a specific conference.
+The app now reads conference data from Firebase Realtime Database by default using `FIREBASE_DATABASE_URL`. When no `FIREBASE_CONFERENCE_ID` is set, it picks the conference whose title contains `ING Event`; set `FIREBASE_CONFERENCE_ID` to force a specific conference.
 
 ### Firebase anonymous authentication
 
@@ -139,7 +139,7 @@ Realtime Database requests are authenticated automatically without showing a log
 
 For Android, place the Firebase configuration at `androidApp/google-services.json`. The
 build reads the Realtime Database URL and the API key from the client whose package is
-`com.mobilemeetsmobile.android`.
+`com.ing.event`.
 
 You can override those values, or set an optional conference filter, in the untracked
 `local.properties` file:
@@ -151,7 +151,7 @@ FIREBASE_CONFERENCE_ID=A0C691FD-E111-4436-8B51-2EF97C14E548
 ```
 
 For iOS, place the Firebase configuration at
-`iosApp/MobileMeetsMobile/MobileMeetsMobile/GoogleService-Info.plist`. You can override
+`iosApp/INGEvent/INGEvent/GoogleService-Info.plist`. You can override
 `FIREBASE_DATABASE_URL` or `FIREBASE_API_KEY`, and optionally define
 `FIREBASE_CONFERENCE_ID`, as user-defined Xcode build settings.
 

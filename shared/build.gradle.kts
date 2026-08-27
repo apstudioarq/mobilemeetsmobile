@@ -78,8 +78,8 @@ kotlin {
 }
 
 android {
-    namespace = "com.mobilemeetsmobile.shared"
-    compileSdk = 34
+    namespace = "com.ingevent.shared"
+    compileSdk = 36
     defaultConfig {
         minSdk = 26
     }
@@ -91,8 +91,8 @@ android {
 
 sqldelight {
     databases {
-        create("MobileMeetsMobileDatabase") {
-            packageName.set("com.mobilemeetsmobile.data.local")
+        create("INGEventDatabase") {
+            packageName.set("com.ingevent.data.local")
         }
     }
 }

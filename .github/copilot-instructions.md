@@ -1,4 +1,4 @@
-# Copilot Instructions for Mobile Meets Mobile KMP
+# Copilot Instructions for ING Event KMP
 
 ## Architecture Overview
 
@@ -30,7 +30,7 @@ iosApp/               # iOS UI
    - `LocalDataSource` manages SQLDelight queries
 
 2. **Dependency Injection** via Koin:
-   - `SharedModule` in `shared/src/commonMain/kotlin/com/mobilemeetsmobile/di/SharedModule.kt`
+   - `SharedModule` in `shared/src/commonMain/kotlin/com/ingevent/di/SharedModule.kt`
    - Single instances: HTTP client, repositories, API client
    - Factory instances: use cases (stateless) and ViewModels (stateful)
    - Platform-specific modules via `expect/actual` pattern
@@ -105,7 +105,7 @@ iosApp/               # iOS UI
 - Queries defined in `.sq` files in `src/commonMain/resources`
 - Generated code goes to `shared/build/generated/sqldelight/`
 - Platform drivers automatically selected (Android/iOS via `expect/actual`)
-- Access via `MobileMeetsMobileDatabase` singleton (from `LocalDataSource`)
+- Access via `INGEventDatabase` singleton (from `LocalDataSource`)
 
 ### Serialization
 
@@ -121,7 +121,7 @@ data class SessionDto(
 ### Firebase Configuration
 
 - **Android**: Reads from `androidApp/google-services.json` or `local.properties`
-- **iOS**: Reads from `iosApp/MobileMeetsMobile/GoogleService-Info.plist` or Xcode build settings
+- **iOS**: Reads from `iosApp/INGEvent/INGEvent/GoogleService-Info.plist` or Xcode build settings
 - Override via build config or environment variables: `FIREBASE_DATABASE_URL`, `FIREBASE_API_KEY`, `FIREBASE_CONFERENCE_ID`
 
 ### Gradle Conventions
@@ -159,7 +159,7 @@ The app supports three backends (configurable at build time):
 
 1. **Firebase Realtime Database** (default, `FIREBASE_DATABASE_URL`)
    - Anonymous auth with token refresh
-   - REST API via `MobileMeetsMobileApi`
+   - REST API via `INGEventApi`
 
 2. **Supabase PostgreSQL** (fallback, `SUPABASE_URL` + `SUPABASE_ANON_KEY`)
    - Auto-generated REST API
@@ -200,7 +200,7 @@ Cancellation cleanup must be handled manually in iOS (no ViewModel lifecycle).
 ### Offline-First Behavior
 
 1. Call `LocalDataSource.getX()` first (SQLDelight query)
-2. If empty or stale, call API via `MobileMeetsMobileApi`
+2. If empty or stale, call API via `INGEventApi`
 3. On success, write to local DB and emit updated state
 4. On failure, emit cached data or error
 
@@ -222,25 +222,25 @@ Located in `admin-panel/`:
 
 1. **SPM Integration**: After running `./gradlew :shared:prepareSharedSpm`, add `iosApp/SharedSPM` as a local package in Xcode
 2. **Linker Flag**: Ensure `Other Linker Flags` includes `-lsqlite3`
-3. **Bundle ID**: Firebase `GoogleService-Info.plist` must match target bundle ID (`com.mobilemeetsmobile.ios`)
+3. **Bundle ID**: Firebase `GoogleService-Info.plist` must match target bundle ID (`com.ing.event`)
 4. **Build Settings**: Override `FIREBASE_DATABASE_URL` or `FIREBASE_API_KEY` as user-defined settings if needed
 
 ## Common Tasks
 
 ### Adding a New Use Case
-1. Create `NewUseCase.kt` in `shared/src/commonMain/kotlin/com/mobilemeetsmobile/domain/usecase/`
+1. Create `NewUseCase.kt` in `shared/src/commonMain/kotlin/com/ingevent/domain/usecase/`
 2. Inject dependencies in constructor
 3. Implement `operator fun invoke()` or a named function
 4. Register in `SharedModule.kt` as `factory`
 
 ### Adding a New Screen (Android)
-1. Create `NewScreen.kt` in `androidApp/src/main/kotlin/com/mobilemeetsmobile/android/ui/`
-2. Create corresponding `NewViewModel` in `shared/src/commonMain/kotlin/com/mobilemeetsmobile/presentation/new/`
+1. Create `NewScreen.kt` in `androidApp/src/main/kotlin/com/ing/event/ui/`
+2. Create corresponding `NewViewModel` in `shared/src/commonMain/kotlin/com/ingevent/presentation/new/`
 3. Add route to `AppNavigation.kt`
 4. Register ViewModel in `SharedModule`
 
 ### Adding a Database Table
-1. Create `.sq` file in `shared/src/commonMain/resources/com/mobilemeetsmobile/data/local/`
+1. Create `.sq` file in `shared/src/commonMain/resources/com/ingevent/data/local/`
 2. Run `./gradlew :shared:generateDebugDatabaseSchema` (or build task)
 3. Use generated types in `LocalDataSource`
 

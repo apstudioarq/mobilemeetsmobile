@@ -89,7 +89,7 @@ The mobile app reads `/test/home` for the Home hero, `/test/map` for the event m
 ```json
 {
   "id": "mmm-2026",
-  "title": "Mobile Meets Mobile 2026",
+  "title": "ING Event 2026",
   "audience": "Developers",
   "eventType": "Conference",
   "organizingCountry": "ES",

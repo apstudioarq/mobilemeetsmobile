@@ -1,5 +1,5 @@
 {
-  "name": "mobilemeetsmobile-firebase-functions",
+  "name": "ingevent-firebase-functions",
   "version": "1.0.0",
   "private": true,
   "main": "lib/index.js",

@@ -1,4 +1,4 @@
--- Base schema for Mobile Meets Mobile style event app.
+-- Base schema for ING Event style event app.
 -- Run this once in Supabase SQL editor for a new project.
 
 create extension if not exists pgcrypto;

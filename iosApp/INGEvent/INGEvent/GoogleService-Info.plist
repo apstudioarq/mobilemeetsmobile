@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>748397811920-58qk8dnjt5bi5t96a8mvaqrfk1b33r5j.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.748397811920-58qk8dnjt5bi5t96a8mvaqrfk1b33r5j</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDdbF9nhicYA1sGZBSDth2h08bbH2bEkGk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>748397811920</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.ing.event</string>
+	<key>PROJECT_ID</key>
+	<string>ingtechrating</string>
+	<key>STORAGE_BUCKET</key>
+	<string>ingtechrating.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:748397811920:ios:25df4dd1fef7d44c7066d5</string>
+	<key>DATABASE_URL</key>
+	<string>https://ingtechrating-default-rtdb.europe-west1.firebasedatabase.app</string>
+</dict>
+</plist>

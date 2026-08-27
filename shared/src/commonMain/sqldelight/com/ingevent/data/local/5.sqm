@@ -1,0 +1,10 @@
+ALTER TABLE HomeContentEntity ADD COLUMN title TEXT NOT NULL DEFAULT "ING Event";
+ALTER TABLE HomeContentEntity ADD COLUMN description TEXT NOT NULL DEFAULT "Welcome to ING Event. Explore the agenda, discover live sessions, and make the event your own.";
+ALTER TABLE HomeContentEntity ADD COLUMN imageBase64 TEXT NOT NULL DEFAULT "";
+ALTER TABLE HomeContentEntity ADD COLUMN imageMimeType TEXT NOT NULL DEFAULT "";
+ALTER TABLE HomeContentEntity ADD COLUMN imageUrl TEXT NOT NULL DEFAULT "";
+
+UPDATE HomeContentEntity
+SET description = welcomeMessage,
+    imageUrl = heroImageUrl
+WHERE singletonId = 1;

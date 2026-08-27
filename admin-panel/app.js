@@ -24,9 +24,9 @@ const MAP_CONTENT_PATH = "test/map";
 const RATINGS_PATH = "ratings";
 const APPLICATION_LOCK_PATH = "test/config/appLocked";
 const MAX_MAP_IMAGE_BYTES = 5 * 1024 * 1024;
-const DEFAULT_HOME_TITLE = "Mobile Meets Mobile";
+const DEFAULT_HOME_TITLE = "ING Event";
 const DEFAULT_HOME_DESCRIPTION =
-  "Welcome to Mobile Meets Mobile. Explore the agenda, discover live sessions, and make the event your own.";
+  "Welcome to ING Event. Explore the agenda, discover live sessions, and make the event your own.";
 const LOCAL_FIREBASE_CONFIG = {
   apiKey: "demo-local-api-key",
   authDomain: "ingtechrating.firebaseapp.com",

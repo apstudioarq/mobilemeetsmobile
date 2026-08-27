@@ -7,13 +7,13 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
-        android:name=".di.MobileMeetsMobileApp"
+        android:name=".di.INGEventApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Mobile Meets Mobile"
+        android:label="ING Event"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MobileMeetsMobile">
+        android:theme="@style/Theme.INGEvent">
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"

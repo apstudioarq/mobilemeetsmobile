@@ -162,7 +162,7 @@ values
     4000,
     3890,
     array['keynote','ai','roadmap']::text[],
-    'https://youtube.com/live/mobilemeetsmobile-day1-keynote',
+    'https://youtube.com/live/ingevent-day1-keynote',
     null,
     now()
   ),
@@ -183,7 +183,7 @@ values
     570,
     array['android','jetpack','performance']::text[],
     null,
-    'https://speakerdeck.com/mobilemeetsmobile/android-2026',
+    'https://speakerdeck.com/ingevent/android-2026',
     now()
   ),
   (
@@ -263,7 +263,7 @@ values
     120,
     array['flutter','workshop','state-management']::text[],
     null,
-    'https://github.com/mobilemeetsmobile/flutter-workshop-2026',
+    'https://github.com/ingevent/flutter-workshop-2026',
     now()
   ),
   (
@@ -302,7 +302,7 @@ values
     4000,
     3720,
     array['keynote','cloud']::text[],
-    'https://youtube.com/live/mobilemeetsmobile-day2-keynote',
+    'https://youtube.com/live/ingevent-day2-keynote',
     null,
     now()
   ),
@@ -323,7 +323,7 @@ values
     500,
     array['ai','rag','mobile']::text[],
     null,
-    'https://speakerdeck.com/mobilemeetsmobile/rag-mobile-2026',
+    'https://speakerdeck.com/ingevent/rag-mobile-2026',
     now()
   ),
   (
@@ -343,7 +343,7 @@ values
     135,
     array['android','compose','codelab']::text[],
     null,
-    'https://github.com/mobilemeetsmobile/compose-performance-lab',
+    'https://github.com/ingevent/compose-performance-lab',
     now()
   ),
   (
@@ -442,7 +442,7 @@ values
     4000,
     3660,
     array['keynote','dx']::text[],
-    'https://youtube.com/live/mobilemeetsmobile-day3-keynote',
+    'https://youtube.com/live/ingevent-day3-keynote',
     null,
     now()
   ),
@@ -463,7 +463,7 @@ values
     512,
     array['kmm','offline-first','architecture']::text[],
     null,
-    'https://speakerdeck.com/mobilemeetsmobile/kmm-offline-first',
+    'https://speakerdeck.com/ingevent/kmm-offline-first',
     now()
   ),
   (
@@ -503,7 +503,7 @@ values
     98,
     array['ai','genai','codelab','evaluation']::text[],
     null,
-    'https://github.com/mobilemeetsmobile/genai-eval-codelab',
+    'https://github.com/ingevent/genai-eval-codelab',
     now()
   ),
   (
