@@ -77,16 +77,17 @@ private struct MainContentView: View {
     @StateObject private var notificationSchedule = ScheduleViewModelWrapper()
     @StateObject private var homeSpeakers = SpeakersViewModelWrapper()
     @ObservedObject private var notificationRouter = NotificationRouter.shared
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage(SessionNotificationSettings.reminderMinutesKey)
     private var reminderMinutes = SessionNotificationSettings.defaultReminderMinutes
 
     private var notificationScheduleSignature: String {
         let savedSessions = notificationSchedule.state.allSessions
             .filter(\.isBookmarked)
-            .map { "\($0.id)|\($0.startTime)|\($0.endTime)" }
+            .map { "\($0.id)|\($0.startTime)|\($0.endTime)|\($0.title)|\($0.room)" }
             .sorted()
             .joined(separator: ";")
-        return "\(reminderMinutes):\(savedSessions)"
+        return "\(notificationSchedule.state.isNotificationScheduleReady):\(reminderMinutes):\(savedSessions)"
     }
 
     var body: some View {
@@ -127,14 +128,25 @@ private struct MainContentView: View {
         }
         .tint(.ingOrange)
         .onChange(of: notificationScheduleSignature, initial: true) { _, _ in
-            SessionNotificationScheduler.shared.reschedule(
-                sessions: Array(notificationSchedule.state.allSessions),
-                reminderMinutes: reminderMinutes
-            )
+            rescheduleNotifications()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { rescheduleNotifications() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
+            rescheduleNotifications()
         }
         .fullScreenCover(item: $notificationRouter.pendingSessionId) { sessionId in
             SessionDetailView(sessionId: sessionId)
         }
+    }
+
+    private func rescheduleNotifications() {
+        SessionNotificationScheduler.shared.reschedule(
+            sessions: notificationSchedule.state.allSessions.map(\.reminderSession),
+            reminderMinutes: reminderMinutes,
+            isDataReady: notificationSchedule.state.isNotificationScheduleReady
+        )
     }
 }
 

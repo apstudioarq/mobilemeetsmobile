@@ -40,6 +40,8 @@ data class ScheduleUiState(
     val selectedTrack: Track? = null,
     val sessions: List<Session> = emptyList(),
     val allSessions: List<Session> = emptyList(),
+    val hasLoadedAllSessions: Boolean = false,
+    val hasLoadedBookmarks: Boolean = false,
     val homeSessions: List<Session> = emptyList(),
     val homeSessionsAreLive: Boolean = false,
     val timeSlots: Map<String, List<Session>> = emptyMap(),
@@ -55,7 +57,10 @@ data class ScheduleUiState(
     val mapError: String? = null,
     val isOffline: Boolean = false,
     val requiresConnection: Boolean = false,
-)
+) {
+    val isNotificationScheduleReady: Boolean
+        get() = hasLoadedAllSessions && hasLoadedBookmarks
+}
 
 class ScheduleViewModel(
     private val getSchedule: GetScheduleUseCase,
@@ -185,6 +190,7 @@ class ScheduleViewModel(
                 _uiState.update {
                     it.copy(
                         bookmarkedIds = bookmarkIds,
+                        hasLoadedBookmarks = true,
                         sessions = applyBookmarkState(it.sessions, bookmarkIds),
                         allSessions = applyBookmarkState(it.allSessions, bookmarkIds),
                     )
@@ -258,6 +264,7 @@ class ScheduleViewModel(
                         _uiState.update {
                             it.copy(
                                 allSessions = emptyList(),
+                                hasLoadedAllSessions = true,
                                 homeSessions = emptyList(),
                                 homeSessionsAreLive = false,
                             )
@@ -278,6 +285,7 @@ class ScheduleViewModel(
                     _uiState.update {
                         it.copy(
                             allSessions = allSessions,
+                            hasLoadedAllSessions = true,
                             homeSessions = homeSelection.sessions,
                             homeSessionsAreLive = homeSelection.isLive,
                             days = derivedDays,

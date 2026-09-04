@@ -28,6 +28,7 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcuserdatad/
 iosApp/SharedSPM/shared.xcframework/
+iosApp/.build/
 
 # Logs
 *.log
